@@ -23,8 +23,7 @@ export const teamGridArgs = z.object({
           .meta({ payload: { singular: 'Link', plural: 'Links' } }),
       }),
     )
-    .min(1)
-    .meta({ payload: { singular: 'Member', plural: 'Members' } }),
+    .meta({ payload: { singular: 'Member', plural: 'Members', minRows: 1 } }),
 })
 
 export type TeamGridArgs = z.input<typeof teamGridArgs>
@@ -34,16 +33,18 @@ export function teamGrid(input: TeamGridArgs): SectionDefinition {
 
   const blocks: Block[] = sectionHeaderBlocks(args, 5)
 
-  blocks.push({
-    blockType: 'personGrid',
-    columns: { base: 1, sm: 2, lg: 4 },
-    people: args.members.map((member) => ({
-      name: member.name,
-      role: member.role,
-      image: member.image,
-      links: member.links,
-    })),
-  })
+  if (args.members.length > 0) {
+    blocks.push({
+      blockType: 'personGrid',
+      columns: { base: 1, sm: 2, lg: 4 },
+      people: args.members.map((member) => ({
+        name: member.name,
+        role: member.role,
+        image: member.image,
+        links: member.links,
+      })),
+    })
+  }
 
   return {
     tag: 'section',

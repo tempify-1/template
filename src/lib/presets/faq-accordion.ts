@@ -9,11 +9,13 @@ export const faqAccordionArgs = z.object({
     .array(
       z.object({
         question: z.string().min(1),
-        answer: z.string().min(1).meta({ payload: { type: 'textarea' } }),
+        answer: z
+          .string()
+          .min(1)
+          .meta({ payload: { type: 'textarea' } }),
       }),
     )
-    .min(1)
-    .meta({ payload: { singular: 'Question', plural: 'Questions' } }),
+    .meta({ payload: { singular: 'Question', plural: 'Questions', minRows: 1 } }),
 })
 
 export type FaqAccordionArgs = z.input<typeof faqAccordionArgs>
@@ -23,13 +25,15 @@ export function faqAccordion(input: FaqAccordionArgs): SectionDefinition {
 
   const blocks: Block[] = sectionHeaderBlocks(args, 5)
 
-  blocks.push({
-    blockType: 'accordion',
-    items: args.questions.map((entry) => ({
-      question: entry.question,
-      answer: entry.answer,
-    })),
-  })
+  if (args.questions.length > 0) {
+    blocks.push({
+      blockType: 'accordion',
+      items: args.questions.map((entry) => ({
+        question: entry.question,
+        answer: entry.answer,
+      })),
+    })
+  }
 
   return {
     tag: 'section',

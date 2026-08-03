@@ -46,10 +46,14 @@ test.describe('Landing page', () => {
 
   test('is legible on a phone viewport without horizontal overflow', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
-    const overflows = await page.evaluate(
-      () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
-    )
-    expect(overflows).toBe(false)
+
+    await expect
+      .poll(async () =>
+        page.evaluate(
+          () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        ),
+      )
+      .toBeLessThanOrEqual(1)
   })
 })
 

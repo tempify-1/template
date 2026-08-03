@@ -9,14 +9,16 @@ export const testimonialCarouselArgs = z.object({
   testimonials: z
     .array(
       z.object({
-        quote: z.string().min(1).meta({ payload: { type: 'textarea' } }),
+        quote: z
+          .string()
+          .min(1)
+          .meta({ payload: { type: 'textarea' } }),
         name: z.string().min(1),
         title: z.string().optional(),
         image: imageArgs.optional().meta({ payload: { label: 'Portrait' } }),
       }),
     )
-    .min(1)
-    .meta({ payload: { singular: 'Testimonial', plural: 'Testimonials' } }),
+    .meta({ payload: { singular: 'Testimonial', plural: 'Testimonials', minRows: 1 } }),
 })
 
 export type TestimonialCarouselArgs = z.input<typeof testimonialCarouselArgs>
@@ -26,15 +28,17 @@ export function testimonialCarousel(input: TestimonialCarouselArgs): SectionDefi
 
   const blocks: Block[] = sectionHeaderBlocks(args, 5)
 
-  blocks.push({
-    blockType: 'testimonialCarousel',
-    testimonials: args.testimonials.map((testimonial) => ({
-      quote: testimonial.quote,
-      name: testimonial.name,
-      title: testimonial.title,
-      image: testimonial.image,
-    })),
-  })
+  if (args.testimonials.length > 0) {
+    blocks.push({
+      blockType: 'testimonialCarousel',
+      testimonials: args.testimonials.map((testimonial) => ({
+        quote: testimonial.quote,
+        name: testimonial.name,
+        title: testimonial.title,
+        image: testimonial.image,
+      })),
+    })
+  }
 
   return {
     tag: 'section',

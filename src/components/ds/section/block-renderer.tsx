@@ -5,7 +5,16 @@ import type { Block, BlockType } from '@/lib/presets/types'
 import { AccordionList } from './accordion-block'
 import { ImageMedia } from './image-block'
 import { TestimonialCarousel } from './testimonial-carousel-block'
-import { BadgeRow, ButtonRow, CardGrid, Heading, ItemList, LogoRow, Paragraph, PersonGrid } from './blocks'
+import {
+  BadgeRow,
+  ButtonRow,
+  CardGrid,
+  Heading,
+  ItemList,
+  LogoRow,
+  Paragraph,
+  PersonGrid,
+} from './blocks'
 
 type BlockRenderers = {
   [K in BlockType]: (props: { block: Extract<Block, { blockType: K }> }) => ReactNode

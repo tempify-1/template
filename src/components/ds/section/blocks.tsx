@@ -73,7 +73,10 @@ export function ButtonRow({ block }: { block: ButtonRowBlock }) {
 
 export function CardGrid({ block }: { block: CardGridBlock }) {
   return (
-    <ul className="ds-card-grid" style={responsiveVars('cards', block.columns ?? { base: 1, sm: 2, lg: 4 })}>
+    <ul
+      className="ds-card-grid"
+      style={responsiveVars('cards', block.columns ?? { base: 1, sm: 2, lg: 4 })}
+    >
       {block.cards.map((card, index) => {
         const Icon = iconFor(card.icon)
 
@@ -169,15 +172,14 @@ export function PersonGrid({ block }: { block: PersonGridBlock }) {
           {person.image ? (
             <Image
               src={person.image.src}
-              alt={person.name}
+              alt={person.image.alt}
               width={person.image.width}
               height={person.image.height}
-              sizes="96px"
               className="size-24 rounded-full object-cover"
             />
           ) : null}
           <span className="flex flex-col gap-0.5">
-            <span className="text-base font-medium text-foreground">{person.name}</span>
+            <h3 className="text-base font-medium text-foreground">{person.name}</h3>
             <span className="text-sm text-muted-foreground">{person.role}</span>
           </span>
           {person.links && person.links.length > 0 ? (

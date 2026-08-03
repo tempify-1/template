@@ -19,13 +19,32 @@ interface StoredCallToAction {
   href?: string | null
 }
 
+function filled(value: string | null | undefined): boolean {
+  return typeof value === 'string' && value.trim().length > 0
+}
+
+function keepRows<T>(
+  rows: T[],
+  isComplete: (row: T) => boolean,
+  onProblem: MediaProblem,
+  label: string,
+): T[] {
+  const kept = rows.filter(isComplete)
+  const dropped = rows.length - kept.length
+  if (dropped > 0) onProblem(`${dropped} ${label} row(s) dropped for missing required fields`)
+  return kept
+}
+
 function toCallToAction(cta: StoredCallToAction | null | undefined) {
   if (!cta?.label || !cta.href) return undefined
   return { label: cta.label, href: cta.href }
 }
 
 const presetMappers = {
-  heroCentered: (block: Extract<SectionBlock, { blockType: 'heroCentered' }>, onProblem: MediaProblem) =>
+  heroCentered: (
+    block: Extract<SectionBlock, { blockType: 'heroCentered' }>,
+    onProblem: MediaProblem,
+  ) =>
     heroCentered({
       heading: block.heading,
       subheading: block.subheading ?? undefined,
@@ -58,9 +77,9 @@ const presetMappers = {
   logoWall: (block: Extract<SectionBlock, { blockType: 'logoWall' }>, onProblem: MediaProblem) =>
     logoWall({
       heading: block.heading ?? undefined,
-      logos: (block.logos ?? [])
-        .filter((logo) => Boolean(logo.name))
-        .map((logo) => ({ name: logo.name, image: toImage(logo.image, onProblem) })),
+      logos: keepRows(block.logos ?? [], (logo) => filled(logo.name), onProblem, 'logo').map(
+        (logo) => ({ name: logo.name, image: toImage(logo.image, onProblem) }),
+      ),
     }),
 
   serviceList: (block: Extract<SectionBlock, { blockType: 'serviceList' }>) =>
@@ -81,30 +100,36 @@ const presetMappers = {
     testimonialCarousel({
       heading: block.heading,
       subheading: block.subheading ?? undefined,
-      testimonials: (block.testimonials ?? [])
-        .filter((entry) => Boolean(entry.quote) && Boolean(entry.name))
-        .map((entry) => ({
-          quote: entry.quote,
-          name: entry.name,
-          title: entry.title ?? undefined,
-          image: toImage(entry.image, onProblem),
-        })),
+      testimonials: keepRows(
+        block.testimonials ?? [],
+        (entry) => filled(entry.quote) && filled(entry.name),
+        onProblem,
+        'testimonial',
+      ).map((entry) => ({
+        quote: entry.quote,
+        name: entry.name,
+        title: entry.title ?? undefined,
+        image: toImage(entry.image, onProblem),
+      })),
     }),
 
   teamGrid: (block: Extract<SectionBlock, { blockType: 'teamGrid' }>, onProblem: MediaProblem) =>
     teamGrid({
       heading: block.heading,
       subheading: block.subheading ?? undefined,
-      members: (block.members ?? [])
-        .filter((member) => Boolean(member.name) && Boolean(member.role))
-        .map((member) => ({
-          name: member.name,
-          role: member.role,
-          image: toImage(member.image, onProblem),
-          links: (member.links ?? [])
-            .filter((link) => Boolean(link.label) && Boolean(link.href))
-            .map((link) => ({ label: link.label, href: link.href })),
-        })),
+      members: keepRows(
+        block.members ?? [],
+        (member) => filled(member.name) && filled(member.role),
+        onProblem,
+        'member',
+      ).map((member) => ({
+        name: member.name,
+        role: member.role,
+        image: toImage(member.image, onProblem),
+        links: (member.links ?? [])
+          .filter((link) => filled(link.label) && filled(link.href))
+          .map((link) => ({ label: link.label, href: link.href })),
+      })),
     }),
 
   ctaBanner: (block: Extract<SectionBlock, { blockType: 'ctaBanner' }>) =>
@@ -131,7 +156,10 @@ const presetMappers = {
         answer: entry.answer,
       })),
     }),
-} satisfies Record<SectionBlock['blockType'], (block: never, onProblem: MediaProblem) => SectionDefinition>
+} satisfies Record<
+  SectionBlock['blockType'],
+  (block: never, onProblem: MediaProblem) => SectionDefinition
+>
 
 export interface MapPageResult {
   sections: SectionDefinition[]
@@ -146,8 +174,7 @@ export function mapPageResult(page: Pick<Page, 'sections'>): MapPageResult {
 
   for (const block of page.sections ?? []) {
     const map = presetMappers[block.blockType] as
-      | ((block: SectionBlock, onProblem: MediaProblem) => SectionDefinition)
-      | undefined
+      ((block: SectionBlock, onProblem: MediaProblem) => SectionDefinition) | undefined
 
     if (!map) {
       skipped.push({ blockType: block.blockType, reason: 'no Preset is registered for this block' })
