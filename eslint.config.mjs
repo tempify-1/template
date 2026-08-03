@@ -24,6 +24,21 @@ const eslintConfig = [
     },
   },
   {
+    files: [
+      'src/components/ui/**',
+      'src/hooks/**',
+      'src/components/app-sidebar.tsx',
+      'src/components/chart-area-interactive.tsx',
+      'src/components/data-table.tsx',
+      'src/components/nav-*.tsx',
+      'src/components/section-cards.tsx',
+      'src/components/site-header.tsx',
+    ],
+    rules: {
+      'react-hooks/set-state-in-effect': 'off',
+    },
+  },
+  {
     ignores: ['.next/', 'src/payload-types.ts', 'src/payload-generated-schema.ts'],
   },
 ]
