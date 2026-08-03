@@ -140,6 +140,65 @@ describe('a page authored with an image round-trips through the Local API', () =
     expect(row.logos[1]!.name).toBe('Acme')
   })
 
+  it('emits an image Block for a hero authored with an image', async () => {
+    const media = await payload.findByID({ collection: 'media', id: mediaId })
+    const { sections, skipped } = mapPageResult({
+      sections: [
+        {
+          blockType: 'heroCentered',
+          heading: 'Hero with art',
+          primaryCta: { label: null, href: null },
+          secondaryCta: { label: null, href: null },
+          image: media,
+        },
+      ],
+    } as never)
+
+    expect(skipped).toHaveLength(0)
+    const image = sections[0]!.columns![0]!.blocks!.find((b) => b.blockType === 'image')
+    expect(image).toMatchObject({ alt: 'Northwind logo', width: 120, height: 40 })
+  })
+
+  it('does not preload the hero image, which renders below the fold', async () => {
+    const media = await payload.findByID({ collection: 'media', id: mediaId })
+    const { sections } = mapPageResult({
+      sections: [
+        {
+          blockType: 'heroCentered',
+          heading: 'Hero with art',
+          primaryCta: { label: null, href: null },
+          secondaryCta: { label: null, href: null },
+          image: media,
+        },
+      ],
+    } as never)
+
+    const image = sections[0]!.columns![0]!.blocks!.find((b) => b.blockType === 'image')
+    expect((image as { priority?: boolean }).priority).toBeUndefined()
+  })
+
+  it('drops an incomplete logo row but keeps the rest of the wall', () => {
+    const { sections, skipped } = mapPageResult({
+      sections: [{ blockType: 'logoWall', logos: [{ name: '' }, { name: 'Acme' }] }],
+    } as never)
+
+    expect(skipped).toHaveLength(0)
+    const row = sections[0]!.columns![0]!.blocks!.find(
+      (b) => b.blockType === 'logoRow',
+    ) as LogoRowBlock
+    expect(row.logos.map((l) => l.name)).toEqual(['Acme'])
+  })
+
+  it('warns rather than staying silent when media cannot be rendered', () => {
+    const { sections, warnings } = mapPageResult({
+      sections: [{ blockType: 'logoWall', logos: [{ name: 'Acme', image: 999 }] }],
+    } as never)
+
+    expect(sections).toHaveLength(1)
+    expect(warnings[0]!.blockType).toBe('logoWall')
+    expect(warnings[0]!.reason).toContain('not populated')
+  })
+
   it('keeps the Section when a relationship comes back unpopulated', () => {
     const { sections, skipped } = mapPageResult({
       sections: [{ blockType: 'logoWall', logos: [{ name: 'Acme', image: 999 }] }],
@@ -150,5 +209,14 @@ describe('a page authored with an image round-trips through the Local API', () =
       (b) => b.blockType === 'logoRow',
     ) as LogoRowBlock
     expect(row.logos[0]!.image).toBeUndefined()
+  })
+})
+
+describe('arrays of media', () => {
+  it('generates upload rows rather than raw url fields', () => {
+    const fields = fieldsFromSchema(z.object({ gallery: z.array(imageArgs) }))
+    const rows = (byName(fields, 'gallery').fields as Field[])[0] as never as Record<string, unknown>
+
+    expect(rows).toMatchObject({ type: 'upload', relationTo: 'media' })
   })
 })

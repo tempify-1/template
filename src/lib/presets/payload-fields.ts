@@ -1,9 +1,9 @@
-import type { Block, Field } from 'payload'
+import type { Block, CollectionSlug, Field } from 'payload'
 import type { z } from 'zod'
 
 export interface PayloadFieldHint {
   type?: 'textarea' | 'upload'
-  relationTo?: string
+  relationTo?: CollectionSlug
   label?: string
   description?: string
   singular?: string
@@ -99,7 +99,7 @@ function fieldFor(name: string, raw: z.ZodType, blankable = false): Field {
     return {
       name,
       type: 'upload',
-      relationTo: (hint.relationTo ?? 'media') as 'media',
+      relationTo: hint.relationTo ?? 'media',
       label,
       required,
       ...admin,
@@ -157,10 +157,13 @@ function fieldFor(name: string, raw: z.ZodType, blankable = false): Field {
   }
 
   if (kind === 'array') {
-    const element = unwrap(def(schema).element as z.ZodType).schema
+    const rawElement = def(schema).element as z.ZodType
+    const element = unwrap(rawElement).schema
     const minRows = boundOf(schema, 'min_length')
     const maxRows = boundOf(schema, 'max_length')
-    const isObjectElement = (def(element).type as string) === 'object'
+    const elementHint = { ...hintFor(element), ...hintFor(rawElement) }
+    const isObjectElement =
+      (def(element).type as string) === 'object' && elementHint.type !== 'upload'
 
     return {
       name,

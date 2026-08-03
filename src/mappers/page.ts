@@ -4,7 +4,7 @@ import { ctaBanner } from '@/lib/presets/cta-banner'
 import { faqAccordion } from '@/lib/presets/faq-accordion'
 import { featureGrid } from '@/lib/presets/feature-grid'
 import { heroCentered } from '@/lib/presets/hero-centered'
-import { toImage } from '@/lib/presets/media'
+import { toImage, type MediaProblem } from '@/lib/presets/media'
 import { logoWall } from '@/lib/presets/logo-wall'
 import { serviceList } from '@/lib/presets/service-list'
 import type { SectionDefinition } from '@/lib/presets/types'
@@ -23,14 +23,14 @@ function toCallToAction(cta: StoredCallToAction | null | undefined) {
 }
 
 const presetMappers = {
-  heroCentered: (block: Extract<SectionBlock, { blockType: 'heroCentered' }>) =>
+  heroCentered: (block: Extract<SectionBlock, { blockType: 'heroCentered' }>, onProblem: MediaProblem) =>
     heroCentered({
       heading: block.heading,
       subheading: block.subheading ?? undefined,
       primaryCta: toCallToAction(block.primaryCta),
       secondaryCta: toCallToAction(block.secondaryCta),
       trustBadges: (block.trustBadges ?? []).map((badge) => badge.text).filter(Boolean),
-      image: toImage(block.image),
+      image: toImage(block.image, onProblem),
     }),
 
   benefitsGrid: (block: Extract<SectionBlock, { blockType: 'benefitsGrid' }>) =>
@@ -53,13 +53,12 @@ const presetMappers = {
         description: feature.description ?? undefined,
       })),
     }),
-  logoWall: (block: Extract<SectionBlock, { blockType: 'logoWall' }>) =>
+  logoWall: (block: Extract<SectionBlock, { blockType: 'logoWall' }>, onProblem: MediaProblem) =>
     logoWall({
       heading: block.heading ?? undefined,
-      logos: (block.logos ?? []).map((logo) => ({
-        name: logo.name,
-        image: toImage(logo.image),
-      })),
+      logos: (block.logos ?? [])
+        .filter((logo) => Boolean(logo.name))
+        .map((logo) => ({ name: logo.name, image: toImage(logo.image, onProblem) })),
     }),
 
   serviceList: (block: Extract<SectionBlock, { blockType: 'serviceList' }>) =>
@@ -97,20 +96,22 @@ const presetMappers = {
         answer: entry.answer,
       })),
     }),
-} satisfies Record<SectionBlock['blockType'], (block: never) => SectionDefinition>
+} satisfies Record<SectionBlock['blockType'], (block: never, onProblem: MediaProblem) => SectionDefinition>
 
 export interface MapPageResult {
   sections: SectionDefinition[]
   skipped: { blockType: string; reason: string }[]
+  warnings: { blockType: string; reason: string }[]
 }
 
 export function mapPageResult(page: Pick<Page, 'sections'>): MapPageResult {
   const sections: SectionDefinition[] = []
   const skipped: { blockType: string; reason: string }[] = []
+  const warnings: { blockType: string; reason: string }[] = []
 
   for (const block of page.sections ?? []) {
     const map = presetMappers[block.blockType] as
-      | ((block: SectionBlock) => SectionDefinition)
+      | ((block: SectionBlock, onProblem: MediaProblem) => SectionDefinition)
       | undefined
 
     if (!map) {
@@ -119,7 +120,7 @@ export function mapPageResult(page: Pick<Page, 'sections'>): MapPageResult {
     }
 
     try {
-      sections.push(map(block))
+      sections.push(map(block, (reason) => warnings.push({ blockType: block.blockType, reason })))
     } catch (error) {
       skipped.push({
         blockType: block.blockType,
@@ -128,7 +129,7 @@ export function mapPageResult(page: Pick<Page, 'sections'>): MapPageResult {
     }
   }
 
-  return { sections, skipped }
+  return { sections, skipped, warnings }
 }
 
 export function mapPage(page: Pick<Page, 'sections'>): SectionDefinition[] {

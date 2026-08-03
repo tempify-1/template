@@ -118,9 +118,10 @@ export function LogoRow({ block }: { block: LogoRowBlock }) {
           {logo.image ? (
             <Image
               src={logo.image.src}
-              alt={logo.image.alt}
+              alt={logo.name}
               width={logo.image.width}
               height={logo.image.height}
+              sizes="8rem"
               className="h-8 w-auto object-contain"
             />
           ) : (

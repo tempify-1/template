@@ -58,7 +58,7 @@ export function heroCentered(input: HeroCenteredArgs): SectionDefinition {
   }
 
   if (args.image) {
-    blocks.push({ blockType: 'image', ...args.image, priority: true })
+    blocks.push({ blockType: 'image', ...args.image })
   }
 
   return {

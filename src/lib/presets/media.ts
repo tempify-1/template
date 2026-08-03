@@ -18,9 +18,29 @@ export interface StoredMedia {
   height?: number | null
 }
 
-export function toImage(media: number | StoredMedia | null | undefined): ImageArgs | undefined {
-  if (media === null || media === undefined || typeof media === 'number') return undefined
-  if (!media.url || !media.alt || !media.width || !media.height) return undefined
+export type MediaProblem = (reason: string) => void
 
-  return { src: media.url, alt: media.alt, width: media.width, height: media.height }
+export function toImage(
+  media: number | StoredMedia | null | undefined,
+  onProblem?: MediaProblem,
+): ImageArgs | undefined {
+  if (media === null || media === undefined) return undefined
+
+  if (typeof media === 'number') {
+    onProblem?.(`media ${media} was referenced but not populated`)
+    return undefined
+  }
+
+  const missing = (['url', 'alt', 'width', 'height'] as const).filter((key) => !media[key])
+  if (missing.length > 0) {
+    onProblem?.(`media document is missing ${missing.join(', ')}`)
+    return undefined
+  }
+
+  return {
+    src: media.url as string,
+    alt: media.alt as string,
+    width: media.width as number,
+    height: media.height as number,
+  }
 }
