@@ -24,16 +24,7 @@ const eslintConfig = [
     },
   },
   {
-    files: [
-      'src/components/ui/**',
-      'src/hooks/**',
-      'src/components/app-sidebar.tsx',
-      'src/components/chart-area-interactive.tsx',
-      'src/components/data-table.tsx',
-      'src/components/nav-*.tsx',
-      'src/components/section-cards.tsx',
-      'src/components/site-header.tsx',
-    ],
+    files: ['src/components/chart-area-interactive.tsx', 'src/hooks/use-mobile.ts'],
     rules: {
       'react-hooks/set-state-in-effect': 'off',
     },
