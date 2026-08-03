@@ -2,18 +2,20 @@ import { z } from 'zod'
 
 import type { Block, SectionDefinition } from './types'
 
-const callToAction = z.object({
-  label: z.string().min(1),
-  href: z.string().min(1),
-})
+const callToAction = z
+  .object({
+    label: z.string().min(1),
+    href: z.string().min(1),
+  })
+  .optional()
+  .meta({ payload: { description: 'Leave both fields empty to omit this call to action.' } })
 
 export const heroCenteredArgs = z.object({
   heading: z.string().min(1),
-  subheading: z.string().optional(),
-  primaryCta: callToAction.optional(),
-  secondaryCta: callToAction.optional(),
+  subheading: z.string().optional().meta({ payload: { type: 'textarea' } }),
+  primaryCta: callToAction,
+  secondaryCta: callToAction,
   trustBadges: z.array(z.string().min(1)).default([]),
-  minHeight: z.string().optional(),
 })
 
 export type HeroCenteredArgs = z.input<typeof heroCenteredArgs>
@@ -43,7 +45,7 @@ export function heroCentered(input: HeroCenteredArgs): SectionDefinition {
   return {
     tag: 'section',
     gutter: 'lg',
-    minHeight: args.minHeight,
+    minHeight: '100svh',
     columnLayout: 1,
     columns: [{ justify: 'center', verticalAlignment: 'middle', blocks }],
   }

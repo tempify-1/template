@@ -11,7 +11,6 @@ export const homeSections: SectionDefinition[] = [
     primaryCta: { label: 'Start free trial', href: '/signup' },
     secondaryCta: { label: 'Book a demo', href: '/demo' },
     trustBadges: ['No credit card required', '14-day free trial', 'Cancel anytime'],
-    minHeight: '100svh',
   }),
 
   benefitsGrid({

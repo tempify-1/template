@@ -4,15 +4,16 @@ import type { Block, SectionDefinition } from './types'
 
 export const benefitsGridArgs = z.object({
   heading: z.string().min(1),
-  subheading: z.string().optional(),
+  subheading: z.string().optional().meta({ payload: { type: 'textarea' } }),
   benefits: z
     .array(
       z.object({
         title: z.string().min(1),
-        description: z.string().optional(),
+        description: z.string().optional().meta({ payload: { type: 'textarea' } }),
       }),
     )
-    .min(1),
+    .min(1)
+    .meta({ payload: { description: 'Numbered automatically in the order listed here.' } }),
 })
 
 export type BenefitsGridArgs = z.input<typeof benefitsGridArgs>

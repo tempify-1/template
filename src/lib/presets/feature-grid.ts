@@ -5,13 +5,13 @@ import type { Block, SectionDefinition } from './types'
 
 export const featureGridArgs = z.object({
   heading: z.string().min(1),
-  subheading: z.string().optional(),
+  subheading: z.string().optional().meta({ payload: { type: 'textarea' } }),
   features: z
     .array(
       z.object({
         icon: z.enum(ICON_NAMES),
         title: z.string().min(1),
-        description: z.string().optional(),
+        description: z.string().optional().meta({ payload: { type: 'textarea' } }),
       }),
     )
     .min(1),
