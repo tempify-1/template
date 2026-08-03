@@ -1,18 +1,21 @@
+import type { ReactNode } from 'react'
+
 import type { Block, BlockType } from '@/lib/presets/types'
 
 import { BadgeRow, ButtonRow, Heading, Paragraph } from './blocks'
 
-type BlockComponent = (props: { block: never }) => React.ReactNode
+type BlockRenderers = {
+  [K in BlockType]: (props: { block: Extract<Block, { blockType: K }> }) => ReactNode
+}
 
-export const blockRegistry = {
+export const blockRegistry: BlockRenderers = {
   heading: Heading,
   paragraph: Paragraph,
   buttonRow: ButtonRow,
   badgeRow: BadgeRow,
-} as unknown as Record<BlockType, BlockComponent>
+}
 
 export function BlockRenderer({ block }: { block: Block }) {
-  const Component = blockRegistry[block.blockType]
-  if (!Component) return null
-  return <Component block={block as never} />
+  const Component = blockRegistry[block.blockType] as (props: { block: Block }) => ReactNode
+  return <Component block={block} />
 }

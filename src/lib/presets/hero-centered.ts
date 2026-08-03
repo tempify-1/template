@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { THEME_COLORS, type Block, type SectionDefinition } from './types'
+import type { Block, SectionDefinition } from './types'
 
 const callToAction = z.object({
   label: z.string().min(1),
@@ -13,7 +13,6 @@ export const heroCenteredArgs = z.object({
   primaryCta: callToAction.optional(),
   secondaryCta: callToAction.optional(),
   trustBadges: z.array(z.string().min(1)).default([]),
-  theme: z.enum(THEME_COLORS).optional(),
   minHeight: z.string().optional(),
 })
 
@@ -43,7 +42,6 @@ export function heroCentered(input: HeroCenteredArgs): SectionDefinition {
 
   return {
     tag: 'section',
-    theme: args.theme,
     gutter: 'lg',
     minHeight: args.minHeight,
     columnLayout: 1,

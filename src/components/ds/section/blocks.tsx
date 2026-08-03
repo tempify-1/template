@@ -21,21 +21,15 @@ const HEADING_SIZES: Record<number, string> = {
 
 export function Heading({ block }: { block: HeadingBlock }) {
   const Tag = `h${block.level}` as 'h1'
-  const words = block.text.split(' ')
 
   return (
     <Tag
       className={cn(
-        'text-balance font-medium tracking-tight text-foreground',
+        'text-balance font-medium leading-[1.05] tracking-tight text-foreground',
         HEADING_SIZES[block.size ?? block.level + 2] ?? 'text-4xl',
-        'leading-[1.05]',
       )}
     >
-      {words.map((word, index) => (
-        <span key={`${word}-${index}`} data-word style={{ '--word-index': index } as never}>
-          {index === words.length - 1 ? word : `${word} `}
-        </span>
-      ))}
+      {block.text}
     </Tag>
   )
 }

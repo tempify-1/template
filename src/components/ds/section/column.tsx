@@ -5,15 +5,13 @@ import { responsiveVars, type ColumnDefinition } from '@/lib/presets/types'
 import { BlockRenderer } from './block-renderer'
 
 export function Column({ definition, index }: { definition: ColumnDefinition; index: number }) {
-  const style = {
-    ...responsiveVars('span', definition.colSpan),
-    '--column-index': index,
-  } as CSSProperties
+  const style = responsiveVars('span', definition.colSpan)
 
   return (
     <div
       className="ds-column"
       style={style}
+      data-column-index={index}
       data-justify={definition.justify}
       data-align={definition.verticalAlignment}
     >

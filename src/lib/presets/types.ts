@@ -5,16 +5,6 @@ export type Breakpoint = (typeof BREAKPOINTS)[number]
 
 export type Responsive<T> = T | ({ base?: T } & Partial<Record<Breakpoint, T>>)
 
-export const THEME_COLORS = [
-  'default',
-  'muted',
-  'accent',
-  'inverse',
-  'brand-dark',
-  'brand-light',
-] as const
-export type ThemeColor = (typeof THEME_COLORS)[number]
-
 export type GutterSize = 'none' | 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 
 export interface HeadingBlock {
@@ -59,13 +49,10 @@ export interface ColumnDefinition {
 
 export interface SectionDefinition {
   tag?: 'header' | 'section' | 'footer'
-  theme?: ThemeColor
-  invert?: boolean
   gutter?: GutterSize
   columnLayout?: Responsive<number>
   columns?: ColumnDefinition[]
   minHeight?: string
-  scrollAnimate?: boolean
 }
 
 export function responsiveVars(name: string, value?: Responsive<number>): CSSProperties {

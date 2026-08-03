@@ -65,6 +65,14 @@
       );
     }
   }
+  @media (min-width: 96rem) {
+    .ds-grid {
+      grid-template-columns: repeat(
+        var(--cols-2xl, var(--cols-xl, var(--cols-lg, var(--cols-md, var(--cols-sm, var(--cols, 1)))))),
+        minmax(0, 1fr)
+      );
+    }
+  }
 
   .ds-column {
     display: flex;
@@ -87,6 +95,17 @@
   @media (min-width: 64rem) {
     .ds-column {
       grid-column: span var(--span-lg, var(--span-md, var(--span-sm, var(--span, 1))));
+    }
+  }
+  @media (min-width: 80rem) {
+    .ds-column {
+      grid-column: span var(--span-xl, var(--span-lg, var(--span-md, var(--span-sm, var(--span, 1)))));
+    }
+  }
+  @media (min-width: 96rem) {
+    .ds-column {
+      grid-column: span
+        var(--span-2xl, var(--span-xl, var(--span-lg, var(--span-md, var(--span-sm, var(--span, 1))))));
     }
   }
 
