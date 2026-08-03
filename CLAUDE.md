@@ -1,22 +1,25 @@
 # Stack
 
 Payload CMS 3 embedded in Next.js · Postgres · Next 16.2.6 (pinned) · App Router, RSC by default
-Tailwind v4 (CSS-first `@theme`) · shadcn/ui · react-hook-form + zod · Lexical rich text · pnpm · Node 24
+Tailwind v4 (CSS-first `@theme`) · shadcn/ui (Base UI) · react-hook-form + zod · Lexical rich text · pnpm · Node 24
 
 Domain material lives in CONTEXT.md. Rationale and architecture live in docs/.
 
 # Hard rules
 
-1. Schema first. Every feature starts as a Payload collection/field or a zod schema. Run `payload generate:types` before writing consuming code and commit the result. Generated types are the contract — never hand-write duplicates.
+1. Schema first. Every feature starts as a Payload collection/field or a zod schema. Run `payload generate:types` before writing consuming code and commit the result. Generated types are the contract for Payload data — never hand-write duplicates. Carve-out: design-system config types (`SectionDefinition`, `Field`, `LayoutConfig`) are hand-authored TypeScript and Payload is derived from them, not the reverse — see `docs/adr/0002`.
 2. Local API (`getPayload`) in all RSC/server code. Server Functions for client mutations. REST only for external consumers.
 3. Mapper boundary: Payload data is transformed in `src/mappers/` before reaching any component. Presentational components never import Payload types.
-4. Server Components by default; `'use client'` as low in the tree as possible.
-5. Access control: function-per-operation. `authenticated` for admin ops, `authenticatedOrPublished` for public reads. Never leave default-open.
-6. `afterChange` hooks → `revalidatePath` / `revalidateTag`.
-7. Forms: react-hook-form + zod, field registry. STORE BARE VALUES — string keys, numbers, booleans, `yyyy-MM-dd` strings. Never `{key,label}` objects in form state. Conditional validators self-evaluate at validation time, never baked in at render time.
-8. Value contracts are law: a row in `docs/frontend/form-runtime-contracts.md` before any new field component.
-9. No comments in code. Rationale goes in docs/.
-10. Verify, don't assume: typecheck + targeted test + observe the live page. A log is only evidence if it logs the value that goes over the wire.
+4. shadcn best practice first. Check the registry before writing a component; check for a block before assembling primitives. When shadcn has an opinion — token naming, component anatomy, `cva` over per-component CSS — shadcn wins. The old Qwik design system in `~/Development/design-system` is evidence about pitfalls, never a source of design. This is not a port — see `docs/adr/0006`.
+5. Server Components by default; `'use client'` as low in the tree as possible.
+6. Generate configs, not JSX. Pages and sections are authored as typed config objects rendered by design-system components. Never hand-write or generate bespoke JSX for something a config can describe. If the config can't express it, extend the config type and the DS component — dropping to one-off markup is the failure mode this rule exists to prevent.
+7. Semantic tokens only. DS components style with semantic utilities (`bg-background`, `text-foreground`, `bg-primary`, `border-border`). Never raw palette classes (`bg-blue-500`, `text-slate-700`) and never literal colour values. Section colour is set by `data-theme` on a section container; components inherit it and never branch on theme themselves.
+8. Access control: function-per-operation. `authenticated` for admin ops, `authenticatedOrPublished` for public reads. Never leave default-open.
+9. `afterChange` hooks → `revalidatePath` / `revalidateTag`.
+10. Forms: react-hook-form + zod (via `@hookform/resolvers/zod`), field registry. STORE BARE VALUES — string keys, numbers, booleans, `yyyy-MM-dd` strings. Never `{key,label}` objects in form state. Conditions live at the schema's object level and self-evaluate at validation time, never baked in at render time.
+11. Value contracts are law: a row in `docs/frontend/nextjs-ds-blueprint/03-forms.md` (Value contracts) before any new field component.
+12. No comments in code. Rationale goes in docs/.
+13. Verify, don't assume: typecheck + targeted test + observe the live page. A log is only evidence if it logs the value that goes over the wire.
 
 # Retrieval guardrail
 
