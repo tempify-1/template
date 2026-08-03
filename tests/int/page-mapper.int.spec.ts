@@ -2,7 +2,7 @@ import { getPayload, type Payload } from 'payload'
 import { describe, it, beforeAll, afterAll, expect } from 'vitest'
 
 import config from '@/payload.config'
-import { mapPage } from '@/mappers/page'
+import { mapPage, mapPageResult } from '@/mappers/page'
 
 const SLUG = 'int-mapper-fixture'
 
@@ -86,12 +86,25 @@ describe('page mapper', () => {
     expect(buttons).toMatchObject({ buttons: [{ label: 'Go', href: '/go' }] })
   })
 
-  it('drops a section whose heading fails the Preset schema', async () => {
+  it('drops a section whose heading fails the Preset schema, keeping the rest of the page', () => {
+    const result = mapPageResult({
+      sections: [
+        { blockType: 'heroCentered' as const, heading: '', primaryCta: {}, secondaryCta: {} },
+        { blockType: 'heroCentered' as const, heading: 'Survivor', primaryCta: {}, secondaryCta: {} },
+      ],
+    })
+
+    expect(result.sections).toHaveLength(1)
+    expect(result.skipped).toHaveLength(1)
+    expect(result.skipped[0]!.blockType).toBe('heroCentered')
+  })
+
+  it('never throws on malformed stored content, so one bad section cannot 500 the route', () => {
     expect(() =>
       mapPage({
         sections: [{ blockType: 'heroCentered' as const, heading: '', primaryCta: {}, secondaryCta: {} }],
       }),
-    ).toThrow()
+    ).not.toThrow()
   })
 
   it('reads the stored page back through the Local API with access enforced', async () => {

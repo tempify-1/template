@@ -1,11 +1,14 @@
-import { defaultValueFor, isInputField, type FieldConfig, type FormValues, type ValueResolver } from './types'
+import { setAtPath } from './paths'
+import { inputFields, defaultValueFor, type FieldConfig, type FormValues, type ValueResolver } from './types'
 
 export function emptyValues(fields: FieldConfig[]): FormValues {
-  const values: FormValues = {}
-  for (const field of fields.filter(isInputField)) {
-    values[field.name] = defaultValueFor(field)
+  const values: Record<string, unknown> = {}
+
+  for (const field of inputFields(fields)) {
+    setAtPath(values, field.name, defaultValueFor(field))
   }
-  return values
+
+  return values as FormValues
 }
 
 export function staticValues(seed: FormValues): ValueResolver {

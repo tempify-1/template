@@ -25,14 +25,38 @@ const presetMappers = {
     }),
 } satisfies Record<SectionBlock['blockType'], (block: never) => SectionDefinition>
 
-export function mapSection(block: SectionBlock): SectionDefinition | null {
-  const map = presetMappers[block.blockType] as ((block: SectionBlock) => SectionDefinition) | undefined
-  if (!map) return null
-  return map(block)
+export interface MapPageResult {
+  sections: SectionDefinition[]
+  skipped: { blockType: string; reason: string }[]
+}
+
+export function mapPageResult(page: Pick<Page, 'sections'>): MapPageResult {
+  const sections: SectionDefinition[] = []
+  const skipped: { blockType: string; reason: string }[] = []
+
+  for (const block of page.sections ?? []) {
+    const map = presetMappers[block.blockType] as
+      | ((block: SectionBlock) => SectionDefinition)
+      | undefined
+
+    if (!map) {
+      skipped.push({ blockType: block.blockType, reason: 'no Preset is registered for this block' })
+      continue
+    }
+
+    try {
+      sections.push(map(block))
+    } catch (error) {
+      skipped.push({
+        blockType: block.blockType,
+        reason: error instanceof Error ? error.message : String(error),
+      })
+    }
+  }
+
+  return { sections, skipped }
 }
 
 export function mapPage(page: Pick<Page, 'sections'>): SectionDefinition[] {
-  return (page.sections ?? [])
-    .map(mapSection)
-    .filter((section): section is SectionDefinition => section !== null)
+  return mapPageResult(page).sections
 }

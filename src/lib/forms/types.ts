@@ -34,7 +34,11 @@ export interface FieldConfig {
   requiredWhen?: Condition
 }
 
-export type FormValues = Record<string, string | boolean>
+export type FormValue = string | boolean | undefined
+
+export interface FormValues {
+  [key: string]: FormValue | FormValues
+}
 
 export type ValueResolver = (current: FormValues) => FormValues | Promise<FormValues>
 
@@ -44,6 +48,10 @@ export function isInputField(field: FieldConfig): boolean {
   return field.type !== 'submit'
 }
 
-export function defaultValueFor(field: FieldConfig): string | boolean {
+export function inputFields(fields: FieldConfig[]): FieldConfig[] {
+  return fields.filter(isInputField)
+}
+
+export function defaultValueFor(field: FieldConfig): FormValue {
   return field.type === 'checkbox' ? false : ''
 }

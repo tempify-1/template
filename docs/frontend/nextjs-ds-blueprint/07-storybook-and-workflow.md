@@ -42,8 +42,33 @@ Setup (current best practice for Next):
 
 ## Test harness constraints
 
-Both suites run against **one** Postgres database and, for e2e, **one** dev server, so neither can
-run files in parallel:
+### Tests own their own database
+
+Both suites derive their `DATABASE_URL` from the development one by appending `_test` to the
+database name (`tests/helpers/test-database.ts`), so `template` becomes `template_test`. Nothing
+about this is optional: the e2e suite seeds and deletes CMS pages, and before isolation existed it
+was hard-deleting the developer's real `home` page — and all of its versions — on every run.
+
+The derivation deliberately reuses the existing credentials rather than introducing a second env
+file. A committed `.env.test` would leak the Postgres password, since `.gitignore` covers `.env`
+and `.env*.local` but not `.env.test`.
+
+`tests/int/test-database.int.spec.ts` asserts the suite is pointed at a `_test` database, so
+pointing tests at development data fails loudly rather than destroying it.
+
+Create the database once: `CREATE DATABASE template_test`. Payload pushes the schema on first
+connect.
+
+### e2e owns the dev server
+
+Playwright runs its own server on port 3001 with `reuseExistingServer: false`, so a server started
+against the development database can never serve the tests. Next permits only one dev server per
+project directory, so **`pnpm test:e2e` cannot run while `pnpm dev` is running** — stop the dev
+server first. Override the port with `E2E_PORT` if 3001 is taken.
+
+### Neither suite runs files in parallel
+
+Both suites share a single database and, for e2e, a single server:
 
 - **Vitest** sets `fileParallelism: false`. Two spec files calling `getPayload` concurrently both
   try to push the dev schema and race on enum creation, which surfaces as Postgres `42710`
