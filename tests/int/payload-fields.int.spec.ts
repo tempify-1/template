@@ -10,11 +10,11 @@ function byName(fields: Field[], name: string) {
 }
 
 describe('scalar fields', () => {
-  it('makes a min-length string required and a bare string optional', () => {
+  it('requires any string the schema does not mark optional, constrained or not', () => {
     const fields = fieldsFromSchema(z.object({ a: z.string().min(1), b: z.string() }))
 
     expect(byName(fields, 'a')).toMatchObject({ type: 'text', required: true })
-    expect(byName(fields, 'b')).toMatchObject({ type: 'text', required: false })
+    expect(byName(fields, 'b')).toMatchObject({ type: 'text', required: true })
   })
 
   it('treats an optional string as not required', () => {

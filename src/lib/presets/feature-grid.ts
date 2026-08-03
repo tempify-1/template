@@ -14,7 +14,8 @@ export const featureGridArgs = z.object({
         description: z.string().optional().meta({ payload: { type: 'textarea' } }),
       }),
     )
-    .min(1),
+    .min(1)
+    .meta({ payload: { singular: 'Feature', plural: 'Features' } }),
 })
 
 export type FeatureGridArgs = z.input<typeof featureGridArgs>

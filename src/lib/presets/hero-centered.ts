@@ -8,14 +8,27 @@ const callToAction = z
     href: z.string().min(1),
   })
   .optional()
-  .meta({ payload: { description: 'Leave both fields empty to omit this call to action.' } })
 
 export const heroCenteredArgs = z.object({
   heading: z.string().min(1),
   subheading: z.string().optional().meta({ payload: { type: 'textarea' } }),
-  primaryCta: callToAction,
-  secondaryCta: callToAction,
-  trustBadges: z.array(z.string().min(1)).default([]),
+  primaryCta: callToAction.meta({
+    payload: {
+      label: 'Primary call to action',
+      description: 'Leave both fields empty to omit this call to action.',
+    },
+  }),
+  secondaryCta: callToAction.meta({
+    payload: {
+      label: 'Secondary call to action',
+      description: 'Leave both fields empty to omit this call to action.',
+    },
+  }),
+  trustBadges: z
+    .array(z.string().min(1))
+    .default([])
+    .meta({ payload: { singular: 'Badge', plural: 'Badges' } }),
+  minHeight: z.string().optional().meta({ payload: { hidden: true } }),
 })
 
 export type HeroCenteredArgs = z.input<typeof heroCenteredArgs>
@@ -45,7 +58,7 @@ export function heroCentered(input: HeroCenteredArgs): SectionDefinition {
   return {
     tag: 'section',
     gutter: 'lg',
-    minHeight: '100svh',
+    minHeight: args.minHeight,
     columnLayout: 1,
     columns: [{ justify: 'center', verticalAlignment: 'middle', blocks }],
   }

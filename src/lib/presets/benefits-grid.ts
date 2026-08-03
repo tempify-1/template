@@ -13,7 +13,13 @@ export const benefitsGridArgs = z.object({
       }),
     )
     .min(1)
-    .meta({ payload: { description: 'Numbered automatically in the order listed here.' } }),
+    .meta({
+      payload: {
+        singular: 'Benefit',
+        plural: 'Benefits',
+        description: 'Numbered automatically in the order listed here.',
+      },
+    }),
 })
 
 export type BenefitsGridArgs = z.input<typeof benefitsGridArgs>
