@@ -1,6 +1,11 @@
 import { benefitsGrid } from '@/lib/presets/benefits-grid'
+import { community } from '@/lib/presets/community'
+import { ctaBanner } from '@/lib/presets/cta-banner'
+import { faqAccordion } from '@/lib/presets/faq-accordion'
 import { featureGrid } from '@/lib/presets/feature-grid'
 import { heroCentered } from '@/lib/presets/hero-centered'
+import { logoWall } from '@/lib/presets/logo-wall'
+import { serviceList } from '@/lib/presets/service-list'
 import type { SectionDefinition } from '@/lib/presets/types'
 import type { Page } from '@/payload-types'
 
@@ -44,6 +49,47 @@ const presetMappers = {
         icon: feature.icon,
         title: feature.title,
         description: feature.description ?? undefined,
+      })),
+    }),
+  logoWall: (block: Extract<SectionBlock, { blockType: 'logoWall' }>) =>
+    logoWall({
+      heading: block.heading ?? undefined,
+      logos: (block.logos ?? []).map((logo) => logo.name).filter(Boolean),
+    }),
+
+  serviceList: (block: Extract<SectionBlock, { blockType: 'serviceList' }>) =>
+    serviceList({
+      heading: block.heading,
+      subheading: block.subheading ?? undefined,
+      services: (block.services ?? []).map((service) => ({
+        title: service.title,
+        description: service.description ?? undefined,
+        badge: service.badge ?? undefined,
+      })),
+    }),
+
+  ctaBanner: (block: Extract<SectionBlock, { blockType: 'ctaBanner' }>) =>
+    ctaBanner({
+      heading: block.heading,
+      subheading: block.subheading ?? undefined,
+      primaryCta: toCallToAction(block.primaryCta),
+      secondaryCta: toCallToAction(block.secondaryCta),
+    }),
+
+  community: (block: Extract<SectionBlock, { blockType: 'community' }>) =>
+    community({
+      heading: block.heading,
+      body: block.body ?? undefined,
+      cta: toCallToAction(block.cta),
+    }),
+
+  faqAccordion: (block: Extract<SectionBlock, { blockType: 'faqAccordion' }>) =>
+    faqAccordion({
+      heading: block.heading,
+      subheading: block.subheading ?? undefined,
+      questions: (block.questions ?? []).map((entry) => ({
+        question: entry.question,
+        answer: entry.answer,
       })),
     }),
 } satisfies Record<SectionBlock['blockType'], (block: never) => SectionDefinition>

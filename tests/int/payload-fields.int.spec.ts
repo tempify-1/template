@@ -113,11 +113,42 @@ describe('arrays', () => {
 })
 
 describe('generated blocks', () => {
-  it('generates one block per registered Preset with a stable interface name', () => {
+  it('gives each generated block field names matching its Preset schema keys', () => {
+    for (const block of presetBlocks()) {
+      const entry = presetRegistry[block.slug as keyof typeof presetRegistry]
+      const schemaKeys = Object.keys(
+        (entry.schema as never as { def: { shape: Record<string, unknown> } }).def.shape,
+      )
+      const fieldNames = block.fields.map((f) => ('name' in f ? f.name : ''))
+
+      expect(fieldNames.sort(), block.slug).toEqual(schemaKeys.sort())
+    }
+  })
+
+  it('names block interfaces from the slug so payload-types stays stable', () => {
     const blocks = presetBlocks()
 
-    expect(blocks.map((b) => b.slug).sort()).toEqual(['benefitsGrid', 'featureGrid', 'heroCentered'])
     expect(blocks.find((b) => b.slug === 'heroCentered')?.interfaceName).toBe('HeroCenteredBlock')
+    expect(blocks.find((b) => b.slug === 'faqAccordion')?.interfaceName).toBe('FaqAccordionBlock')
+  })
+
+  it('marks a min-length array required so Payload rejects a block saved with no rows', () => {
+    const fields = fieldsFromSchema(z.object({ items: z.array(z.object({ a: z.string() })).min(1) }))
+
+    expect(byName(fields, 'items')).toMatchObject({ minRows: 1, required: true })
+  })
+
+  it('attaches an all-or-none validator to an optional group of required fields', () => {
+    const fields = fieldsFromSchema(
+      z.object({ cta: z.object({ label: z.string().min(1), href: z.string().min(1) }).optional() }),
+    )
+
+    const validate = byName(fields, 'cta').validate as (v: unknown) => true | string
+
+    expect(validate({})).toBe(true)
+    expect(validate({ label: 'Go', href: '/go' })).toBe(true)
+    expect(validate({ label: 'Go' })).toContain('leave them all empty')
+    expect(validate({ href: '/go' })).toContain('leave them all empty')
   })
 
   it('produces a block for every Preset without any hand-written definition', () => {

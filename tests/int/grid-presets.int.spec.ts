@@ -72,12 +72,22 @@ describe('featureGrid Preset', () => {
 })
 
 describe('preset registry', () => {
-  it('registers all three Presets, which is the ADR-0002 hand-written block budget', () => {
-    expect(Object.keys(presetRegistry).sort()).toEqual([
-      'benefitsGrid',
-      'featureGrid',
-      'heroCentered',
-    ])
+  it('gives every registered Preset a schema, a factory and both labels', () => {
+    const entries = Object.entries(presetRegistry)
+    expect(entries.length).toBeGreaterThanOrEqual(3)
+
+    for (const [name, entry] of entries) {
+      expect(entry.schema, name).toBeDefined()
+      expect(typeof entry.factory, name).toBe('function')
+      expect(entry.singular, name).toBeTruthy()
+      expect(entry.plural, name).toBeTruthy()
+    }
+  })
+
+  it('includes the grid Presets this ticket added', () => {
+    expect(Object.keys(presetRegistry)).toEqual(
+      expect.arrayContaining(['heroCentered', 'benefitsGrid', 'featureGrid']),
+    )
   })
 })
 

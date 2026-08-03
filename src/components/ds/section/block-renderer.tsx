@@ -2,7 +2,8 @@ import type { ReactNode } from 'react'
 
 import type { Block, BlockType } from '@/lib/presets/types'
 
-import { BadgeRow, ButtonRow, CardGrid, Heading, Paragraph } from './blocks'
+import { AccordionList } from './accordion-block'
+import { BadgeRow, ButtonRow, CardGrid, Heading, ItemList, LogoRow, Paragraph } from './blocks'
 
 type BlockRenderers = {
   [K in BlockType]: (props: { block: Extract<Block, { blockType: K }> }) => ReactNode
@@ -14,6 +15,9 @@ export const blockRegistry: BlockRenderers = {
   buttonRow: ButtonRow,
   badgeRow: BadgeRow,
   cardGrid: CardGrid,
+  logoRow: LogoRow,
+  itemList: ItemList,
+  accordion: AccordionList,
 }
 
 export function BlockRenderer({ block }: { block: Block }) {

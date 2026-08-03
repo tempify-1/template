@@ -1,11 +1,11 @@
 import { z } from 'zod'
 
 import { ICON_NAMES } from '../icons'
+import { sectionHeaderArgs, sectionHeaderBlocks } from './section-header'
 import type { Block, SectionDefinition } from './types'
 
 export const featureGridArgs = z.object({
-  heading: z.string().min(1),
-  subheading: z.string().optional().meta({ payload: { type: 'textarea' } }),
+  ...sectionHeaderArgs,
   features: z
     .array(
       z.object({
@@ -23,11 +23,7 @@ export type FeatureGridArgs = z.input<typeof featureGridArgs>
 export function featureGrid(input: FeatureGridArgs): SectionDefinition {
   const args = featureGridArgs.parse(input)
 
-  const blocks: Block[] = [{ blockType: 'heading', level: 2, text: args.heading, size: 5 }]
-
-  if (args.subheading) {
-    blocks.push({ blockType: 'paragraph', text: args.subheading, lead: true })
-  }
+  const blocks: Block[] = sectionHeaderBlocks(args, 5)
 
   blocks.push({
     blockType: 'cardGrid',

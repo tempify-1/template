@@ -125,8 +125,17 @@
   }
 
   .ds-block {
+    width: 100%;
     min-width: 0;
     max-width: 100%;
+  }
+
+  .ds-column[data-justify='center'] .ds-block > * {
+    margin-inline: auto;
+  }
+
+  .ds-column[data-justify='right'] .ds-block > * {
+    margin-inline-start: auto;
   }
 
   .ds-row {
