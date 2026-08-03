@@ -40,6 +40,20 @@ Setup (current best practice for Next):
 - Also keep the old system's one great trick: an **"emulate reduced motion" toolbar toggle**
   that flips a class the animation CSS respects — auditing choreography without OS settings.
 
+## Test harness constraints
+
+Both suites run against **one** Postgres database and, for e2e, **one** dev server, so neither can
+run files in parallel:
+
+- **Vitest** sets `fileParallelism: false`. Two spec files calling `getPayload` concurrently both
+  try to push the dev schema and race on enum creation, which surfaces as Postgres `42710`
+  duplicate-object errors rather than anything test-shaped.
+- **Playwright** sets `workers: 1`. Specs that seed a CMS page mutate the very route that
+  Fixture-based specs assert on, so parallel files produce failures that look like flakes but are
+  a shared-state fault.
+
+Revisit only with per-worker database isolation; retrying is the wrong fix.
+
 ## Golden fixtures are the contract
 
 For each system, a small set of typed fixtures lives in the repo and is used by BOTH Storybook
