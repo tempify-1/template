@@ -1,5 +1,7 @@
 import type { FormName } from '@/lib/forms/definitions'
 
+import type { SectionTheme } from './theme'
+
 import type { CSSProperties } from 'react'
 
 export const BREAKPOINTS = ['sm', 'md', 'lg', 'xl', '2xl'] as const
@@ -154,6 +156,7 @@ export interface ColumnDefinition {
 
 export interface SectionDefinition {
   tag?: 'header' | 'section' | 'footer'
+  theme?: SectionTheme
   gutter?: GutterSize
   columnLayout?: Responsive<number>
   columns?: ColumnDefinition[]

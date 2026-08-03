@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react'
 import { responsiveVars, type SectionDefinition } from '@/lib/presets/types'
 
 import { Column } from './column'
+import { SectionThemeProvider } from './section-theme-context'
 
 export function Section({ definition }: { definition: SectionDefinition }) {
   const Tag = definition.tag ?? 'section'
@@ -17,12 +18,15 @@ export function Section({ definition }: { definition: SectionDefinition }) {
       className="ds-section bg-background text-foreground"
       style={style}
       data-gutter={definition.gutter}
+      data-theme={definition.theme}
     >
-      <div className="ds-grid">
-        {(definition.columns ?? []).map((column, index) => (
-          <Column key={index} definition={column} index={index} />
-        ))}
-      </div>
+      <SectionThemeProvider theme={definition.theme}>
+        <div className="ds-grid">
+          {(definition.columns ?? []).map((column, index) => (
+            <Column key={index} definition={column} index={index} />
+          ))}
+        </div>
+      </SectionThemeProvider>
     </Tag>
   )
 }

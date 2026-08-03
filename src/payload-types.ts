@@ -222,6 +222,10 @@ export interface HeroCenteredBlock {
     | null;
   image?: (number | null) | Media;
   minHeight?: string | null;
+  /**
+   * Recolours this Section and everything in it. Leave empty for the page Theme.
+   */
+  theme?: ('muted' | 'accent' | 'brand') | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'heroCentered';
@@ -237,6 +241,10 @@ export interface LogoWallBlock {
     image?: (number | null) | Media;
     id?: string | null;
   }[];
+  /**
+   * Recolours this Section and everything in it. Leave empty for the page Theme.
+   */
+  theme?: ('muted' | 'accent' | 'brand') | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'logoWall';
@@ -256,6 +264,10 @@ export interface BenefitsGridBlock {
     description?: string | null;
     id?: string | null;
   }[];
+  /**
+   * Recolours this Section and everything in it. Leave empty for the page Theme.
+   */
+  theme?: ('muted' | 'accent' | 'brand') | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'benefitsGrid';
@@ -289,6 +301,10 @@ export interface FeatureGridBlock {
     description?: string | null;
     id?: string | null;
   }[];
+  /**
+   * Recolours this Section and everything in it. Leave empty for the page Theme.
+   */
+  theme?: ('muted' | 'accent' | 'brand') | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'featureGrid';
@@ -306,6 +322,10 @@ export interface ServiceListBlock {
     badge?: string | null;
     id?: string | null;
   }[];
+  /**
+   * Recolours this Section and everything in it. Leave empty for the page Theme.
+   */
+  theme?: ('muted' | 'accent' | 'brand') | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'serviceList';
@@ -324,6 +344,10 @@ export interface TestimonialCarouselBlock {
     image?: (number | null) | Media;
     id?: string | null;
   }[];
+  /**
+   * Recolours this Section and everything in it. Leave empty for the page Theme.
+   */
+  theme?: ('muted' | 'accent' | 'brand') | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'testimonialCarousel';
@@ -348,6 +372,10 @@ export interface TeamGridBlock {
       | null;
     id?: string | null;
   }[];
+  /**
+   * Recolours this Section and everything in it. Leave empty for the page Theme.
+   */
+  theme?: ('muted' | 'accent' | 'brand') | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'teamGrid';
@@ -373,6 +401,10 @@ export interface CtaBannerBlock {
     label?: string | null;
     href?: string | null;
   };
+  /**
+   * Recolours this Section and everything in it. Leave empty for the page Theme.
+   */
+  theme?: ('muted' | 'accent' | 'brand') | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'ctaBanner';
@@ -391,6 +423,10 @@ export interface CommunityBlock {
     label?: string | null;
     href?: string | null;
   };
+  /**
+   * Recolours this Section and everything in it. Leave empty for the page Theme.
+   */
+  theme?: ('muted' | 'accent' | 'brand') | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'community';
@@ -402,6 +438,10 @@ export interface CommunityBlock {
 export interface ContactFormBlock {
   heading: string;
   subheading?: string | null;
+  /**
+   * Recolours this Section and everything in it. Leave empty for the page Theme.
+   */
+  theme?: ('muted' | 'accent' | 'brand') | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'contactForm';
@@ -413,6 +453,10 @@ export interface ContactFormBlock {
 export interface NewsletterBlock {
   heading: string;
   subheading?: string | null;
+  /**
+   * Recolours this Section and everything in it. Leave empty for the page Theme.
+   */
+  theme?: ('muted' | 'accent' | 'brand') | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'newsletter';
@@ -429,6 +473,10 @@ export interface FaqAccordionBlock {
     answer: string;
     id?: string | null;
   }[];
+  /**
+   * Recolours this Section and everything in it. Leave empty for the page Theme.
+   */
+  theme?: ('muted' | 'accent' | 'brand') | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'faqAccordion';
@@ -632,6 +680,7 @@ export interface HeroCenteredBlockSelect<T extends boolean = true> {
       };
   image?: T;
   minHeight?: T;
+  theme?: T;
   id?: T;
   blockName?: T;
 }
@@ -648,6 +697,7 @@ export interface LogoWallBlockSelect<T extends boolean = true> {
         image?: T;
         id?: T;
       };
+  theme?: T;
   id?: T;
   blockName?: T;
 }
@@ -665,6 +715,7 @@ export interface BenefitsGridBlockSelect<T extends boolean = true> {
         description?: T;
         id?: T;
       };
+  theme?: T;
   id?: T;
   blockName?: T;
 }
@@ -683,6 +734,7 @@ export interface FeatureGridBlockSelect<T extends boolean = true> {
         description?: T;
         id?: T;
       };
+  theme?: T;
   id?: T;
   blockName?: T;
 }
@@ -701,6 +753,7 @@ export interface ServiceListBlockSelect<T extends boolean = true> {
         badge?: T;
         id?: T;
       };
+  theme?: T;
   id?: T;
   blockName?: T;
 }
@@ -720,6 +773,7 @@ export interface TestimonialCarouselBlockSelect<T extends boolean = true> {
         image?: T;
         id?: T;
       };
+  theme?: T;
   id?: T;
   blockName?: T;
 }
@@ -745,6 +799,7 @@ export interface TeamGridBlockSelect<T extends boolean = true> {
             };
         id?: T;
       };
+  theme?: T;
   id?: T;
   blockName?: T;
 }
@@ -767,6 +822,7 @@ export interface CtaBannerBlockSelect<T extends boolean = true> {
         label?: T;
         href?: T;
       };
+  theme?: T;
   id?: T;
   blockName?: T;
 }
@@ -783,6 +839,7 @@ export interface CommunityBlockSelect<T extends boolean = true> {
         label?: T;
         href?: T;
       };
+  theme?: T;
   id?: T;
   blockName?: T;
 }
@@ -793,6 +850,7 @@ export interface CommunityBlockSelect<T extends boolean = true> {
 export interface ContactFormBlockSelect<T extends boolean = true> {
   heading?: T;
   subheading?: T;
+  theme?: T;
   id?: T;
   blockName?: T;
 }
@@ -803,6 +861,7 @@ export interface ContactFormBlockSelect<T extends boolean = true> {
 export interface NewsletterBlockSelect<T extends boolean = true> {
   heading?: T;
   subheading?: T;
+  theme?: T;
   id?: T;
   blockName?: T;
 }
@@ -820,6 +879,7 @@ export interface FaqAccordionBlockSelect<T extends boolean = true> {
         answer?: T;
         id?: T;
       };
+  theme?: T;
   id?: T;
   blockName?: T;
 }

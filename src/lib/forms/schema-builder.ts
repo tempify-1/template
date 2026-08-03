@@ -91,7 +91,11 @@ export function buildSchema(fields: FieldConfig[]): FormSchema {
           ctx.addIssue({ code: 'custom', path, message: 'Enter a valid email address' })
         }
 
-        if (field.type === 'select' && field.options && !field.options.some((o) => o.value === value)) {
+        if (
+          field.type === 'select' &&
+          field.options &&
+          !field.options.some((o) => o.value === value)
+        ) {
           ctx.addIssue({ code: 'custom', path, message: 'Choose one of the available options' })
         }
       }

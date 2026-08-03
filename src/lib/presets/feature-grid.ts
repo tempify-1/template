@@ -11,7 +11,10 @@ export const featureGridArgs = z.object({
       z.object({
         icon: z.enum(ICON_NAMES),
         title: z.string().min(1),
-        description: z.string().optional().meta({ payload: { type: 'textarea' } }),
+        description: z
+          .string()
+          .optional()
+          .meta({ payload: { type: 'textarea' } }),
       }),
     )
     .min(1)

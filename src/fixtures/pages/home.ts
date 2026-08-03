@@ -9,6 +9,7 @@ import { logoWall } from '@/lib/presets/logo-wall'
 import { newsletter } from '@/lib/presets/newsletter'
 import { serviceList } from '@/lib/presets/service-list'
 import { teamGrid } from '@/lib/presets/team-grid'
+import { themed } from '@/lib/presets/theme'
 import { testimonialCarousel } from '@/lib/presets/testimonial-carousel'
 import type { SectionDefinition } from '@/lib/presets/types'
 
@@ -23,115 +24,190 @@ export const homeSections: SectionDefinition[] = [
     minHeight: '100svh',
   }),
 
-  logoWall({
-    heading: 'Trusted by teams shipping every day',
-    logos: ['Northwind', 'Acme', 'Globex', 'Initech', 'Umbra', 'Vertex'].map((name) => ({ name })),
-  }),
+  themed(
+    'muted',
+    logoWall({
+      heading: 'Trusted by teams shipping every day',
+      logos: ['Northwind', 'Acme', 'Globex', 'Initech', 'Umbra', 'Vertex'].map((name) => ({
+        name,
+      })),
+    }),
+  ),
 
   benefitsGrid({
     heading: 'What you get',
     subheading: 'The parts that usually take a quarter, ready on day one.',
     benefits: [
-      { title: 'Typed page config', description: 'Pages are data, so a change is a reviewable diff rather than a rewrite.' },
-      { title: 'One vocabulary', description: 'Editors compose from the same presets developers call. Nothing drifts.' },
-      { title: 'Server-first rendering', description: 'Marketing pages ship almost no JavaScript by construction.' },
-      { title: 'Dashboard included', description: 'Sidebar, charts and tables arrive configured rather than built.' },
+      {
+        title: 'Typed page config',
+        description: 'Pages are data, so a change is a reviewable diff rather than a rewrite.',
+      },
+      {
+        title: 'One vocabulary',
+        description: 'Editors compose from the same presets developers call. Nothing drifts.',
+      },
+      {
+        title: 'Server-first rendering',
+        description: 'Marketing pages ship almost no JavaScript by construction.',
+      },
+      {
+        title: 'Dashboard included',
+        description: 'Sidebar, charts and tables arrive configured rather than built.',
+      },
     ],
   }),
 
-  featureGrid({
-    heading: 'Everything the template already handles',
-    subheading: 'Built on shadcn primitives, wired to Payload, covered by tests.',
-    features: [
-      { icon: 'layers', title: 'Section system', description: 'Page, Section, Column and Block renderers as Server Components.' },
-      { icon: 'workflow', title: 'Preset registry', description: 'Adding a pattern is a schema, a factory and a registry line.' },
-      { icon: 'shield', title: 'Access control', description: 'Function-per-operation, with published-only reads for anonymous visitors.' },
-      { icon: 'gauge', title: 'Cache revalidation', description: 'Publishing, renaming and deleting all purge the right routes.' },
-      { icon: 'check', title: 'Config-driven forms', description: 'A field list becomes a validated form with conditional logic.' },
-      { icon: 'sparkles', title: 'Live preview', description: 'Drafts render for editors before anything is published.' },
-    ],
-  }),
+  themed(
+    'muted',
+    featureGrid({
+      heading: 'Everything the template already handles',
+      subheading: 'Built on shadcn primitives, wired to Payload, covered by tests.',
+      features: [
+        {
+          icon: 'layers',
+          title: 'Section system',
+          description: 'Page, Section, Column and Block renderers as Server Components.',
+        },
+        {
+          icon: 'workflow',
+          title: 'Preset registry',
+          description: 'Adding a pattern is a schema, a factory and a registry line.',
+        },
+        {
+          icon: 'shield',
+          title: 'Access control',
+          description: 'Function-per-operation, with published-only reads for anonymous visitors.',
+        },
+        {
+          icon: 'gauge',
+          title: 'Cache revalidation',
+          description: 'Publishing, renaming and deleting all purge the right routes.',
+        },
+        {
+          icon: 'check',
+          title: 'Config-driven forms',
+          description: 'A field list becomes a validated form with conditional logic.',
+        },
+        {
+          icon: 'sparkles',
+          title: 'Live preview',
+          description: 'Drafts render for editors before anything is published.',
+        },
+      ],
+    }),
+  ),
 
   serviceList({
     heading: 'Grow with the team behind it',
     subheading: 'Optional services for when you want the work done with you rather than by you.',
     services: [
-      { title: 'Architecture review', description: 'A read of your schema and render boundaries before you commit.', badge: 'Pro' },
-      { title: 'Design system audit', description: 'Token, component and accessibility pass against your brand.', badge: 'Pro' },
-      { title: 'Migration support', description: 'Move an existing site onto the preset model without a rewrite.' },
-      { title: 'Ongoing maintenance', description: 'Dependency and upstream shadcn updates handled for you.' },
+      {
+        title: 'Architecture review',
+        description: 'A read of your schema and render boundaries before you commit.',
+        badge: 'Pro',
+      },
+      {
+        title: 'Design system audit',
+        description: 'Token, component and accessibility pass against your brand.',
+        badge: 'Pro',
+      },
+      {
+        title: 'Migration support',
+        description: 'Move an existing site onto the preset model without a rewrite.',
+      },
+      {
+        title: 'Ongoing maintenance',
+        description: 'Dependency and upstream shadcn updates handled for you.',
+      },
     ],
   }),
 
-  testimonialCarousel({
-    heading: 'Loved by the teams using it',
-    subheading: 'What people say after their first project on the template.',
-    testimonials: [
-      {
-        quote:
-          'We had a marketing site in front of stakeholders on day two, and the editors never once asked us to change a layout for them.',
-        name: 'Priya Raman',
-        title: 'Head of Engineering, Northwind',
-      },
-      {
-        quote:
-          'The generated admin panel is the part that sold it. Nobody maintains a second schema, so nothing drifts.',
-        name: 'Tom Beckett',
-        title: 'Technical Director, Globex',
-      },
-      {
-        quote:
-          'Our designers stopped filing tickets to fix off-brand pages, because the presets simply do not allow them.',
-        name: 'Sofia Almeida',
-        title: 'Design Lead, Initech',
-      },
-    ],
-  }),
+  themed(
+    'accent',
+    testimonialCarousel({
+      heading: 'Loved by the teams using it',
+      subheading: 'What people say after their first project on the template.',
+      testimonials: [
+        {
+          quote:
+            'We had a marketing site in front of stakeholders on day two, and the editors never once asked us to change a layout for them.',
+          name: 'Priya Raman',
+          title: 'Head of Engineering, Northwind',
+        },
+        {
+          quote:
+            'The generated admin panel is the part that sold it. Nobody maintains a second schema, so nothing drifts.',
+          name: 'Tom Beckett',
+          title: 'Technical Director, Globex',
+        },
+        {
+          quote:
+            'Our designers stopped filing tickets to fix off-brand pages, because the presets simply do not allow them.',
+          name: 'Sofia Almeida',
+          title: 'Design Lead, Initech',
+        },
+      ],
+    }),
+  ),
 
   teamGrid({
     heading: 'The people behind it',
     subheading: 'A small team that ships and answers its own support.',
     members: [
-      { name: 'Priya Raman', role: 'Engineering', links: [{ label: 'Profile', href: '/team/priya' }] },
+      {
+        name: 'Priya Raman',
+        role: 'Engineering',
+        links: [{ label: 'Profile', href: '/team/priya' }],
+      },
       { name: 'Tom Beckett', role: 'Design', links: [{ label: 'Profile', href: '/team/tom' }] },
-      { name: 'Sofia Almeida', role: 'Product', links: [{ label: 'Profile', href: '/team/sofia' }] },
+      {
+        name: 'Sofia Almeida',
+        role: 'Product',
+        links: [{ label: 'Profile', href: '/team/sofia' }],
+      },
       { name: 'Ade Okonkwo', role: 'Support', links: [{ label: 'Profile', href: '/team/ade' }] },
     ],
   }),
 
-  faqAccordion({
-    heading: 'Common questions',
-    subheading: 'The things teams ask before they start.',
-    questions: [
-      {
-        question: 'Can editors build pages without a developer?',
-        answer:
-          'Yes. Every preset a developer can call is a block an editor can pick, with the same arguments and no extra schema to maintain.',
-      },
-      {
-        question: 'What happens when a preset changes?',
-        answer:
-          'The Payload block is generated from the preset argument schema, so the admin panel follows automatically and cannot drift from the code.',
-      },
-      {
-        question: 'Does the marketing site ship a lot of JavaScript?',
-        answer:
-          'Almost none. The page tree renders as Server Components; only genuinely interactive pieces such as this accordion are client components.',
-      },
-      {
-        question: 'Is the dashboard included?',
-        answer:
-          'Yes, assembled from shadcn blocks rather than hand-built, with the sidebar, charts and data table already configured.',
-      },
-    ],
-  }),
+  themed(
+    'muted',
+    faqAccordion({
+      heading: 'Common questions',
+      subheading: 'The things teams ask before they start.',
+      questions: [
+        {
+          question: 'Can editors build pages without a developer?',
+          answer:
+            'Yes. Every preset a developer can call is a block an editor can pick, with the same arguments and no extra schema to maintain.',
+        },
+        {
+          question: 'What happens when a preset changes?',
+          answer:
+            'The Payload block is generated from the preset argument schema, so the admin panel follows automatically and cannot drift from the code.',
+        },
+        {
+          question: 'Does the marketing site ship a lot of JavaScript?',
+          answer:
+            'Almost none. The page tree renders as Server Components; only genuinely interactive pieces such as this accordion are client components.',
+        },
+        {
+          question: 'Is the dashboard included?',
+          answer:
+            'Yes, assembled from shadcn blocks rather than hand-built, with the sidebar, charts and data table already configured.',
+        },
+      ],
+    }),
+  ),
 
-  ctaBanner({
-    heading: 'Ready to start?',
-    subheading: 'Clone the template and have a page on screen in an afternoon.',
-    primaryCta: { label: 'Create your account', href: '/signup' },
-    secondaryCta: { label: 'Read the docs', href: '/docs' },
-  }),
+  themed(
+    'brand',
+    ctaBanner({
+      heading: 'Ready to start?',
+      subheading: 'Clone the template and have a page on screen in an afternoon.',
+      primaryCta: { label: 'Create your account', href: '/signup' },
+      secondaryCta: { label: 'Read the docs', href: '/docs' },
+    }),
+  ),
 
   community({
     heading: 'Join the community',
@@ -139,10 +215,13 @@ export const homeSections: SectionDefinition[] = [
     cta: { label: 'Open Discord', href: 'https://discord.gg' },
   }),
 
-  newsletter({
-    heading: 'Get the release notes',
-    subheading: 'One short email whenever a preset, block or upstream dependency changes.',
-  }),
+  themed(
+    'muted',
+    newsletter({
+      heading: 'Get the release notes',
+      subheading: 'One short email whenever a preset, block or upstream dependency changes.',
+    }),
+  ),
 
   contactForm({
     heading: 'Talk to us',

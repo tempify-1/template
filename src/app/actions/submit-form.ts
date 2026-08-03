@@ -23,7 +23,10 @@ export async function submitForm(formName: string, values: FormValues): Promise<
   const parsed = buildSchema(definition.fields).safeParse(values)
 
   if (!parsed.success) {
-    return { ok: false, message: 'Some answers were rejected. Please check the form and try again.' }
+    return {
+      ok: false,
+      message: 'Some answers were rejected. Please check the form and try again.',
+    }
   }
 
   let payload: Payload

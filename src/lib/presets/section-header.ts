@@ -4,7 +4,10 @@ import type { Block } from './types'
 
 export const sectionHeaderArgs = {
   heading: z.string().min(1),
-  subheading: z.string().optional().meta({ payload: { type: 'textarea' } }),
+  subheading: z
+    .string()
+    .optional()
+    .meta({ payload: { type: 'textarea' } }),
 }
 
 export interface SectionHeaderInput {

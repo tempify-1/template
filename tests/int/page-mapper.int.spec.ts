@@ -90,7 +90,12 @@ describe('page mapper', () => {
     const result = mapPageResult({
       sections: [
         { blockType: 'heroCentered' as const, heading: '', primaryCta: {}, secondaryCta: {} },
-        { blockType: 'heroCentered' as const, heading: 'Survivor', primaryCta: {}, secondaryCta: {} },
+        {
+          blockType: 'heroCentered' as const,
+          heading: 'Survivor',
+          primaryCta: {},
+          secondaryCta: {},
+        },
       ],
     })
 
@@ -102,7 +107,9 @@ describe('page mapper', () => {
   it('never throws on malformed stored content, so one bad section cannot 500 the route', () => {
     expect(() =>
       mapPage({
-        sections: [{ blockType: 'heroCentered' as const, heading: '', primaryCta: {}, secondaryCta: {} }],
+        sections: [
+          { blockType: 'heroCentered' as const, heading: '', primaryCta: {}, secondaryCta: {} },
+        ],
       }),
     ).not.toThrow()
   })

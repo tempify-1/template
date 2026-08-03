@@ -3,7 +3,7 @@ import { z } from 'zod'
 import type { Field } from 'payload'
 
 import { blockFromSchema, fieldsFromSchema } from '@/lib/presets/payload-fields'
-import { presetBlocks, presetRegistry } from '@/lib/presets/registry'
+import { presetBlocks, presetBlockSchema, presetRegistry } from '@/lib/presets/registry'
 
 function byName(fields: Field[], name: string) {
   return fields.find((f) => 'name' in f && f.name === name) as never as Record<string, unknown>
@@ -25,7 +25,12 @@ describe('scalar fields', () => {
 
   it('honours a textarea hint from schema metadata', () => {
     const fields = fieldsFromSchema(
-      z.object({ a: z.string().optional().meta({ payload: { type: 'textarea' } }) }),
+      z.object({
+        a: z
+          .string()
+          .optional()
+          .meta({ payload: { type: 'textarea' } }),
+      }),
     )
 
     expect(byName(fields, 'a')).toMatchObject({ type: 'textarea' })
@@ -33,10 +38,20 @@ describe('scalar fields', () => {
 
   it('reads a hint placed on either side of optional', () => {
     const outer = fieldsFromSchema(
-      z.object({ a: z.string().optional().meta({ payload: { type: 'textarea' } }) }),
+      z.object({
+        a: z
+          .string()
+          .optional()
+          .meta({ payload: { type: 'textarea' } }),
+      }),
     )
     const inner = fieldsFromSchema(
-      z.object({ a: z.string().meta({ payload: { type: 'textarea' } }).optional() }),
+      z.object({
+        a: z
+          .string()
+          .meta({ payload: { type: 'textarea' } })
+          .optional(),
+      }),
     )
 
     expect(byName(outer, 'a')).toMatchObject({ type: 'textarea' })
@@ -73,9 +88,7 @@ describe('groups', () => {
   })
 
   it('keeps subfields required when the group is required', () => {
-    const fields = fieldsFromSchema(
-      z.object({ cta: z.object({ label: z.string().min(1) }) }),
-    )
+    const fields = fieldsFromSchema(z.object({ cta: z.object({ label: z.string().min(1) }) }))
 
     const group = byName(fields, 'cta')
     expect(byName(group.fields as Field[], 'label')).toMatchObject({ required: true })
@@ -117,7 +130,8 @@ describe('generated blocks', () => {
     for (const block of presetBlocks()) {
       const entry = presetRegistry[block.slug as keyof typeof presetRegistry]
       const schemaKeys = Object.keys(
-        (entry.schema as never as { def: { shape: Record<string, unknown> } }).def.shape,
+        (presetBlockSchema(entry.schema) as never as { def: { shape: Record<string, unknown> } })
+          .def.shape,
       )
       const fieldNames = block.fields.map((f) => ('name' in f ? f.name : ''))
 
@@ -133,7 +147,9 @@ describe('generated blocks', () => {
   })
 
   it('marks a min-length array required so Payload rejects a block saved with no rows', () => {
-    const fields = fieldsFromSchema(z.object({ items: z.array(z.object({ a: z.string() })).min(1) }))
+    const fields = fieldsFromSchema(
+      z.object({ items: z.array(z.object({ a: z.string() })).min(1) }),
+    )
 
     expect(byName(fields, 'items')).toMatchObject({ minRows: 1, required: true })
   })

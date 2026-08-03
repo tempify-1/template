@@ -183,7 +183,14 @@ function fieldFor(name: string, raw: z.ZodType, blankable = false): Field {
   const maxLength = boundOf(schema, 'max_length')
 
   if (hint.type === 'textarea') {
-    return { name, type: 'textarea', label, required, ...(maxLength ? { maxLength } : {}), ...admin }
+    return {
+      name,
+      type: 'textarea',
+      label,
+      required,
+      ...(maxLength ? { maxLength } : {}),
+      ...admin,
+    }
   }
 
   return { name, type: 'text', label, required, ...(maxLength ? { maxLength } : {}), ...admin }

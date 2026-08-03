@@ -68,7 +68,10 @@
   @media (min-width: 96rem) {
     .ds-grid {
       grid-template-columns: repeat(
-        var(--cols-2xl, var(--cols-xl, var(--cols-lg, var(--cols-md, var(--cols-sm, var(--cols, 1)))))),
+        var(
+          --cols-2xl,
+          var(--cols-xl, var(--cols-lg, var(--cols-md, var(--cols-sm, var(--cols, 1)))))
+        ),
         minmax(0, 1fr)
       );
     }
@@ -99,13 +102,17 @@
   }
   @media (min-width: 80rem) {
     .ds-column {
-      grid-column: span var(--span-xl, var(--span-lg, var(--span-md, var(--span-sm, var(--span, 1)))));
+      grid-column: span
+        var(--span-xl, var(--span-lg, var(--span-md, var(--span-sm, var(--span, 1)))));
     }
   }
   @media (min-width: 96rem) {
     .ds-column {
       grid-column: span
-        var(--span-2xl, var(--span-xl, var(--span-lg, var(--span-md, var(--span-sm, var(--span, 1))))));
+        var(
+          --span-2xl,
+          var(--span-xl, var(--span-lg, var(--span-md, var(--span-sm, var(--span, 1)))))
+        );
     }
   }
 
@@ -165,7 +172,10 @@
   }
   @media (min-width: 48rem) {
     .ds-card-grid {
-      grid-template-columns: repeat(var(--cards-md, var(--cards-sm, var(--cards, 1))), minmax(0, 1fr));
+      grid-template-columns: repeat(
+        var(--cards-md, var(--cards-sm, var(--cards, 1))),
+        minmax(0, 1fr)
+      );
     }
   }
   @media (min-width: 64rem) {

@@ -31,7 +31,13 @@ const newsletter: FormDefinition = {
   successMessage: 'You are on the list. Check your inbox to confirm.',
   summaryField: 'email',
   fields: [
-    { name: 'email', type: 'email', label: 'Email', required: true, placeholder: 'you@company.com' },
+    {
+      name: 'email',
+      type: 'email',
+      label: 'Email',
+      required: true,
+      placeholder: 'you@company.com',
+    },
     { name: 'consent', type: 'checkbox', label: 'Send me occasional product updates' },
   ],
 }

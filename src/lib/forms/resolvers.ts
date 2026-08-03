@@ -1,5 +1,11 @@
 import { setAtPath } from './paths'
-import { inputFields, defaultValueFor, type FieldConfig, type FormValues, type ValueResolver } from './types'
+import {
+  inputFields,
+  defaultValueFor,
+  type FieldConfig,
+  type FormValues,
+  type ValueResolver,
+} from './types'
 
 export function emptyValues(fields: FieldConfig[]): FormValues {
   const values: Record<string, unknown> = {}

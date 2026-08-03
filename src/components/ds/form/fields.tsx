@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { useSectionTheme } from '@/components/ds/section/section-theme-context'
 import type { FieldConfig, FormValues } from '@/lib/forms/types'
 
 export interface FieldControlProps {
@@ -42,7 +43,13 @@ export function TextControl({ config, field, controlId, invalid, describedBy }: 
   )
 }
 
-export function TextareaControl({ config, field, controlId, invalid, describedBy }: FieldControlProps) {
+export function TextareaControl({
+  config,
+  field,
+  controlId,
+  invalid,
+  describedBy,
+}: FieldControlProps) {
   const { value, ...control } = field
   return (
     <Textarea
@@ -56,8 +63,15 @@ export function TextareaControl({ config, field, controlId, invalid, describedBy
   )
 }
 
-export function SelectControl({ config, field, controlId, invalid, describedBy }: FieldControlProps) {
+export function SelectControl({
+  config,
+  field,
+  controlId,
+  invalid,
+  describedBy,
+}: FieldControlProps) {
   const { value, onChange } = field
+  const theme = useSectionTheme()
   return (
     <Select value={String(value ?? '')} onValueChange={onChange}>
       <SelectTrigger
@@ -67,7 +81,7 @@ export function SelectControl({ config, field, controlId, invalid, describedBy }
       >
         <SelectValue placeholder={config.placeholder ?? 'Choose one'} />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent data-theme={theme}>
         {(config.options ?? []).map((option) => (
           <SelectItem key={option.value} value={option.value}>
             {option.label}
