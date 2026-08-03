@@ -171,7 +171,7 @@ export interface Page {
   id: number;
   title: string;
   slug: string;
-  sections?: HeroCenteredBlock[] | null;
+  sections?: (HeroCenteredBlock | BenefitsGridBlock | FeatureGridBlock)[] | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -206,6 +206,62 @@ export interface HeroCenteredBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'heroCentered';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "BenefitsGridBlock".
+ */
+export interface BenefitsGridBlock {
+  heading: string;
+  subheading?: string | null;
+  /**
+   * Numbered automatically in the order listed here.
+   */
+  benefits?:
+    | {
+        title: string;
+        description?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'benefitsGrid';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FeatureGridBlock".
+ */
+export interface FeatureGridBlock {
+  heading: string;
+  subheading?: string | null;
+  features?:
+    | {
+        icon:
+          | 'activity'
+          | 'chart'
+          | 'check'
+          | 'clock'
+          | 'gauge'
+          | 'globe'
+          | 'layers'
+          | 'lock'
+          | 'plug'
+          | 'rocket'
+          | 'search'
+          | 'shield'
+          | 'sparkles'
+          | 'users'
+          | 'workflow'
+          | 'zap';
+        title: string;
+        description?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'featureGrid';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -336,6 +392,8 @@ export interface PagesSelect<T extends boolean = true> {
     | T
     | {
         heroCentered?: T | HeroCenteredBlockSelect<T>;
+        benefitsGrid?: T | BenefitsGridBlockSelect<T>;
+        featureGrid?: T | FeatureGridBlockSelect<T>;
       };
   updatedAt?: T;
   createdAt?: T;
@@ -364,6 +422,41 @@ export interface HeroCenteredBlockSelect<T extends boolean = true> {
     | T
     | {
         text?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "BenefitsGridBlock_select".
+ */
+export interface BenefitsGridBlockSelect<T extends boolean = true> {
+  heading?: T;
+  subheading?: T;
+  benefits?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FeatureGridBlock_select".
+ */
+export interface FeatureGridBlockSelect<T extends boolean = true> {
+  heading?: T;
+  subheading?: T;
+  features?:
+    | T
+    | {
+        icon?: T;
+        title?: T;
+        description?: T;
         id?: T;
       };
   id?: T;

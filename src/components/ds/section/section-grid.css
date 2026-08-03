@@ -141,4 +141,30 @@
   .ds-column[data-justify='right'] .ds-row {
     justify-content: flex-end;
   }
+
+  .ds-card-grid {
+    display: grid;
+    gap: var(--ds-gap);
+    width: 100%;
+    grid-template-columns: repeat(var(--cards, 1), minmax(0, 1fr));
+  }
+
+  @media (min-width: 40rem) {
+    .ds-card-grid {
+      grid-template-columns: repeat(var(--cards-sm, var(--cards, 1)), minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 48rem) {
+    .ds-card-grid {
+      grid-template-columns: repeat(var(--cards-md, var(--cards-sm, var(--cards, 1))), minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 64rem) {
+    .ds-card-grid {
+      grid-template-columns: repeat(
+        var(--cards-lg, var(--cards-md, var(--cards-sm, var(--cards, 1)))),
+        minmax(0, 1fr)
+      );
+    }
+  }
 }
