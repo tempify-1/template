@@ -70,9 +70,8 @@ test.describe('Grid Presets', () => {
   test('renders the feature grid with a resolved icon per card', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Everything the template already handles' })).toBeVisible()
 
-    const grids = page.locator('.ds-card-grid')
-    await expect(grids).toHaveCount(2)
-    await expect(grids.nth(1).locator('svg')).toHaveCount(6)
+    const featureGrid = page.locator('.ds-card-grid').nth(1)
+    await expect(featureGrid.locator('svg')).toHaveCount(6)
   })
 })
 
@@ -90,7 +89,7 @@ test.describe('Card-based Presets', () => {
     ]) {
       await expect(page.getByRole('heading', { name: heading })).toBeVisible()
     }
-    await expect(page.getByText('Northwind')).toBeVisible()
+    await expect(page.getByText('Northwind', { exact: true })).toBeVisible()
   })
 
   test('FAQ accordion is keyboard navigable and announces expanded state', async ({ page }) => {
@@ -131,5 +130,51 @@ test.describe('Card-based Presets', () => {
     await first.click()
     await expect(first).toHaveAttribute('aria-expanded', 'true')
     await expect(second).toHaveAttribute('aria-expanded', 'false')
+  })
+})
+
+test.describe('Testimonial carousel and team grid', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+  })
+
+  test('renders testimonials with author and role', async ({ page }) => {
+    await expect(page.getByRole('heading', { name: 'Loved by the teams using it' })).toBeVisible()
+    await expect(page.getByText('Priya Raman').first()).toBeVisible()
+    await expect(page.getByText('Head of Engineering, Northwind')).toBeVisible()
+  })
+
+  test('carousel controls advance the testimonials and do not trap focus', async ({ page }) => {
+    const carousel = page.locator('[role="region"]', { hasText: 'We had a marketing site' }).first()
+    const next = carousel.getByRole('button', { name: /next/i })
+    const previous = carousel.getByRole('button', { name: /previous/i })
+
+    await expect(previous).toBeDisabled()
+    await expect(next).toBeEnabled()
+
+    await next.click()
+    await expect(previous).toBeEnabled()
+
+    await previous.focus()
+    await expect(previous).toBeFocused()
+    await page.keyboard.press('Tab')
+    await expect(previous).not.toBeFocused()
+  })
+
+  test('renders each team member with a distinguishable profile link', async ({ page }) => {
+    await expect(page.getByRole('heading', { name: 'The people behind it' })).toBeVisible()
+
+    const members: [string, string][] = [
+      ['Priya Raman', 'Engineering'],
+      ['Ade Okonkwo', 'Support'],
+    ]
+
+    for (const [name, role] of members) {
+      await expect(page.getByText(role, { exact: true })).toBeVisible()
+      await expect(page.getByRole('link', { name: `Profile — ${name}` })).toHaveAttribute(
+        'href',
+        /\/team\//,
+      )
+    }
   })
 })

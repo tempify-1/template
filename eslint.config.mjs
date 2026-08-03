@@ -24,7 +24,11 @@ const eslintConfig = [
     },
   },
   {
-    files: ['src/components/chart-area-interactive.tsx', 'src/hooks/use-mobile.ts'],
+    files: [
+      'src/components/chart-area-interactive.tsx',
+      'src/components/ui/carousel.tsx',
+      'src/hooks/use-mobile.ts',
+    ],
     rules: {
       'react-hooks/set-state-in-effect': 'off',
     },

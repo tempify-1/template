@@ -7,6 +7,8 @@ import { heroCentered } from '@/lib/presets/hero-centered'
 import { toImage, type MediaProblem } from '@/lib/presets/media'
 import { logoWall } from '@/lib/presets/logo-wall'
 import { serviceList } from '@/lib/presets/service-list'
+import { teamGrid } from '@/lib/presets/team-grid'
+import { testimonialCarousel } from '@/lib/presets/testimonial-carousel'
 import type { SectionDefinition } from '@/lib/presets/types'
 import type { Page } from '@/payload-types'
 
@@ -70,6 +72,39 @@ const presetMappers = {
         description: service.description ?? undefined,
         badge: service.badge ?? undefined,
       })),
+    }),
+
+  testimonialCarousel: (
+    block: Extract<SectionBlock, { blockType: 'testimonialCarousel' }>,
+    onProblem: MediaProblem,
+  ) =>
+    testimonialCarousel({
+      heading: block.heading,
+      subheading: block.subheading ?? undefined,
+      testimonials: (block.testimonials ?? [])
+        .filter((entry) => Boolean(entry.quote) && Boolean(entry.name))
+        .map((entry) => ({
+          quote: entry.quote,
+          name: entry.name,
+          title: entry.title ?? undefined,
+          image: toImage(entry.image, onProblem),
+        })),
+    }),
+
+  teamGrid: (block: Extract<SectionBlock, { blockType: 'teamGrid' }>, onProblem: MediaProblem) =>
+    teamGrid({
+      heading: block.heading,
+      subheading: block.subheading ?? undefined,
+      members: (block.members ?? [])
+        .filter((member) => Boolean(member.name) && Boolean(member.role))
+        .map((member) => ({
+          name: member.name,
+          role: member.role,
+          image: toImage(member.image, onProblem),
+          links: (member.links ?? [])
+            .filter((link) => Boolean(link.label) && Boolean(link.href))
+            .map((link) => ({ label: link.label, href: link.href })),
+        })),
     }),
 
   ctaBanner: (block: Extract<SectionBlock, { blockType: 'ctaBanner' }>) =>

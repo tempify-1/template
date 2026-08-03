@@ -92,6 +92,36 @@ export interface AccordionBlock {
   items: AccordionItemSpec[]
 }
 
+export interface TestimonialSpec {
+  quote: string
+  name: string
+  title?: string
+  image?: ImageSpec
+}
+
+export interface TestimonialCarouselBlock {
+  blockType: 'testimonialCarousel'
+  testimonials: TestimonialSpec[]
+}
+
+export interface PersonLinkSpec {
+  label: string
+  href: string
+}
+
+export interface PersonSpec {
+  name: string
+  role: string
+  image?: ImageSpec
+  links?: PersonLinkSpec[]
+}
+
+export interface PersonGridBlock {
+  blockType: 'personGrid'
+  people: PersonSpec[]
+  columns?: Responsive<number>
+}
+
 export type Block =
   | HeadingBlock
   | ParagraphBlock
@@ -102,6 +132,8 @@ export type Block =
   | ItemListBlock
   | AccordionBlock
   | ImageBlock
+  | TestimonialCarouselBlock
+  | PersonGridBlock
 
 export type BlockType = Block['blockType']
 
