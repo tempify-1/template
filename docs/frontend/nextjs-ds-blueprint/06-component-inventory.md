@@ -40,6 +40,17 @@ Contact and newsletter mean the **form engine core** (field registry, schema bui
 is in v1 rather than v2. Record drawers, Kanban, EventCalendar, Map and the wizard/array tier stay
 v2.
 
+**Media storage is local disk, and that is a deployment decision deferred, not solved.** The
+`Media` collection uses `upload: true` with no `staticDir`, so Payload writes to `media/` on the
+filesystem — already excluded by `.gitignore`, with `sharp` handling resizing. This works for local
+development and for any host with a persistent disk, and needs nothing configured.
+
+It breaks silently on an ephemeral filesystem. Deploy to Vercel or a container that resets, and
+uploads succeed, then 404 after the next deploy. Before shipping to such a host, install one of
+Payload's official adapters — `@payloadcms/storage-vercel-blob`, `-s3`, `-gcs`, `-azure` or
+`-uploadthing`, all published at 3.87.0 to match the Payload version pinned here. Tracked as its
+own ticket; do not let it surface as a production incident.
+
 Two deliberate exclusions on the dashboard half. It keeps `dashboard-01`'s shipped `data.json`
 rather than reading from Payload — a template has no domain to be a dashboard *of*, and inventing
 one would be speculative. And there is **no auth in v1**: the dashboard route is open, `AuthShell`
