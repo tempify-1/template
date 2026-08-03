@@ -14,8 +14,28 @@ const themeCss = readFileSync(
   'utf8',
 )
 
+const globalsCss = readFileSync(join(process.cwd(), 'src/app/globals.css'), 'utf8')
+
+const NON_SURFACE = /^(chart-|sidebar|radius|font-|color-)/
+
+function tokensIn(block: string): string[] {
+  return [...block.matchAll(/--([\w-]+):/g)].map((match) => match[1]!)
+}
+
+function blockFor(selector: string, css = themeCss): string {
+  const start = css.indexOf(`${selector} {`)
+  expect(start, selector).toBeGreaterThan(-1)
+  return css.slice(start).split('{')[1]!.split('}')[0]!
+}
+
+const SURFACE_TOKENS = tokensIn(blockFor(':root', globalsCss)).filter(
+  (token) => !NON_SURFACE.test(token),
+)
+
+const generatedBlocks = presetBlocks()
+
 function themeField(slug: string) {
-  const block = presetBlocks().find((entry) => entry.slug === slug)!
+  const block = generatedBlocks.find((entry) => entry.slug === slug)!
   return block.fields.find((field) => 'name' in field && field.name === 'theme') as never as {
     type: string
     options: { value: string }[]
@@ -36,18 +56,78 @@ describe('Theme set', () => {
     }
   })
 
-  it('overrides the same token set in both pairings, so nothing is half-themed', () => {
+  it('overrides every surface token the page defines, so nothing falls back mid-Section', () => {
     for (const theme of SECTION_THEMES) {
-      const light = themeCss.split(`[data-theme='${theme}'] {`)[1]!.split('}')[0]!
-      const dark = themeCss.split(`.dark [data-theme='${theme}'] {`)[1]!.split('}')[0]!
-
-      const tokensIn = (block: string) =>
-        [...block.matchAll(/--([\w-]+):/g)].map((m) => m[1]).sort()
-
-      expect(tokensIn(dark)).toEqual(tokensIn(light))
-      expect(tokensIn(light)).toContain('background')
-      expect(tokensIn(light)).toContain('foreground')
+      for (const selector of [`[data-theme='${theme}']`, `.dark [data-theme='${theme}']`]) {
+        expect(tokensIn(blockFor(selector)).sort(), selector).toEqual([...SURFACE_TOKENS].sort())
+      }
     }
+  })
+
+  it('declares each token exactly once per pairing, so no override is dead', () => {
+    for (const theme of SECTION_THEMES) {
+      for (const selector of [`[data-theme='${theme}']`, `.dark [data-theme='${theme}']`]) {
+        const declared = tokensIn(blockFor(selector))
+
+        expect(new Set(declared).size, selector).toBe(declared.length)
+      }
+    }
+  })
+})
+
+describe('Theme values stay on the shadcn palette', () => {
+  const tailwindTheme = readFileSync(
+    join(process.cwd(), 'node_modules/tailwindcss/theme.css'),
+    'utf8',
+  )
+
+  function normalise(colour: string): string {
+    const parts = colour
+      .replace(/^oklch\(|\)$/g, '')
+      .trim()
+      .split(/[\s/]+/)
+      .slice(0, 3)
+      .map((part) =>
+        part === 'none' ? 0 : part.endsWith('%') ? Number(part.slice(0, -1)) / 100 : Number(part),
+      )
+    return parts.map((n) => Number(n.toFixed(4))).join(' ')
+  }
+
+  const RAMP = new Set(
+    [...tailwindTheme.matchAll(/--color-[\w-]+:\s*(oklch\([^)]*\))/g)].map((match) =>
+      normalise(match[1]!),
+    ),
+  )
+
+  const WHITE = normalise('oklch(1 0 0)')
+
+  function valuesIn(css: string): { token: string; colour: string }[] {
+    return [...css.matchAll(/--([\w-]+):\s*(oklch\([^)]*\))/g)].map((match) => ({
+      token: match[1]!,
+      colour: match[2]!,
+    }))
+  }
+
+  it('reads a non-empty ramp from the installed Tailwind, so the check is not vacuous', () => {
+    expect(RAMP.size).toBeGreaterThan(100)
+    expect(RAMP.has(normalise('oklch(97% 0 none)'))).toBe(true)
+  })
+
+  it('picks every Theme colour off the ramp rather than inventing one', () => {
+    const offRamp = valuesIn(themeCss).filter(
+      ({ colour }) => normalise(colour) !== WHITE && !RAMP.has(normalise(colour)),
+    )
+
+    expect(offRamp).toEqual([])
+  })
+
+  it('holds the page tokens to the same ramp', () => {
+    const scoped = globalsCss.slice(globalsCss.indexOf(':root'))
+    const offRamp = valuesIn(scoped).filter(
+      ({ colour }) => normalise(colour) !== WHITE && !RAMP.has(normalise(colour)),
+    )
+
+    expect(offRamp).toEqual([])
   })
 })
 
@@ -80,12 +160,21 @@ describe('authoring a Section Theme', () => {
     expect(sections[1]!.theme).toBeUndefined()
   })
 
-  it('ignores a Theme the set no longer contains rather than stamping it', () => {
-    const { sections } = mapPageResult({
+  it('ignores a Theme the set no longer contains, and says so rather than dropping it silently', () => {
+    const { sections, warnings } = mapPageResult({
       sections: [{ blockType: 'ctaBanner', heading: 'Ready?', theme: 'sunset' }],
     } as never)
 
     expect(sections[0]!.theme).toBeUndefined()
+    expect(warnings[0]!.reason).toContain('sunset')
+  })
+
+  it('stays quiet about a Section that was never given a Theme', () => {
+    const { warnings } = mapPageResult({
+      sections: [{ blockType: 'ctaBanner', heading: 'Ready?' }],
+    } as never)
+
+    expect(warnings).toEqual([])
   })
 
   it('sets the Theme without disturbing the Section it wraps', () => {
@@ -107,10 +196,18 @@ describe('components never name a colour', () => {
   const paletteClass = new RegExp(
     `\\b(?:bg|text|border|ring|fill|stroke|from|via|to|outline|decoration|shadow|accent|caret|divide)-(?:${PALETTES})-\\d`,
   )
-  const literalColour = /#[0-9a-fA-F]{3,8}\b|\b(?:rgba?|hsla?|oklch|oklab|lab|lch|color-mix)\(/
+  const literalColour =
+    /#[0-9a-fA-F]{3,8}(?![0-9a-zA-Z])|\b(?:rgba?|hsla?|oklch|oklab|lab|lch)\(\s*[\d.]/
+
+  function withoutTokenReferences(source: string): string {
+    return source
+      .replace(/_/g, ' ')
+      .replace(/=['"]#[0-9a-fA-F]{3,8}['"]/g, '=SELECTOR')
+      .replace(/var\(--[\w-]+(?:,[^()]*)?\)/g, 'TOKEN')
+  }
 
   function componentSources(): { path: string; source: string }[] {
-    const root = join(process.cwd(), 'src/components/ds')
+    const root = join(process.cwd(), 'src/components')
     const walk = (dir: string): string[] =>
       readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
         const full = join(dir, entry.name)
@@ -126,7 +223,7 @@ describe('components never name a colour', () => {
       }))
   }
 
-  it('uses no palette-named utility anywhere in the design system', () => {
+  it('uses no palette-named utility in any component a Section can render', () => {
     const offenders = componentSources()
       .filter(({ source }) => paletteClass.test(source))
       .map(({ path }) => path)
@@ -136,9 +233,29 @@ describe('components never name a colour', () => {
 
   it('writes no literal colour value outside the Theme definitions', () => {
     const offenders = componentSources()
-      .filter(({ source }) => literalColour.test(source))
+      .filter(({ source }) => literalColour.test(withoutTokenReferences(source)))
       .map(({ path }) => path)
 
     expect(offenders).toEqual([])
+  })
+
+  it('still rejects a hex, an rgb() and a color-mix over a raw colour', () => {
+    for (const violation of [
+      'className="text-[#ff0000]"',
+      'style={{ color: "rgb(255 0 0)" }}',
+      'className="bg-[color-mix(in_oklch,var(--primary),#fff_10%)]"',
+      'className="bg-[oklch(0.5_0.2_20)]"',
+    ]) {
+      expect(literalColour.test(withoutTokenReferences(violation)), violation).toBe(true)
+    }
+  })
+
+  it('accepts a color-mix composed only of tokens and a Recharts attribute selector', () => {
+    for (const allowed of [
+      'hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)]',
+      "[&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50",
+    ]) {
+      expect(literalColour.test(withoutTokenReferences(allowed)), allowed).toBe(false)
+    }
   })
 })

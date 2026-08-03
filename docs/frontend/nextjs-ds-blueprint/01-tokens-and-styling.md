@@ -131,6 +131,15 @@ migration — the stored value would say `blue` while the brand had moved on —
 convention is semantic naming end to end. `brand` inverts onto the primary surface; `muted` and
 `accent` are progressively stronger tonal bands.
 
+Every value is a step on Tailwind's ramp. shadcn's `neutral` base is Tailwind's neutral ramp
+transcribed as literals — `oklch(0.205 0 0)` is `neutral-900`, `oklch(0.922 0 0)` is `neutral-200`
+— so a Theme that invents an in-between value is off the palette the rest of the system uses. A
+test parses `node_modules/tailwindcss/theme.css` and asserts every colour in the Theme file and in
+`:root` matches a ramp step, and separately asserts the ramp it read is non-empty so the check
+cannot pass vacuously. Referencing the ramp directly (`var(--color-neutral-200)`) does not work:
+Tailwind v4 emits only the theme variables a build actually uses, and those variables resolve to
+empty on this page — verified in the browser, not assumed.
+
 Every Theme defines a light **and** a dark pairing (`[data-theme='x']` and `.dark
 [data-theme='x']`). A Theme with only one pairing would silently fall through to the page tokens
 in the other mode, which reads as a Section that loses its Theme at night. A test asserts both
@@ -140,6 +149,13 @@ The Theme is added to every generated block by the registry and applied to every
 mapper, rather than being threaded through each Preset's arguments. Presets stay about content;
 adding a Preset gets theming for free instead of getting it only if the author remembered.
 Fixtures use `themed(theme, section)`.
+
+Portalled content is the one place the cascade does not reach: shadcn's `Select`, `DropdownMenu`
+and `Tooltip` mount on `document.body`, outside the themed subtree, so an open dropdown inside a
+`brand` Section would render page-level colours. `Section` publishes its Theme through
+`SectionThemeProvider` and the DS select control re-stamps `data-theme` on its portalled content.
+The component still does not decide any colour — it only carries the attribute across the portal
+boundary.
 
 ## What we deliberately drop from Kallax
 

@@ -64,3 +64,58 @@ test.describe('Section Themes', () => {
     expect(brandButton).not.toBe(pageButton)
   })
 })
+
+test.describe('Section Themes in dark mode', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+    await page.waitForLoadState('networkidle')
+    await page.evaluate(() => document.documentElement.classList.add('dark'))
+  })
+
+  test('gives every Theme a dark pairing that differs from its light one', async ({ page }) => {
+    const headings = [
+      'Trusted by teams shipping every day',
+      'Loved by the teams using it',
+      'Ready to start?',
+    ]
+
+    const dark = await Promise.all(headings.map((heading) => background(page, heading)))
+
+    await page.evaluate(() => document.documentElement.classList.remove('dark'))
+    const light = await Promise.all(headings.map((heading) => background(page, heading)))
+
+    for (const [index, heading] of headings.entries()) {
+      expect(dark[index], heading).not.toBe(light[index])
+    }
+  })
+
+  test('keeps the brand Theme inverted against the dark page, not merged into it', async ({
+    page,
+  }) => {
+    const pageBackground = await page.evaluate(
+      () => getComputedStyle(document.body).backgroundColor,
+    )
+    const brand = await background(page, 'Ready to start?')
+    const unthemed = await background(page, 'Join the community')
+
+    expect(brand).not.toBe(pageBackground)
+    expect(brand).not.toBe(unthemed)
+  })
+
+  test('keeps a validation error legible against an inverted Section', async ({ page }) => {
+    const form = page
+      .locator('form')
+      .filter({ has: page.getByRole('button', { name: 'Subscribe' }) })
+    await form.getByRole('button', { name: 'Subscribe' }).click()
+
+    const error = form.locator('[data-field="email"] [data-slot="field-error"]')
+    await expect(error).toBeVisible()
+
+    const [colour, surface] = await Promise.all([
+      error.evaluate((node) => getComputedStyle(node).color),
+      background(page, 'Get the release notes'),
+    ])
+
+    expect(colour).not.toBe(surface)
+  })
+})

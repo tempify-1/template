@@ -197,9 +197,18 @@ export function mapPageResult(page: Pick<Page, 'sections'>): MapPageResult {
 
     try {
       const section = map(block, (reason) => warnings.push({ blockType: block.blockType, reason }))
-      const theme = (block as { theme?: unknown }).theme
 
-      sections.push(isSectionTheme(theme) ? { ...section, theme } : section)
+      if (isSectionTheme(block.theme)) {
+        sections.push({ ...section, theme: block.theme })
+      } else {
+        if (block.theme) {
+          warnings.push({
+            blockType: block.blockType,
+            reason: `Theme "${block.theme}" is not in the Theme set, so the Section keeps the page Theme`,
+          })
+        }
+        sections.push(section)
+      }
     } catch (error) {
       skipped.push({
         blockType: block.blockType,
