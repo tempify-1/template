@@ -15,11 +15,13 @@ test.describe('Landing page', () => {
   })
 
   test('renders both calls to action as links', async ({ page }) => {
-    await expect(page.getByRole('link', { name: 'Start free trial' })).toHaveAttribute(
+    const hero = page.locator('main section').first()
+
+    await expect(hero.getByRole('link', { name: 'Start free trial' })).toHaveAttribute(
       'href',
       '/signup',
     )
-    await expect(page.getByRole('link', { name: 'Book a demo' })).toHaveAttribute('href', '/demo')
+    await expect(hero.getByRole('link', { name: 'Book a demo' })).toHaveAttribute('href', '/demo')
   })
 
   test('renders the trust badges', async ({ page }) => {
@@ -73,5 +75,60 @@ test.describe('Grid Presets', () => {
     const grids = page.locator('.ds-card-grid')
     await expect(grids).toHaveCount(2)
     await expect(grids.nth(1).locator('svg')).toHaveCount(6)
+  })
+})
+
+test.describe('Card-based Presets', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+  })
+
+  test('renders all five card-based Sections', async ({ page }) => {
+    for (const heading of [
+      'Grow with the team behind it',
+      'Common questions',
+      'Ready to start?',
+      'Join the community',
+    ]) {
+      await expect(page.getByRole('heading', { name: heading })).toBeVisible()
+    }
+    await expect(page.getByText('Northwind')).toBeVisible()
+  })
+
+  test('FAQ accordion is keyboard navigable and announces expanded state', async ({ page }) => {
+    const trigger = page.getByRole('button', { name: 'Can editors build pages without a developer?' })
+
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false')
+
+    await trigger.focus()
+    await page.keyboard.press('Enter')
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true')
+    await expect(page.getByText('Every preset a developer can call', { exact: false })).toBeVisible()
+
+    await page.keyboard.press('Enter')
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  test('every accordion trigger is reachable by keyboard alone', async ({ page }) => {
+    const triggers = page.getByRole('button', { name: /\?$/ })
+    await expect(triggers).toHaveCount(4)
+
+    await triggers.first().focus()
+    await expect(triggers.first()).toBeFocused()
+
+    await page.keyboard.press('Tab')
+    await expect(triggers.nth(1)).toBeFocused()
+
+    await page.keyboard.press('Space')
+    await expect(triggers.nth(1)).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  test('expanding one question does not reveal another answer', async ({ page }) => {
+    const first = page.getByRole('button', { name: 'Can editors build pages without a developer?' })
+    const second = page.getByRole('button', { name: 'What happens when a preset changes?' })
+
+    await first.click()
+    await expect(first).toHaveAttribute('aria-expanded', 'true')
+    await expect(second).toHaveAttribute('aria-expanded', 'false')
   })
 })

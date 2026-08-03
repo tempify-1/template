@@ -1,9 +1,14 @@
 import type { Block } from 'payload'
 
 import { benefitsGrid, benefitsGridArgs } from './benefits-grid'
+import { community, communityArgs } from './community'
+import { ctaBanner, ctaBannerArgs } from './cta-banner'
+import { faqAccordion, faqAccordionArgs } from './faq-accordion'
 import { featureGrid, featureGridArgs } from './feature-grid'
 import { heroCentered, heroCenteredArgs } from './hero-centered'
+import { logoWall, logoWallArgs } from './logo-wall'
 import { blockFromSchema } from './payload-fields'
+import { serviceList, serviceListArgs } from './service-list'
 
 export const presetRegistry = {
   heroCentered: {
@@ -11,6 +16,12 @@ export const presetRegistry = {
     factory: heroCentered,
     singular: 'Hero (centered)',
     plural: 'Heroes (centered)',
+  },
+  logoWall: {
+    schema: logoWallArgs,
+    factory: logoWall,
+    singular: 'Logo wall',
+    plural: 'Logo walls',
   },
   benefitsGrid: {
     schema: benefitsGridArgs,
@@ -23,6 +34,30 @@ export const presetRegistry = {
     factory: featureGrid,
     singular: 'Feature grid',
     plural: 'Feature grids',
+  },
+  serviceList: {
+    schema: serviceListArgs,
+    factory: serviceList,
+    singular: 'Service list',
+    plural: 'Service lists',
+  },
+  ctaBanner: {
+    schema: ctaBannerArgs,
+    factory: ctaBanner,
+    singular: 'CTA banner',
+    plural: 'CTA banners',
+  },
+  community: {
+    schema: communityArgs,
+    factory: community,
+    singular: 'Community',
+    plural: 'Community sections',
+  },
+  faqAccordion: {
+    schema: faqAccordionArgs,
+    factory: faqAccordion,
+    singular: 'FAQ accordion',
+    plural: 'FAQ accordions',
   },
 } as const
 

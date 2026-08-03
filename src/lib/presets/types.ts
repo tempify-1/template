@@ -49,12 +49,41 @@ export interface CardGridBlock {
   cards: CardSpec[]
 }
 
+export interface LogoRowBlock {
+  blockType: 'logoRow'
+  logos: string[]
+}
+
+export interface ListItemSpec {
+  title: string
+  description?: string
+  badge?: string
+}
+
+export interface ItemListBlock {
+  blockType: 'itemList'
+  items: ListItemSpec[]
+}
+
+export interface AccordionItemSpec {
+  question: string
+  answer: string
+}
+
+export interface AccordionBlock {
+  blockType: 'accordion'
+  items: AccordionItemSpec[]
+}
+
 export type Block =
   | HeadingBlock
   | ParagraphBlock
   | ButtonRowBlock
   | BadgeRowBlock
   | CardGridBlock
+  | LogoRowBlock
+  | ItemListBlock
+  | AccordionBlock
 
 export type BlockType = Block['blockType']
 

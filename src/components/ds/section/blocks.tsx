@@ -8,6 +8,8 @@ import type {
   ButtonRowBlock,
   CardGridBlock,
   HeadingBlock,
+  ItemListBlock,
+  LogoRowBlock,
   ParagraphBlock,
 } from '@/lib/presets/types'
 
@@ -100,6 +102,39 @@ export function BadgeRow({ block }: { block: BadgeRowBlock }) {
       {block.badges.map((badge) => (
         <li key={badge}>
           <Badge variant="secondary">{badge}</Badge>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+export function LogoRow({ block }: { block: LogoRowBlock }) {
+  return (
+    <ul className="ds-row gap-x-10 gap-y-6 opacity-70">
+      {block.logos.map((logo, index) => (
+        <li key={`${logo}-${index}`} className="text-lg font-medium tracking-tight text-foreground">
+          {logo}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+export function ItemList({ block }: { block: ItemListBlock }) {
+  return (
+    <ul className="flex w-full max-w-3xl flex-col gap-0 text-left">
+      {block.items.map((item, index) => (
+        <li
+          key={`${item.title}-${index}`}
+          className="flex flex-col gap-1 border-b border-border py-5 last:border-b-0"
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-base font-medium text-foreground">{item.title}</h3>
+            {item.badge ? <Badge variant="secondary">{item.badge}</Badge> : null}
+          </div>
+          {item.description ? (
+            <p className="text-sm text-pretty text-muted-foreground">{item.description}</p>
+          ) : null}
         </li>
       ))}
     </ul>

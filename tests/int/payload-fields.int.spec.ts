@@ -113,10 +113,11 @@ describe('arrays', () => {
 })
 
 describe('generated blocks', () => {
-  it('generates one block per registered Preset with a stable interface name', () => {
+  it('generates exactly one block per registered Preset, with a stable interface name', () => {
     const blocks = presetBlocks()
+    const registered = Object.keys(presetRegistry)
 
-    expect(blocks.map((b) => b.slug).sort()).toEqual(['benefitsGrid', 'featureGrid', 'heroCentered'])
+    expect(blocks.map((b) => b.slug).sort()).toEqual([...registered].sort())
     expect(blocks.find((b) => b.slug === 'heroCentered')?.interfaceName).toBe('HeroCenteredBlock')
   })
 

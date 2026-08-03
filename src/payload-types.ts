@@ -171,7 +171,18 @@ export interface Page {
   id: number;
   title: string;
   slug: string;
-  sections?: (HeroCenteredBlock | BenefitsGridBlock | FeatureGridBlock)[] | null;
+  sections?:
+    | (
+        | HeroCenteredBlock
+        | LogoWallBlock
+        | BenefitsGridBlock
+        | FeatureGridBlock
+        | ServiceListBlock
+        | CtaBannerBlock
+        | CommunityBlock
+        | FaqAccordionBlock
+      )[]
+    | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -207,6 +218,22 @@ export interface HeroCenteredBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'heroCentered';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "LogoWallBlock".
+ */
+export interface LogoWallBlock {
+  heading?: string | null;
+  logos?:
+    | {
+        name: string;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'logoWall';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -263,6 +290,86 @@ export interface FeatureGridBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'featureGrid';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ServiceListBlock".
+ */
+export interface ServiceListBlock {
+  heading: string;
+  subheading?: string | null;
+  services?:
+    | {
+        title: string;
+        description?: string | null;
+        badge?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'serviceList';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CtaBannerBlock".
+ */
+export interface CtaBannerBlock {
+  heading: string;
+  subheading?: string | null;
+  /**
+   * Leave both fields empty to omit this call to action.
+   */
+  primaryCta?: {
+    label?: string | null;
+    href?: string | null;
+  };
+  /**
+   * Leave both fields empty to omit this call to action.
+   */
+  secondaryCta?: {
+    label?: string | null;
+    href?: string | null;
+  };
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'ctaBanner';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CommunityBlock".
+ */
+export interface CommunityBlock {
+  heading: string;
+  body?: string | null;
+  /**
+   * Leave both fields empty to omit the button.
+   */
+  cta?: {
+    label?: string | null;
+    href?: string | null;
+  };
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'community';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FaqAccordionBlock".
+ */
+export interface FaqAccordionBlock {
+  heading: string;
+  subheading?: string | null;
+  questions?:
+    | {
+        question: string;
+        answer: string;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'faqAccordion';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -393,8 +500,13 @@ export interface PagesSelect<T extends boolean = true> {
     | T
     | {
         heroCentered?: T | HeroCenteredBlockSelect<T>;
+        logoWall?: T | LogoWallBlockSelect<T>;
         benefitsGrid?: T | BenefitsGridBlockSelect<T>;
         featureGrid?: T | FeatureGridBlockSelect<T>;
+        serviceList?: T | ServiceListBlockSelect<T>;
+        ctaBanner?: T | CtaBannerBlockSelect<T>;
+        community?: T | CommunityBlockSelect<T>;
+        faqAccordion?: T | FaqAccordionBlockSelect<T>;
       };
   updatedAt?: T;
   createdAt?: T;
@@ -431,6 +543,21 @@ export interface HeroCenteredBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "LogoWallBlock_select".
+ */
+export interface LogoWallBlockSelect<T extends boolean = true> {
+  heading?: T;
+  logos?:
+    | T
+    | {
+        name?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "BenefitsGridBlock_select".
  */
 export interface BenefitsGridBlockSelect<T extends boolean = true> {
@@ -459,6 +586,79 @@ export interface FeatureGridBlockSelect<T extends boolean = true> {
         icon?: T;
         title?: T;
         description?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ServiceListBlock_select".
+ */
+export interface ServiceListBlockSelect<T extends boolean = true> {
+  heading?: T;
+  subheading?: T;
+  services?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        badge?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CtaBannerBlock_select".
+ */
+export interface CtaBannerBlockSelect<T extends boolean = true> {
+  heading?: T;
+  subheading?: T;
+  primaryCta?:
+    | T
+    | {
+        label?: T;
+        href?: T;
+      };
+  secondaryCta?:
+    | T
+    | {
+        label?: T;
+        href?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CommunityBlock_select".
+ */
+export interface CommunityBlockSelect<T extends boolean = true> {
+  heading?: T;
+  body?: T;
+  cta?:
+    | T
+    | {
+        label?: T;
+        href?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FaqAccordionBlock_select".
+ */
+export interface FaqAccordionBlockSelect<T extends boolean = true> {
+  heading?: T;
+  subheading?: T;
+  questions?:
+    | T
+    | {
+        question?: T;
+        answer?: T;
         id?: T;
       };
   id?: T;
