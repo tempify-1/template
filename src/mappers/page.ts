@@ -1,11 +1,13 @@
 import { benefitsGrid } from '@/lib/presets/benefits-grid'
 import { community } from '@/lib/presets/community'
+import { contactForm } from '@/lib/presets/contact-form'
 import { ctaBanner } from '@/lib/presets/cta-banner'
 import { faqAccordion } from '@/lib/presets/faq-accordion'
 import { featureGrid } from '@/lib/presets/feature-grid'
 import { heroCentered } from '@/lib/presets/hero-centered'
 import { toImage, type MediaProblem } from '@/lib/presets/media'
 import { logoWall } from '@/lib/presets/logo-wall'
+import { newsletter } from '@/lib/presets/newsletter'
 import { serviceList } from '@/lib/presets/service-list'
 import { teamGrid } from '@/lib/presets/team-grid'
 import { testimonialCarousel } from '@/lib/presets/testimonial-carousel'
@@ -155,6 +157,17 @@ const presetMappers = {
         question: entry.question,
         answer: entry.answer,
       })),
+    }),
+  contactForm: (block: Extract<SectionBlock, { blockType: 'contactForm' }>) =>
+    contactForm({
+      heading: block.heading,
+      subheading: block.subheading ?? undefined,
+    }),
+
+  newsletter: (block: Extract<SectionBlock, { blockType: 'newsletter' }>) =>
+    newsletter({
+      heading: block.heading,
+      subheading: block.subheading ?? undefined,
     }),
 } satisfies Record<
   SectionBlock['blockType'],

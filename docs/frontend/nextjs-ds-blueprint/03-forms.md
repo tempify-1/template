@@ -130,6 +130,18 @@ select-family field, and unwrapping them was its #1 recurring bug. New rule:
 Option metadata (label, icon, image) is looked up from `field.options` at render time when a
 summary needs it. Conditions compare plain strings — no `.key` unwrapping anywhere.
 
+## Element ids
+
+`ConfigForm` prefixes every control id with a `useId()` value, so `htmlFor` resolves to the
+control in *this* form. Field names alone are not unique: a page can carry a contact Section and
+a newsletter Section, both with a field named `email`, and duplicate ids silently point every
+label at the first match. Controls receive the resolved id as an explicit `controlId` prop rather
+than deriving it from `config.name`.
+
+Checkbox fields render `orientation="horizontal"` with the control before a `FieldContent`
+wrapper holding label, description and error — the vertical variant applies `*:w-full`, which
+stretches a checkbox into a full-width bar.
+
 ## Layout
 
 The form body is a grid: `grid-cols-[repeat(auto-fit,minmax(200px,1fr))]`, leaf fields flow
@@ -182,6 +194,29 @@ small recursive helper (~20 lines) and patches those — no snapshots, no re-bas
 shifted paths aren't re-patched).~~ Save feedback per field (`saving → saved`, auto-clear 2s;
 error state with tooltip) via a data-attribute on the field wrapper — avoids re-rendering the
 tree per keystroke. `debug` prop renders a values/errors JSON panel.
+
+## Named forms
+
+Marketing forms are code, not CMS content. `src/lib/forms/definitions.ts` holds one
+`FormDefinition` per named form — its `Field[]`, submit label, success message, and which field
+becomes the stored submission's summary. The Payload block an editor places carries only the form
+*name*; the field list never round-trips through the database. That keeps the schema the server
+re-validates against identical to the one the browser enforced, and it means an editor cannot add
+a field the server action does not expect.
+
+The action re-parses submitted values with `buildSchema(definition.fields)` before writing.
+Client-side validation is a convenience; a form post is an anonymous HTTP request and the server
+treats it as one. Failure returns a message the visitor sees rather than throwing — a swallowed
+error reads to a visitor as a form that does nothing.
+
+Submissions land in the `form-submissions` collection, whose `create` access is `() => false`.
+Payload generates a REST/GraphQL endpoint for every collection, so a public `create` rule would
+let anyone POST straight to `/api/form-submissions` with an arbitrary `form` name and arbitrary
+JSON — the action's zod re-validation would not be a boundary at all, merely the polite path in.
+The action therefore writes with `overrideAccess: true`: it is the only writer, and it has
+already validated. The `form` field additionally validates against `FORM_NAMES`, so a row can
+never name a form that does not exist. It stays a `text` field rather than a `select` because
+forms are code — adding one should not require a database migration.
 
 ## CMS integration
 

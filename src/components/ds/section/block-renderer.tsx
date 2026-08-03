@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import type { Block, BlockType } from '@/lib/presets/types'
 
 import { AccordionList } from './accordion-block'
+import { FormBlock } from './form-block'
 import { ImageMedia } from './image-block'
 import { TestimonialCarousel } from './testimonial-carousel-block'
 import {
@@ -32,6 +33,7 @@ export const blockRegistry: BlockRenderers = {
   image: ImageMedia,
   testimonialCarousel: TestimonialCarousel,
   personGrid: PersonGrid,
+  form: FormBlock,
 }
 
 export function BlockRenderer({ block }: { block: Block }) {

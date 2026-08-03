@@ -2,11 +2,13 @@ import type { Block } from 'payload'
 
 import { benefitsGrid, benefitsGridArgs } from './benefits-grid'
 import { community, communityArgs } from './community'
+import { contactForm, contactFormArgs } from './contact-form'
 import { ctaBanner, ctaBannerArgs } from './cta-banner'
 import { faqAccordion, faqAccordionArgs } from './faq-accordion'
 import { featureGrid, featureGridArgs } from './feature-grid'
 import { heroCentered, heroCenteredArgs } from './hero-centered'
 import { logoWall, logoWallArgs } from './logo-wall'
+import { newsletter, newsletterArgs } from './newsletter'
 import { blockFromSchema } from './payload-fields'
 import { serviceList, serviceListArgs } from './service-list'
 import { teamGrid, teamGridArgs } from './team-grid'
@@ -66,6 +68,18 @@ export const presetRegistry = {
     factory: community,
     singular: 'Community',
     plural: 'Community sections',
+  },
+  contactForm: {
+    schema: contactFormArgs,
+    factory: contactForm,
+    singular: 'Contact form',
+    plural: 'Contact forms',
+  },
+  newsletter: {
+    schema: newsletterArgs,
+    factory: newsletter,
+    singular: 'Newsletter signup',
+    plural: 'Newsletter signups',
   },
   faqAccordion: {
     schema: faqAccordionArgs,

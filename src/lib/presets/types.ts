@@ -1,3 +1,5 @@
+import type { FormName } from '@/lib/forms/definitions'
+
 import type { CSSProperties } from 'react'
 
 export const BREAKPOINTS = ['sm', 'md', 'lg', 'xl', '2xl'] as const
@@ -116,6 +118,11 @@ export interface PersonSpec {
   links?: PersonLinkSpec[]
 }
 
+export interface FormBlock {
+  blockType: 'form'
+  formName: FormName
+}
+
 export interface PersonGridBlock {
   blockType: 'personGrid'
   people: PersonSpec[]
@@ -134,6 +141,7 @@ export type Block =
   | ImageBlock
   | TestimonialCarouselBlock
   | PersonGridBlock
+  | FormBlock
 
 export type BlockType = Block['blockType']
 

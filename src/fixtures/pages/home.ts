@@ -1,10 +1,12 @@
 import { benefitsGrid } from '@/lib/presets/benefits-grid'
 import { community } from '@/lib/presets/community'
+import { contactForm } from '@/lib/presets/contact-form'
 import { ctaBanner } from '@/lib/presets/cta-banner'
 import { faqAccordion } from '@/lib/presets/faq-accordion'
 import { featureGrid } from '@/lib/presets/feature-grid'
 import { heroCentered } from '@/lib/presets/hero-centered'
 import { logoWall } from '@/lib/presets/logo-wall'
+import { newsletter } from '@/lib/presets/newsletter'
 import { serviceList } from '@/lib/presets/service-list'
 import { teamGrid } from '@/lib/presets/team-grid'
 import { testimonialCarousel } from '@/lib/presets/testimonial-carousel'
@@ -135,5 +137,15 @@ export const homeSections: SectionDefinition[] = [
     heading: 'Join the community',
     body: 'Share what you build and get help from people running the same stack.',
     cta: { label: 'Open Discord', href: 'https://discord.gg' },
+  }),
+
+  newsletter({
+    heading: 'Get the release notes',
+    subheading: 'One short email whenever a preset, block or upstream dependency changes.',
+  }),
+
+  contactForm({
+    heading: 'Talk to us',
+    subheading: 'Tell us what you are building and we will point you at the right starting place.',
   }),
 ]

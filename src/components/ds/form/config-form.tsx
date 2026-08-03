@@ -1,11 +1,18 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useMemo } from 'react'
+import { useId, useMemo } from 'react'
 import { useForm, Controller, type SubmitHandler } from 'react-hook-form'
 
 import { Button } from '@/components/ui/button'
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from '@/components/ui/field'
 import { isVisible } from '@/lib/forms/conditions'
 import { getAtPath } from '@/lib/forms/paths'
 import { emptyValues } from '@/lib/forms/resolvers'
@@ -44,6 +51,8 @@ export function ConfigForm({ fields, defaultValues, onSubmit, submitLabel }: Con
     shouldUnregister: true,
   })
 
+  const uid = useId()
+  const controlId = (name: string) => `${uid}${name}`
   const values = form.watch()
   const submit = fields.find((field) => field.type === 'submit')
 
@@ -61,28 +70,53 @@ export function ConfigForm({ fields, defaultValues, onSubmit, submitLabel }: Con
           if (!Control) return null
 
           const message = errorMessageAt(form.formState.errors, config.name)
-          const describedBy = config.description ? `${config.name}-description` : undefined
+          const id = controlId(config.name)
+          const descriptionId = config.description ? `${id}-description` : undefined
+          const errorId = message ? `${id}-error` : undefined
+          const describedBy = [descriptionId, errorId].filter(Boolean).join(' ') || undefined
+
+          const label = config.label ? <FieldLabel htmlFor={id}>{config.label}</FieldLabel> : null
+          const description = config.description ? (
+            <FieldDescription id={descriptionId}>{config.description}</FieldDescription>
+          ) : null
+          const error = message ? <FieldError id={errorId}>{message}</FieldError> : null
+
+          const control = (
+            <Controller
+              control={form.control}
+              name={config.name}
+              defaultValue={getAtPath(seeded, config.name) as never}
+              render={({ field }) => (
+                <Control
+                  config={config}
+                  field={field}
+                  controlId={id}
+                  invalid={Boolean(message)}
+                  describedBy={describedBy}
+                />
+              )}
+            />
+          )
+
+          if (config.type === 'checkbox') {
+            return (
+              <Field key={config.name} orientation="horizontal" data-field={config.name}>
+                {control}
+                <FieldContent>
+                  {label}
+                  {description}
+                  {error}
+                </FieldContent>
+              </Field>
+            )
+          }
 
           return (
             <Field key={config.name} data-field={config.name}>
-              {config.label ? <FieldLabel htmlFor={config.name}>{config.label}</FieldLabel> : null}
-              <Controller
-                control={form.control}
-                name={config.name}
-                defaultValue={getAtPath(seeded, config.name) as never}
-                render={({ field }) => (
-                  <Control
-                    config={config}
-                    field={field}
-                    invalid={Boolean(message)}
-                    describedBy={describedBy}
-                  />
-                )}
-              />
-              {config.description ? (
-                <FieldDescription id={describedBy}>{config.description}</FieldDescription>
-              ) : null}
-              {message ? <FieldError>{message}</FieldError> : null}
+              {label}
+              {control}
+              {description}
+              {error}
             </Field>
           )
         })}
