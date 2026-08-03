@@ -203,6 +203,7 @@ export interface HeroCenteredBlock {
         id?: string | null;
       }[]
     | null;
+  minHeight?: string | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'heroCentered';
@@ -424,6 +425,7 @@ export interface HeroCenteredBlockSelect<T extends boolean = true> {
         text?: T;
         id?: T;
       };
+  minHeight?: T;
   id?: T;
   blockName?: T;
 }

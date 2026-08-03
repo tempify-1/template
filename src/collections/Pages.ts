@@ -1,9 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
 import { authenticated, authenticatedOrPublished } from '../access'
-import { BenefitsGridBlock } from './blocks/benefits-grid'
-import { FeatureGridBlock } from './blocks/feature-grid'
-import { HeroCenteredBlock } from './blocks/hero-centered'
+import { presetBlocks } from '../lib/presets/registry'
 
 function pathForSlug(slug: unknown): string | null {
   if (typeof slug !== 'string' || slug.length === 0) return null
@@ -55,7 +53,7 @@ export const Pages: CollectionConfig = {
     {
       name: 'sections',
       type: 'blocks',
-      blocks: [HeroCenteredBlock, BenefitsGridBlock, FeatureGridBlock],
+      blocks: presetBlocks(),
     },
   ],
   hooks: {

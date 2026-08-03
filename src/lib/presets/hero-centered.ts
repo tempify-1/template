@@ -2,18 +2,33 @@ import { z } from 'zod'
 
 import type { Block, SectionDefinition } from './types'
 
-const callToAction = z.object({
-  label: z.string().min(1),
-  href: z.string().min(1),
-})
+const callToAction = z
+  .object({
+    label: z.string().min(1),
+    href: z.string().min(1),
+  })
+  .optional()
 
 export const heroCenteredArgs = z.object({
   heading: z.string().min(1),
-  subheading: z.string().optional(),
-  primaryCta: callToAction.optional(),
-  secondaryCta: callToAction.optional(),
-  trustBadges: z.array(z.string().min(1)).default([]),
-  minHeight: z.string().optional(),
+  subheading: z.string().optional().meta({ payload: { type: 'textarea' } }),
+  primaryCta: callToAction.meta({
+    payload: {
+      label: 'Primary call to action',
+      description: 'Leave both fields empty to omit this call to action.',
+    },
+  }),
+  secondaryCta: callToAction.meta({
+    payload: {
+      label: 'Secondary call to action',
+      description: 'Leave both fields empty to omit this call to action.',
+    },
+  }),
+  trustBadges: z
+    .array(z.string().min(1))
+    .default([])
+    .meta({ payload: { singular: 'Badge', plural: 'Badges' } }),
+  minHeight: z.string().optional().meta({ payload: { hidden: true } }),
 })
 
 export type HeroCenteredArgs = z.input<typeof heroCenteredArgs>
