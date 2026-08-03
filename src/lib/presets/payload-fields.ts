@@ -115,7 +115,33 @@ function fieldFor(name: string, raw: z.ZodType, blankable = false): Field {
   }
 
   if (kind === 'object') {
-    return { name, type: 'group', label, fields: fieldsFromSchema(schema, optional), ...admin }
+    const inner = def(schema).shape as Record<string, z.ZodType>
+    const allOrNone = optional
+      ? Object.entries(inner)
+          .filter(([, child]) => !unwrap(child).optional)
+          .map(([key]) => key)
+      : []
+
+    return {
+      name,
+      type: 'group',
+      label,
+      fields: fieldsFromSchema(schema, optional),
+      ...(allOrNone.length > 1
+        ? {
+            validate: (value: unknown) => {
+              const group = (value ?? {}) as Record<string, unknown>
+              const filled = allOrNone.filter((key) => {
+                const entry = group[key]
+                return typeof entry === 'string' ? entry.trim() !== '' : entry != null
+              })
+              if (filled.length === 0 || filled.length === allOrNone.length) return true
+              return `Fill in every field or leave them all empty: ${allOrNone.join(', ')}.`
+            },
+          }
+        : {}),
+      ...admin,
+    }
   }
 
   if (kind === 'array') {
@@ -128,7 +154,7 @@ function fieldFor(name: string, raw: z.ZodType, blankable = false): Field {
       name,
       type: 'array',
       label,
-      ...(minRows !== undefined && !optional ? { minRows } : {}),
+      ...(minRows !== undefined && !optional ? { minRows, required: true } : {}),
       ...(maxRows !== undefined ? { maxRows } : {}),
       labels: { singular: hint.singular ?? label, plural: hint.plural ?? label },
       fields: isObjectElement

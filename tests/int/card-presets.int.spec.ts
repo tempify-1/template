@@ -18,10 +18,12 @@ function blockOf<T extends Block['blockType']>(section: SectionDefinition, type:
 }
 
 describe('logoWall', () => {
-  it('renders logos as a row and makes the heading optional', () => {
+  it('renders logos as a row and emits the heading as a real heading element', () => {
     const withHeading = logoWall({ heading: 'Trusted by', logos: ['Acme', 'Globex'] })
+
     expect(blockOf(withHeading, 'logoRow').logos).toEqual(['Acme', 'Globex'])
-    expect(blockOf(withHeading, 'paragraph')).toBeDefined()
+    expect(blockOf(withHeading, 'heading')).toMatchObject({ level: 2, text: 'Trusted by' })
+    expect(blockOf(withHeading, 'paragraph')).toBeUndefined()
 
     const without = logoWall({ logos: ['Acme'] })
     expect(blocksOf(without)).toHaveLength(1)

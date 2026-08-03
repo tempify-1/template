@@ -14,14 +14,12 @@ test.describe('Landing page', () => {
     ).toBeVisible()
   })
 
-  test('renders both calls to action as links', async ({ page }) => {
-    const hero = page.locator('main section').first()
-
-    await expect(hero.getByRole('link', { name: 'Start free trial' })).toHaveAttribute(
+  test('renders both calls to action as unique links across the whole page', async ({ page }) => {
+    await expect(page.getByRole('link', { name: 'Start free trial' })).toHaveAttribute(
       'href',
       '/signup',
     )
-    await expect(hero.getByRole('link', { name: 'Book a demo' })).toHaveAttribute('href', '/demo')
+    await expect(page.getByRole('link', { name: 'Book a demo' })).toHaveAttribute('href', '/demo')
   })
 
   test('renders the trust badges', async ({ page }) => {
@@ -111,16 +109,19 @@ test.describe('Card-based Presets', () => {
 
   test('every accordion trigger is reachable by keyboard alone', async ({ page }) => {
     const triggers = page.getByRole('button', { name: /\?$/ })
-    await expect(triggers).toHaveCount(4)
+    const count = await triggers.count()
+    expect(count).toBe(4)
 
     await triggers.first().focus()
     await expect(triggers.first()).toBeFocused()
 
-    await page.keyboard.press('Tab')
-    await expect(triggers.nth(1)).toBeFocused()
+    for (let index = 1; index < count; index += 1) {
+      await page.keyboard.press('Tab')
+      await expect(triggers.nth(index)).toBeFocused()
+    }
 
     await page.keyboard.press('Space')
-    await expect(triggers.nth(1)).toHaveAttribute('aria-expanded', 'true')
+    await expect(triggers.nth(count - 1)).toHaveAttribute('aria-expanded', 'true')
   })
 
   test('expanding one question does not reveal another answer', async ({ page }) => {

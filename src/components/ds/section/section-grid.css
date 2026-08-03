@@ -134,6 +134,10 @@
     margin-inline: auto;
   }
 
+  .ds-column[data-justify='right'] .ds-block > * {
+    margin-inline-start: auto;
+  }
+
   .ds-row {
     display: flex;
     flex-wrap: wrap;

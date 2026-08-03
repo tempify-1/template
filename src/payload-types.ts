@@ -225,12 +225,10 @@ export interface HeroCenteredBlock {
  */
 export interface LogoWallBlock {
   heading?: string | null;
-  logos?:
-    | {
-        name: string;
-        id?: string | null;
-      }[]
-    | null;
+  logos: {
+    name: string;
+    id?: string | null;
+  }[];
   id?: string | null;
   blockName?: string | null;
   blockType: 'logoWall';
@@ -245,13 +243,11 @@ export interface BenefitsGridBlock {
   /**
    * Numbered automatically in the order listed here.
    */
-  benefits?:
-    | {
-        title: string;
-        description?: string | null;
-        id?: string | null;
-      }[]
-    | null;
+  benefits: {
+    title: string;
+    description?: string | null;
+    id?: string | null;
+  }[];
   id?: string | null;
   blockName?: string | null;
   blockType: 'benefitsGrid';
@@ -263,30 +259,28 @@ export interface BenefitsGridBlock {
 export interface FeatureGridBlock {
   heading: string;
   subheading?: string | null;
-  features?:
-    | {
-        icon:
-          | 'activity'
-          | 'chart'
-          | 'check'
-          | 'clock'
-          | 'gauge'
-          | 'globe'
-          | 'layers'
-          | 'lock'
-          | 'plug'
-          | 'rocket'
-          | 'search'
-          | 'shield'
-          | 'sparkles'
-          | 'users'
-          | 'workflow'
-          | 'zap';
-        title: string;
-        description?: string | null;
-        id?: string | null;
-      }[]
-    | null;
+  features: {
+    icon:
+      | 'activity'
+      | 'chart'
+      | 'check'
+      | 'clock'
+      | 'gauge'
+      | 'globe'
+      | 'layers'
+      | 'lock'
+      | 'plug'
+      | 'rocket'
+      | 'search'
+      | 'shield'
+      | 'sparkles'
+      | 'users'
+      | 'workflow'
+      | 'zap';
+    title: string;
+    description?: string | null;
+    id?: string | null;
+  }[];
   id?: string | null;
   blockName?: string | null;
   blockType: 'featureGrid';
@@ -298,14 +292,12 @@ export interface FeatureGridBlock {
 export interface ServiceListBlock {
   heading: string;
   subheading?: string | null;
-  services?:
-    | {
-        title: string;
-        description?: string | null;
-        badge?: string | null;
-        id?: string | null;
-      }[]
-    | null;
+  services: {
+    title: string;
+    description?: string | null;
+    badge?: string | null;
+    id?: string | null;
+  }[];
   id?: string | null;
   blockName?: string | null;
   blockType: 'serviceList';
@@ -360,13 +352,11 @@ export interface CommunityBlock {
 export interface FaqAccordionBlock {
   heading: string;
   subheading?: string | null;
-  questions?:
-    | {
-        question: string;
-        answer: string;
-        id?: string | null;
-      }[]
-    | null;
+  questions: {
+    question: string;
+    answer: string;
+    id?: string | null;
+  }[];
   id?: string | null;
   blockName?: string | null;
   blockType: 'faqAccordion';

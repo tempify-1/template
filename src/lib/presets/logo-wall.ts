@@ -17,7 +17,7 @@ export function logoWall(input: LogoWallArgs): SectionDefinition {
 
   const blocks: Block[] = []
   if (args.heading) {
-    blocks.push({ blockType: 'paragraph', text: args.heading })
+    blocks.push({ blockType: 'heading', level: 2, text: args.heading, size: 3 })
   }
   blocks.push({ blockType: 'logoRow', logos: args.logos })
 
