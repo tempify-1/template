@@ -36,3 +36,17 @@ Postgres runs on port **5433**, not 5432.
 pnpm dev · pnpm build · pnpm lint · tsc --noEmit
 payload generate:types · payload generate:importmap
 ```
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues on `tempify-1/template`, via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical roles, label strings unchanged. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
