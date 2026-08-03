@@ -214,6 +214,7 @@ export interface HeroCenteredBlock {
         id?: string | null;
       }[]
     | null;
+  image?: (number | null) | Media;
   minHeight?: string | null;
   id?: string | null;
   blockName?: string | null;
@@ -227,6 +228,7 @@ export interface LogoWallBlock {
   heading?: string | null;
   logos: {
     name: string;
+    image?: (number | null) | Media;
     id?: string | null;
   }[];
   id?: string | null;
@@ -527,6 +529,7 @@ export interface HeroCenteredBlockSelect<T extends boolean = true> {
         text?: T;
         id?: T;
       };
+  image?: T;
   minHeight?: T;
   id?: T;
   blockName?: T;
@@ -541,6 +544,7 @@ export interface LogoWallBlockSelect<T extends boolean = true> {
     | T
     | {
         name?: T;
+        image?: T;
         id?: T;
       };
   id?: T;

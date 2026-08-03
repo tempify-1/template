@@ -13,6 +13,9 @@ const nextConfig: NextConfig = {
         pathname: '/api/media/file/**',
       },
     ],
+    dangerouslyAllowSVG: true,
+    contentDispositionType: 'attachment',
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   webpack: (webpackConfig) => {
     webpackConfig.resolve.extensionAlias = {

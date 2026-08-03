@@ -1,13 +1,19 @@
 import { z } from 'zod'
 
+import { imageArgs } from './media'
 import type { Block, SectionDefinition } from './types'
 
 export const logoWallArgs = z.object({
   heading: z.string().optional(),
   logos: z
-    .array(z.string().min(1))
+    .array(
+      z.object({
+        name: z.string().min(1),
+        image: imageArgs.optional(),
+      }),
+    )
     .min(1)
-    .meta({ payload: { singular: 'Logo', plural: 'Logos', itemField: 'name' } }),
+    .meta({ payload: { singular: 'Logo', plural: 'Logos' } }),
 })
 
 export type LogoWallArgs = z.input<typeof logoWallArgs>

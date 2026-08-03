@@ -27,10 +27,14 @@ async function loadHomeSections(): Promise<SectionDefinition[]> {
   const page = docs[0]
   if (!page) return homeSections
 
-  const { sections, skipped } = mapPageResult(page)
+  const { sections, skipped, warnings } = mapPageResult(page)
 
   for (const { blockType, reason } of skipped) {
     payload.logger.error(`Dropped "${blockType}" section on page "home": ${reason}`)
+  }
+
+  for (const { blockType, reason } of warnings) {
+    payload.logger.warn(`Rendered "${blockType}" section on page "home" without media: ${reason}`)
   }
 
   return sections
