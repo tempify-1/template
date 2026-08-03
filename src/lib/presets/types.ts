@@ -49,9 +49,26 @@ export interface CardGridBlock {
   cards: CardSpec[]
 }
 
+export interface ImageSpec {
+  src: string
+  alt: string
+  width: number
+  height: number
+}
+
+export interface ImageBlock extends ImageSpec {
+  blockType: 'image'
+  priority?: boolean
+}
+
+export interface LogoSpec {
+  name: string
+  image?: ImageSpec
+}
+
 export interface LogoRowBlock {
   blockType: 'logoRow'
-  logos: string[]
+  logos: LogoSpec[]
 }
 
 export interface ListItemSpec {
@@ -84,6 +101,7 @@ export type Block =
   | LogoRowBlock
   | ItemListBlock
   | AccordionBlock
+  | ImageBlock
 
 export type BlockType = Block['blockType']
 

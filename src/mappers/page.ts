@@ -4,6 +4,7 @@ import { ctaBanner } from '@/lib/presets/cta-banner'
 import { faqAccordion } from '@/lib/presets/faq-accordion'
 import { featureGrid } from '@/lib/presets/feature-grid'
 import { heroCentered } from '@/lib/presets/hero-centered'
+import { toImage } from '@/lib/presets/media'
 import { logoWall } from '@/lib/presets/logo-wall'
 import { serviceList } from '@/lib/presets/service-list'
 import type { SectionDefinition } from '@/lib/presets/types'
@@ -29,6 +30,7 @@ const presetMappers = {
       primaryCta: toCallToAction(block.primaryCta),
       secondaryCta: toCallToAction(block.secondaryCta),
       trustBadges: (block.trustBadges ?? []).map((badge) => badge.text).filter(Boolean),
+      image: toImage(block.image),
     }),
 
   benefitsGrid: (block: Extract<SectionBlock, { blockType: 'benefitsGrid' }>) =>
@@ -54,7 +56,10 @@ const presetMappers = {
   logoWall: (block: Extract<SectionBlock, { blockType: 'logoWall' }>) =>
     logoWall({
       heading: block.heading ?? undefined,
-      logos: (block.logos ?? []).map((logo) => logo.name).filter(Boolean),
+      logos: (block.logos ?? []).map((logo) => ({
+        name: logo.name,
+        image: toImage(logo.image),
+      })),
     }),
 
   serviceList: (block: Extract<SectionBlock, { blockType: 'serviceList' }>) =>

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import type { Block, BlockType } from '@/lib/presets/types'
 
 import { AccordionList } from './accordion-block'
+import { ImageMedia } from './image-block'
 import { BadgeRow, ButtonRow, CardGrid, Heading, ItemList, LogoRow, Paragraph } from './blocks'
 
 type BlockRenderers = {
@@ -18,6 +19,7 @@ export const blockRegistry: BlockRenderers = {
   logoRow: LogoRow,
   itemList: ItemList,
   accordion: AccordionList,
+  image: ImageMedia,
 }
 
 export function BlockRenderer({ block }: { block: Block }) {

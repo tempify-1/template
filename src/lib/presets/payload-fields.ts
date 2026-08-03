@@ -2,7 +2,8 @@ import type { Block, Field } from 'payload'
 import type { z } from 'zod'
 
 export interface PayloadFieldHint {
-  type?: 'textarea'
+  type?: 'textarea' | 'upload'
+  relationTo?: string
   label?: string
   description?: string
   singular?: string
@@ -93,6 +94,17 @@ function fieldFor(name: string, raw: z.ZodType, blankable = false): Field {
     ...(hint.hidden ? { hidden: true } : {}),
   }
   const admin = Object.keys(adminEntries).length > 0 ? { admin: adminEntries } : {}
+
+  if (hint.type === 'upload') {
+    return {
+      name,
+      type: 'upload',
+      relationTo: (hint.relationTo ?? 'media') as 'media',
+      label,
+      required,
+      ...admin,
+    }
+  }
 
   if (kind === 'boolean') {
     return { name, type: 'checkbox', label, ...admin }

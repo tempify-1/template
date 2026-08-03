@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { imageArgs } from './media'
 import type { Block, SectionDefinition } from './types'
 
 const callToAction = z
@@ -28,6 +29,7 @@ export const heroCenteredArgs = z.object({
     .array(z.string().min(1))
     .default([])
     .meta({ payload: { singular: 'Badge', plural: 'Badges' } }),
+  image: imageArgs.optional().meta({ payload: { label: 'Hero image' } }),
   minHeight: z.string().optional().meta({ payload: { hidden: true } }),
 })
 
@@ -53,6 +55,10 @@ export function heroCentered(input: HeroCenteredArgs): SectionDefinition {
 
   if (args.trustBadges.length > 0) {
     blocks.push({ blockType: 'badgeRow', badges: args.trustBadges })
+  }
+
+  if (args.image) {
+    blocks.push({ blockType: 'image', ...args.image, priority: true })
   }
 
   return {

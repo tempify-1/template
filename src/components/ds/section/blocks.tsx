@@ -1,3 +1,5 @@
+import Image from 'next/image'
+
 import { Badge } from '@/components/ui/badge'
 import { buttonVariants } from '@/components/ui/button'
 import { iconFor } from '@/lib/icons'
@@ -112,8 +114,18 @@ export function LogoRow({ block }: { block: LogoRowBlock }) {
   return (
     <ul className="ds-row gap-x-10 gap-y-6 opacity-70">
       {block.logos.map((logo, index) => (
-        <li key={`${logo}-${index}`} className="text-lg font-medium tracking-tight text-foreground">
-          {logo}
+        <li key={`${logo.name}-${index}`} className="flex items-center">
+          {logo.image ? (
+            <Image
+              src={logo.image.src}
+              alt={logo.image.alt}
+              width={logo.image.width}
+              height={logo.image.height}
+              className="h-8 w-auto object-contain"
+            />
+          ) : (
+            <span className="text-lg font-medium tracking-tight text-foreground">{logo.name}</span>
+          )}
         </li>
       ))}
     </ul>

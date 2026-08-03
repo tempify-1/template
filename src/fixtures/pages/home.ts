@@ -21,7 +21,7 @@ export const homeSections: SectionDefinition[] = [
 
   logoWall({
     heading: 'Trusted by teams shipping every day',
-    logos: ['Northwind', 'Acme', 'Globex', 'Initech', 'Umbra', 'Vertex'],
+    logos: ['Northwind', 'Acme', 'Globex', 'Initech', 'Umbra', 'Vertex'].map((name) => ({ name })),
   }),
 
   benefitsGrid({
