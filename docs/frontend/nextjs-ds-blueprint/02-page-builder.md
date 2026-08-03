@@ -179,6 +179,13 @@ No per-block animation config — the fixed choreography is why everything looks
 
 ## Mapper boundary
 
+**Revalidation must be best-effort.** CLAUDE.md mandates `afterChange` → `revalidatePath` /
+`revalidateTag`, but `revalidatePath` throws `Invariant: static generation store missing` when
+called outside a Next request scope. Payload's Local API runs in plenty of such places —
+integration tests, seed scripts, the CLI — so a naive hook makes every non-Next write fail, not
+just skip revalidation. Wrap the call so a missing cache scope cannot fail the write, and honour a
+`context.disableRevalidate` flag so callers can opt out explicitly during bulk seeding.
+
 CMS data → `SectionDefinition[]` in the app's `src/mappers/` (per CLAUDE.md rule 3, not
 `lib/mappers/`), never inside DS components. Under decision 3 the mapper's job is narrow: Payload
 stores a preset invocation `{ preset, args }`, so the mapper dispatches to the same preset factory
