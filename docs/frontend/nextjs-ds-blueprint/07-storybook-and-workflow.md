@@ -56,8 +56,9 @@ and `.env*.local` but not `.env.test`.
 `tests/int/test-database.int.spec.ts` asserts the suite is pointed at a `_test` database, so
 pointing tests at development data fails loudly rather than destroying it.
 
-Create the database once: `CREATE DATABASE template_test`. Payload pushes the schema on first
-connect.
+Nothing needs creating by hand. A global setup step (`tests/global-setup.ts`) creates the test
+database if it is missing before either suite runs, and Payload pushes the schema on first connect,
+so a fresh clone can run `pnpm test` immediately.
 
 ### e2e owns the dev server
 
