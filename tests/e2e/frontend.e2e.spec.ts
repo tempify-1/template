@@ -28,13 +28,13 @@ test.describe('Landing page', () => {
     }
   })
 
-  test('renders the hero inside a section landmark with a single h1', async ({ page }) => {
-    await expect(page.locator('main section')).toHaveCount(1)
+  test('renders every Section inside main with exactly one h1 on the page', async ({ page }) => {
+    await expect(page.locator('main section').first()).toBeVisible()
     await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1)
   })
 
   test('stamps a block index on every block wrapper so stagger cannot break', async ({ page }) => {
-    const blocks = page.locator('main section [data-block]')
+    const blocks = page.locator('main section').first().locator('[data-block]')
     await expect(blocks.first()).toBeVisible()
 
     const indexes = await blocks.evaluateAll((nodes) =>
@@ -50,5 +50,28 @@ test.describe('Landing page', () => {
       () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
     )
     expect(overflows).toBe(false)
+  })
+})
+
+test.describe('Grid Presets', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+  })
+
+  test('renders the benefits grid with automatic numbering', async ({ page }) => {
+    await expect(page.getByRole('heading', { name: 'What you get' })).toBeVisible()
+
+    for (const [index, title] of ['Typed page config', 'One vocabulary'].entries()) {
+      await expect(page.getByText(title)).toBeVisible()
+      await expect(page.getByText(String(index + 1).padStart(2, '0'), { exact: true })).toBeVisible()
+    }
+  })
+
+  test('renders the feature grid with a resolved icon per card', async ({ page }) => {
+    await expect(page.getByRole('heading', { name: 'Everything the template already handles' })).toBeVisible()
+
+    const grids = page.locator('.ds-card-grid')
+    await expect(grids).toHaveCount(2)
+    await expect(grids.nth(1).locator('svg')).toHaveCount(6)
   })
 })

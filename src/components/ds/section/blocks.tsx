@@ -1,9 +1,12 @@
 import { Badge } from '@/components/ui/badge'
 import { buttonVariants } from '@/components/ui/button'
+import { iconFor } from '@/lib/icons'
+import { responsiveVars } from '@/lib/presets/types'
 import { cn } from '@/lib/utils'
 import type {
   BadgeRowBlock,
   ButtonRowBlock,
+  CardGridBlock,
   HeadingBlock,
   ParagraphBlock,
 } from '@/lib/presets/types'
@@ -60,6 +63,34 @@ export function ButtonRow({ block }: { block: ButtonRowBlock }) {
         </a>
       ))}
     </div>
+  )
+}
+
+export function CardGrid({ block }: { block: CardGridBlock }) {
+  return (
+    <ul className="ds-card-grid" style={responsiveVars('cards', block.columns ?? { base: 1, sm: 2, lg: 4 })}>
+      {block.cards.map((card, index) => {
+        const Icon = iconFor(card.icon)
+
+        return (
+          <li
+            key={`${card.title}-${index}`}
+            className="flex flex-col gap-2 rounded-lg border border-border bg-card p-5 text-left"
+          >
+            {card.index ? (
+              <span className="text-sm font-medium tabular-nums text-muted-foreground">
+                {card.index}
+              </span>
+            ) : null}
+            {Icon ? <Icon className="size-5 text-primary" aria-hidden /> : null}
+            <h3 className="text-base font-medium text-foreground">{card.title}</h3>
+            {card.description ? (
+              <p className="text-sm text-pretty text-muted-foreground">{card.description}</p>
+            ) : null}
+          </li>
+        )
+      })}
+    </ul>
   )
 }
 

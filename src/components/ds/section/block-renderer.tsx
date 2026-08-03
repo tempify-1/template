@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 
 import type { Block, BlockType } from '@/lib/presets/types'
 
-import { BadgeRow, ButtonRow, Heading, Paragraph } from './blocks'
+import { BadgeRow, ButtonRow, CardGrid, Heading, Paragraph } from './blocks'
 
 type BlockRenderers = {
   [K in BlockType]: (props: { block: Extract<Block, { blockType: K }> }) => ReactNode
@@ -13,6 +13,7 @@ export const blockRegistry: BlockRenderers = {
   paragraph: Paragraph,
   buttonRow: ButtonRow,
   badgeRow: BadgeRow,
+  cardGrid: CardGrid,
 }
 
 export function BlockRenderer({ block }: { block: Block }) {

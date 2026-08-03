@@ -36,7 +36,25 @@ export interface BadgeRowBlock {
   badges: string[]
 }
 
-export type Block = HeadingBlock | ParagraphBlock | ButtonRowBlock | BadgeRowBlock
+export interface CardSpec {
+  title: string
+  description?: string
+  icon?: string
+  index?: string
+}
+
+export interface CardGridBlock {
+  blockType: 'cardGrid'
+  columns?: Responsive<number>
+  cards: CardSpec[]
+}
+
+export type Block =
+  | HeadingBlock
+  | ParagraphBlock
+  | ButtonRowBlock
+  | BadgeRowBlock
+  | CardGridBlock
 
 export type BlockType = Block['blockType']
 

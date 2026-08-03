@@ -1,3 +1,5 @@
+import { benefitsGrid } from '@/lib/presets/benefits-grid'
+import { featureGrid } from '@/lib/presets/feature-grid'
 import { heroCentered } from '@/lib/presets/hero-centered'
 import type { SectionDefinition } from '@/lib/presets/types'
 import type { Page } from '@/payload-types'
@@ -22,6 +24,27 @@ const presetMappers = {
       primaryCta: toCallToAction(block.primaryCta),
       secondaryCta: toCallToAction(block.secondaryCta),
       trustBadges: (block.trustBadges ?? []).map((badge) => badge.text).filter(Boolean),
+    }),
+
+  benefitsGrid: (block: Extract<SectionBlock, { blockType: 'benefitsGrid' }>) =>
+    benefitsGrid({
+      heading: block.heading,
+      subheading: block.subheading ?? undefined,
+      benefits: (block.benefits ?? []).map((benefit) => ({
+        title: benefit.title,
+        description: benefit.description ?? undefined,
+      })),
+    }),
+
+  featureGrid: (block: Extract<SectionBlock, { blockType: 'featureGrid' }>) =>
+    featureGrid({
+      heading: block.heading,
+      subheading: block.subheading ?? undefined,
+      features: (block.features ?? []).map((feature) => ({
+        icon: feature.icon,
+        title: feature.title,
+        description: feature.description ?? undefined,
+      })),
     }),
 } satisfies Record<SectionBlock['blockType'], (block: never) => SectionDefinition>
 
