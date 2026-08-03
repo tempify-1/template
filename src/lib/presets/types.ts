@@ -116,6 +116,11 @@ export interface PersonSpec {
   links?: PersonLinkSpec[]
 }
 
+export interface FormBlock {
+  blockType: 'form'
+  formName: string
+}
+
 export interface PersonGridBlock {
   blockType: 'personGrid'
   people: PersonSpec[]
@@ -134,6 +139,7 @@ export type Block =
   | ImageBlock
   | TestimonialCarouselBlock
   | PersonGridBlock
+  | FormBlock
 
 export type BlockType = Block['blockType']
 

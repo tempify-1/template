@@ -85,3 +85,38 @@ describe('ConfigForm', () => {
     }
   })
 })
+
+describe('two ConfigForms on one page', () => {
+  it('gives each control a document-unique id so labels do not cross forms', () => {
+    render(
+      <>
+        <ConfigForm fields={fields} defaultValues={defaults} onSubmit={vi.fn()} />
+        <ConfigForm fields={fields} defaultValues={defaults} onSubmit={vi.fn()} />
+      </>,
+    )
+
+    const ids = screen.getAllByLabelText('Email').map((input) => input.id)
+
+    expect(ids).toHaveLength(2)
+    expect(ids[0]).not.toBe(ids[1])
+    expect(ids.every(Boolean)).toBe(true)
+  })
+
+  it('points each description at the control in its own form', () => {
+    render(
+      <>
+        <ConfigForm fields={fields} defaultValues={defaults} onSubmit={vi.fn()} />
+        <ConfigForm fields={fields} defaultValues={defaults} onSubmit={vi.fn()} />
+      </>,
+    )
+
+    const describedBy = screen
+      .getAllByLabelText('Your name')
+      .map((input) => input.getAttribute('aria-describedby'))
+
+    expect(describedBy[0]).not.toBe(describedBy[1])
+    for (const id of describedBy) {
+      expect(document.getElementById(id!)?.textContent).toBe('As you would like it read')
+    }
+  })
+})
