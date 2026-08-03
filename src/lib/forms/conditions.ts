@@ -1,9 +1,27 @@
-import type { Condition, FieldConfig, FormValues } from './types'
+import { getAtPath } from './paths'
+import { inputFields, type Condition, type FieldConfig, type FormValues } from './types'
+
+export function assertConditionTargetsExist(fields: FieldConfig[]): void {
+  const known = new Set(inputFields(fields).map((field) => field.name))
+
+  for (const field of fields) {
+    for (const [kind, condition] of [
+      ['showWhen', field.showWhen],
+      ['requiredWhen', field.requiredWhen],
+    ] as const) {
+      if (condition && !known.has(condition.field)) {
+        throw new Error(
+          `Field "${field.name}" has a ${kind} condition targeting "${condition.field}", which is not a field in this form. Known fields: ${[...known].join(', ')}`,
+        )
+      }
+    }
+  }
+}
 
 export function conditionHolds(condition: Condition | undefined, values: FormValues): boolean {
   if (!condition) return true
 
-  const value = values[condition.field]
+  const value = getAtPath(values, condition.field)
 
   if ('notEmpty' in condition) {
     if (typeof value === 'boolean') return value

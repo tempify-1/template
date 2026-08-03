@@ -1,36 +1,47 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useMemo } from 'react'
 import { useForm, Controller, type SubmitHandler } from 'react-hook-form'
 
 import { Button } from '@/components/ui/button'
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from '@/components/ui/field'
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { isVisible } from '@/lib/forms/conditions'
+import { getAtPath } from '@/lib/forms/paths'
+import { emptyValues } from '@/lib/forms/resolvers'
 import { buildSchema } from '@/lib/forms/schema-builder'
-import { isInputField, type FieldConfig, type FormValues } from '@/lib/forms/types'
+import { inputFields, type FieldConfig, type FormValues } from '@/lib/forms/types'
 
 import { fieldRegistry } from './field-registry'
 
 export interface ConfigFormProps {
   fields: FieldConfig[]
-  defaultValues: FormValues
+  defaultValues?: FormValues
   onSubmit: (values: FormValues) => void | Promise<void>
   submitLabel?: string
 }
 
+function errorMessageAt(errors: unknown, name: string): string | undefined {
+  const entry = getAtPath(errors, name)
+  if (entry && typeof entry === 'object' && 'message' in entry) {
+    const message = (entry as { message?: unknown }).message
+    if (typeof message === 'string') return message
+  }
+  return undefined
+}
+
 export function ConfigForm({ fields, defaultValues, onSubmit, submitLabel }: ConfigFormProps) {
-  const schema = buildSchema(fields)
+  const schema = useMemo(() => buildSchema(fields), [fields])
+  const seeded = useMemo(
+    () => ({ ...emptyValues(fields), ...(defaultValues ?? {}) }),
+    [fields, defaultValues],
+  )
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues,
+    defaultValues: seeded,
     mode: 'onSubmit',
+    shouldUnregister: true,
   })
 
   const values = form.watch()
@@ -43,13 +54,13 @@ export function ConfigForm({ fields, defaultValues, onSubmit, submitLabel }: Con
   return (
     <form onSubmit={form.handleSubmit(handle)} noValidate>
       <FieldGroup>
-        {fields.filter(isInputField).map((config) => {
+        {inputFields(fields).map((config) => {
           if (!isVisible(config, values)) return null
 
           const Control = fieldRegistry[config.type as keyof typeof fieldRegistry]
           if (!Control) return null
 
-          const error = form.formState.errors[config.name]
+          const message = errorMessageAt(form.formState.errors, config.name)
           const describedBy = config.description ? `${config.name}-description` : undefined
 
           return (
@@ -58,11 +69,12 @@ export function ConfigForm({ fields, defaultValues, onSubmit, submitLabel }: Con
               <Controller
                 control={form.control}
                 name={config.name}
+                defaultValue={getAtPath(seeded, config.name) as never}
                 render={({ field }) => (
                   <Control
                     config={config}
                     field={field}
-                    invalid={Boolean(error)}
+                    invalid={Boolean(message)}
                     describedBy={describedBy}
                   />
                 )}
@@ -70,7 +82,7 @@ export function ConfigForm({ fields, defaultValues, onSubmit, submitLabel }: Con
               {config.description ? (
                 <FieldDescription id={describedBy}>{config.description}</FieldDescription>
               ) : null}
-              {error ? <FieldError>{String(error.message)}</FieldError> : null}
+              {message ? <FieldError>{message}</FieldError> : null}
             </Field>
           )
         })}

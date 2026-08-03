@@ -3,6 +3,23 @@ import type { CollectionConfig } from 'payload'
 import { authenticated, authenticatedOrPublished } from '../access'
 import { HeroCenteredBlock } from './blocks/hero-centered'
 
+function pathForSlug(slug: unknown): string | null {
+  if (typeof slug !== 'string' || slug.length === 0) return null
+  return slug === 'home' ? '/' : `/${slug}`
+}
+
+async function revalidate(paths: (string | null)[]): Promise<void> {
+  const unique = [...new Set(paths.filter((path): path is string => path !== null))]
+  if (unique.length === 0) return
+
+  try {
+    const { revalidatePath } = await import('next/cache')
+    for (const path of unique) revalidatePath(path)
+  } catch {
+    return
+  }
+}
+
 export const Pages: CollectionConfig = {
   slug: 'pages',
   admin: {
@@ -41,16 +58,19 @@ export const Pages: CollectionConfig = {
   ],
   hooks: {
     afterChange: [
+      async ({ doc, previousDoc, context }) => {
+        if (context?.disableRevalidate) return doc
+        if (doc._status !== 'published' && previousDoc?._status !== 'published') return doc
+
+        await revalidate([pathForSlug(doc.slug), pathForSlug(previousDoc?.slug)])
+        return doc
+      },
+    ],
+    afterDelete: [
       async ({ doc, context }) => {
         if (context?.disableRevalidate) return doc
 
-        const path = doc.slug === 'home' ? '/' : `/${doc.slug}`
-        try {
-          const { revalidatePath } = await import('next/cache')
-          revalidatePath(path)
-        } catch {
-          return doc
-        }
+        await revalidate([pathForSlug(doc.slug)])
         return doc
       },
     ],

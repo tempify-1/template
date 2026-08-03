@@ -6,6 +6,12 @@ import { defineConfig, devices } from '@playwright/test'
  */
 import 'dotenv/config'
 
+import { applyTestDatabaseUrl } from './tests/helpers/test-database'
+
+const DATABASE_URL = applyTestDatabaseUrl()
+const PORT = process.env.E2E_PORT ?? '3001'
+const BASE_URL = `http://localhost:${PORT}`
+
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
@@ -21,7 +27,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: 'http://localhost:3000',
+    baseURL: BASE_URL,
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
@@ -33,8 +39,10 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'pnpm dev',
-    reuseExistingServer: true,
-    url: 'http://localhost:3000',
+    command: `pnpm dev --port ${PORT}`,
+    reuseExistingServer: false,
+    url: BASE_URL,
+    timeout: 180_000,
+    env: { ...process.env, DATABASE_URL, PORT },
   },
 })
