@@ -17,7 +17,10 @@ function byName(fields: Field[], name: string) {
 describe('zod introspection assumptions', () => {
   it('still exposes the internals the generator walks', () => {
     const object = z.object({ a: z.string().min(1) })
-    const array = z.array(z.object({ b: z.string() })).min(1).max(3)
+    const array = z
+      .array(z.object({ b: z.string() }))
+      .min(1)
+      .max(3)
     const enumeration = z.enum(['one', 'two'])
 
     expect((object as never as { def: Record<string, unknown> }).def.shape).toBeDefined()
@@ -49,9 +52,7 @@ describe('required-ness follows optionality, not constraints', () => {
   })
 
   it('keeps array rows required even when the array itself is optional', () => {
-    const fields = fieldsFromSchema(
-      z.object({ tags: z.array(z.string().min(1)).default([]) }),
-    )
+    const fields = fieldsFromSchema(z.object({ tags: z.array(z.string().min(1)).default([]) }))
 
     const rows = byName(fields, 'tags').fields as Field[]
     expect(byName(rows, 'text')).toMatchObject({ required: true })

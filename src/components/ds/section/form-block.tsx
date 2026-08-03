@@ -9,9 +9,7 @@ import type { FormValues } from '@/lib/forms/types'
 import type { FormBlock as FormBlockSpec } from '@/lib/presets/types'
 
 type Status =
-  | { state: 'idle' }
-  | { state: 'ok'; message: string }
-  | { state: 'error'; message: string }
+  { state: 'idle' } | { state: 'ok'; message: string } | { state: 'error'; message: string }
 
 const UNREACHABLE = 'We could not reach the server. Please check your connection and try again.'
 

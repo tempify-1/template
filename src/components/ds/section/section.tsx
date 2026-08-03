@@ -17,6 +17,7 @@ export function Section({ definition }: { definition: SectionDefinition }) {
       className="ds-section bg-background text-foreground"
       style={style}
       data-gutter={definition.gutter}
+      data-theme={definition.theme}
     >
       <div className="ds-grid">
         {(definition.columns ?? []).map((column, index) => (

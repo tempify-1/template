@@ -215,7 +215,10 @@ describe('a page authored with an image round-trips through the Local API', () =
 describe('arrays of media', () => {
   it('generates upload rows rather than raw url fields', () => {
     const fields = fieldsFromSchema(z.object({ gallery: z.array(imageArgs) }))
-    const rows = (byName(fields, 'gallery').fields as Field[])[0] as never as Record<string, unknown>
+    const rows = (byName(fields, 'gallery').fields as Field[])[0] as never as Record<
+      string,
+      unknown
+    >
 
     expect(rows).toMatchObject({ type: 'upload', relationTo: 'media' })
   })

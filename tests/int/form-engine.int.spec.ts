@@ -9,8 +9,19 @@ const contact: FieldConfig[] = [
   { name: 'name', type: 'text', label: 'Name', required: true },
   { name: 'email', type: 'email', label: 'Email', required: true },
   { name: 'topic', type: 'select', label: 'Topic', options: [{ label: 'Sales', value: 'sales' }] },
-  { name: 'budget', type: 'text', label: 'Budget', required: true, showWhen: { field: 'topic', equals: 'sales' } },
-  { name: 'message', type: 'textarea', label: 'Message', requiredWhen: { field: 'name', notEmpty: true } },
+  {
+    name: 'budget',
+    type: 'text',
+    label: 'Budget',
+    required: true,
+    showWhen: { field: 'topic', equals: 'sales' },
+  },
+  {
+    name: 'message',
+    type: 'textarea',
+    label: 'Message',
+    requiredWhen: { field: 'name', notEmpty: true },
+  },
   { name: 'consent', type: 'checkbox', label: 'Consent' },
   { name: 'submit', type: 'submit', label: 'Send' },
 ]
@@ -28,7 +39,12 @@ describe('schema builder', () => {
   })
 
   it('does not require a field whose showWhen condition is false', () => {
-    const result = buildSchema(contact).safeParse({ ...base, name: 'Ada', email: 'a@b.com', message: 'hi' })
+    const result = buildSchema(contact).safeParse({
+      ...base,
+      name: 'Ada',
+      email: 'a@b.com',
+      message: 'hi',
+    })
 
     expect(result.success).toBe(true)
   })
@@ -55,7 +71,12 @@ describe('schema builder', () => {
   })
 
   it('rejects a malformed email but only when one was supplied', () => {
-    const bad = buildSchema(contact).safeParse({ ...base, name: 'Ada', email: 'nope', message: 'hi' })
+    const bad = buildSchema(contact).safeParse({
+      ...base,
+      name: 'Ada',
+      email: 'nope',
+      message: 'hi',
+    })
     expect(bad.error!.issues.some((i) => i.message === 'Enter a valid email address')).toBe(true)
   })
 
@@ -72,7 +93,12 @@ describe('schema builder', () => {
   })
 
   it('ignores submit fields when building the shape', () => {
-    const result = buildSchema(contact).safeParse({ ...base, name: 'Ada', email: 'a@b.com', message: 'hi' })
+    const result = buildSchema(contact).safeParse({
+      ...base,
+      name: 'Ada',
+      email: 'a@b.com',
+      message: 'hi',
+    })
 
     expect(result.success).toBe(true)
     expect(Object.keys(result.data!)).not.toContain('submit')

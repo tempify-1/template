@@ -11,6 +11,7 @@ import { logoWall, logoWallArgs } from './logo-wall'
 import { newsletter, newsletterArgs } from './newsletter'
 import { blockFromSchema } from './payload-fields'
 import { serviceList, serviceListArgs } from './service-list'
+import { themeArgs } from './theme'
 import { teamGrid, teamGridArgs } from './team-grid'
 import { testimonialCarousel, testimonialCarouselArgs } from './testimonial-carousel'
 
@@ -91,11 +92,17 @@ export const presetRegistry = {
 
 export type PresetName = keyof typeof presetRegistry
 
+export function presetBlockSchema<S extends { extend: (shape: typeof themeArgs) => unknown }>(
+  schema: S,
+) {
+  return schema.extend(themeArgs) as ReturnType<S['extend']>
+}
+
 export function presetBlocks(): Block[] {
   return Object.entries(presetRegistry).map(([slug, entry]) =>
     blockFromSchema({
       slug,
-      schema: entry.schema,
+      schema: presetBlockSchema(entry.schema) as never,
       singular: entry.singular,
       plural: entry.plural,
     }),

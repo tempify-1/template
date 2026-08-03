@@ -8,7 +8,14 @@ import type { FieldConfig } from '@/lib/forms/types'
 
 describe('length constraints respect visibility', () => {
   const fields: FieldConfig[] = [
-    { name: 'topic', type: 'select', options: [{ label: 'Sales', value: 'sales' }, { label: 'Other', value: 'other' }] },
+    {
+      name: 'topic',
+      type: 'select',
+      options: [
+        { label: 'Sales', value: 'sales' },
+        { label: 'Other', value: 'other' },
+      ],
+    },
     { name: 'reason', type: 'textarea', min: 10, showWhen: { field: 'topic', equals: 'other' } },
   ]
 
@@ -77,7 +84,12 @@ describe('condition targets are validated', () => {
     expect(() =>
       buildSchema([
         { name: 'planType', type: 'text' },
-        { name: 'consent', type: 'checkbox', required: true, showWhen: { field: 'plan_type', equals: 'pro' } },
+        {
+          name: 'consent',
+          type: 'checkbox',
+          required: true,
+          showWhen: { field: 'plan_type', equals: 'pro' },
+        },
       ]),
     ).toThrow(/plan_type/)
   })

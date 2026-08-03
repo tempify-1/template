@@ -9,7 +9,10 @@ export const benefitsGridArgs = z.object({
     .array(
       z.object({
         title: z.string().min(1),
-        description: z.string().optional().meta({ payload: { type: 'textarea' } }),
+        description: z
+          .string()
+          .optional()
+          .meta({ payload: { type: 'textarea' } }),
       }),
     )
     .min(1)

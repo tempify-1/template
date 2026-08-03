@@ -4,7 +4,10 @@ import type { Block, SectionDefinition } from './types'
 
 export const communityArgs = z.object({
   heading: z.string().min(1),
-  body: z.string().optional().meta({ payload: { type: 'textarea' } }),
+  body: z
+    .string()
+    .optional()
+    .meta({ payload: { type: 'textarea' } }),
   cta: z
     .object({
       label: z.string().min(1),

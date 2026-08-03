@@ -11,6 +11,7 @@ import { newsletter } from '@/lib/presets/newsletter'
 import { serviceList } from '@/lib/presets/service-list'
 import { teamGrid } from '@/lib/presets/team-grid'
 import { testimonialCarousel } from '@/lib/presets/testimonial-carousel'
+import { isSectionTheme } from '@/lib/presets/theme'
 import type { SectionDefinition } from '@/lib/presets/types'
 import type { Page } from '@/payload-types'
 
@@ -195,7 +196,10 @@ export function mapPageResult(page: Pick<Page, 'sections'>): MapPageResult {
     }
 
     try {
-      sections.push(map(block, (reason) => warnings.push({ blockType: block.blockType, reason })))
+      const section = map(block, (reason) => warnings.push({ blockType: block.blockType, reason }))
+      const theme = (block as { theme?: unknown }).theme
+
+      sections.push(isSectionTheme(theme) ? { ...section, theme } : section)
     } catch (error) {
       skipped.push({
         blockType: block.blockType,

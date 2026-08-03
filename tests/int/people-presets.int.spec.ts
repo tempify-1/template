@@ -4,7 +4,12 @@ import { presetBlocks } from '@/lib/presets/registry'
 import { teamGrid } from '@/lib/presets/team-grid'
 import { testimonialCarousel } from '@/lib/presets/testimonial-carousel'
 import { mapPageResult } from '@/mappers/page'
-import type { Block, PersonGridBlock, SectionDefinition, TestimonialCarouselBlock } from '@/lib/presets/types'
+import type {
+  Block,
+  PersonGridBlock,
+  SectionDefinition,
+  TestimonialCarouselBlock,
+} from '@/lib/presets/types'
 import type { Field } from 'payload'
 
 function blockOf<T extends Block['blockType']>(section: SectionDefinition, type: T) {
@@ -174,7 +179,10 @@ describe('mapper dispatch for both Presets', () => {
         {
           blockType: 'teamGrid',
           heading: 'Team',
-          members: [{ name: 'Half', role: '' }, { name: 'Tom', role: 'Design' }],
+          members: [
+            { name: 'Half', role: '' },
+            { name: 'Tom', role: 'Design' },
+          ],
         },
       ],
     } as never)
@@ -188,7 +196,10 @@ describe('mapper dispatch for both Presets', () => {
         {
           blockType: 'testimonialCarousel',
           heading: 'Quotes',
-          testimonials: [{ quote: '   ', name: 'A' }, { quote: 'Real', name: 'B' }],
+          testimonials: [
+            { quote: '   ', name: 'A' },
+            { quote: 'Real', name: 'B' },
+          ],
         },
       ],
     } as never)
@@ -210,9 +221,7 @@ describe('mapper dispatch for both Presets', () => {
         {
           blockType: 'teamGrid',
           heading: 'Team',
-          members: [
-            { name: 'Tom', role: 'Design', links: [{ label: 'Profile', href: '' }] },
-          ],
+          members: [{ name: 'Tom', role: 'Design', links: [{ label: 'Profile', href: '' }] }],
         },
       ],
     } as never)

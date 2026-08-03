@@ -9,9 +9,7 @@ test.describe('Landing page', () => {
     const heading = page.getByRole('heading', { level: 1 })
     await expect(heading).toHaveText('Build your site at the speed of thought')
 
-    await expect(
-      page.getByText('Compose pages from typed presets', { exact: false }),
-    ).toBeVisible()
+    await expect(page.getByText('Compose pages from typed presets', { exact: false })).toBeVisible()
   })
 
   test('renders both calls to action as unique links across the whole page', async ({ page }) => {
@@ -67,12 +65,16 @@ test.describe('Grid Presets', () => {
 
     for (const [index, title] of ['Typed page config', 'One vocabulary'].entries()) {
       await expect(page.getByText(title)).toBeVisible()
-      await expect(page.getByText(String(index + 1).padStart(2, '0'), { exact: true })).toBeVisible()
+      await expect(
+        page.getByText(String(index + 1).padStart(2, '0'), { exact: true }),
+      ).toBeVisible()
     }
   })
 
   test('renders the feature grid with a resolved icon per card', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: 'Everything the template already handles' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Everything the template already handles' }),
+    ).toBeVisible()
 
     const featureGrid = page.locator('.ds-card-grid').nth(1)
     await expect(featureGrid.locator('svg')).toHaveCount(6)
@@ -97,14 +99,18 @@ test.describe('Card-based Presets', () => {
   })
 
   test('FAQ accordion is keyboard navigable and announces expanded state', async ({ page }) => {
-    const trigger = page.getByRole('button', { name: 'Can editors build pages without a developer?' })
+    const trigger = page.getByRole('button', {
+      name: 'Can editors build pages without a developer?',
+    })
 
     await expect(trigger).toHaveAttribute('aria-expanded', 'false')
 
     await trigger.focus()
     await page.keyboard.press('Enter')
     await expect(trigger).toHaveAttribute('aria-expanded', 'true')
-    await expect(page.getByText('Every preset a developer can call', { exact: false })).toBeVisible()
+    await expect(
+      page.getByText('Every preset a developer can call', { exact: false }),
+    ).toBeVisible()
 
     await page.keyboard.press('Enter')
     await expect(trigger).toHaveAttribute('aria-expanded', 'false')

@@ -12,7 +12,10 @@ const callToAction = z
 
 export const heroCenteredArgs = z.object({
   heading: z.string().min(1),
-  subheading: z.string().optional().meta({ payload: { type: 'textarea' } }),
+  subheading: z
+    .string()
+    .optional()
+    .meta({ payload: { type: 'textarea' } }),
   primaryCta: callToAction.meta({
     payload: {
       label: 'Primary call to action',
@@ -30,7 +33,10 @@ export const heroCenteredArgs = z.object({
     .default([])
     .meta({ payload: { singular: 'Badge', plural: 'Badges' } }),
   image: imageArgs.optional().meta({ payload: { label: 'Hero image' } }),
-  minHeight: z.string().optional().meta({ payload: { hidden: true } }),
+  minHeight: z
+    .string()
+    .optional()
+    .meta({ payload: { hidden: true } }),
 })
 
 export type HeroCenteredArgs = z.input<typeof heroCenteredArgs>

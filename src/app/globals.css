@@ -1,7 +1,8 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
-@import "../components/ds/section/section-grid.css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@import '../components/ds/section/section-grid.css';
+@import '../components/ds/section/section-themes.css';
 
 @custom-variant dark (&:is(.dark *));
 

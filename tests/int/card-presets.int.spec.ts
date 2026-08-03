@@ -19,7 +19,10 @@ function blockOf<T extends Block['blockType']>(section: SectionDefinition, type:
 
 describe('logoWall', () => {
   it('renders logos as a row and emits the heading as a real heading element', () => {
-    const withHeading = logoWall({ heading: 'Trusted by', logos: [{ name: 'Acme' }, { name: 'Globex' }] })
+    const withHeading = logoWall({
+      heading: 'Trusted by',
+      logos: [{ name: 'Acme' }, { name: 'Globex' }],
+    })
 
     expect(blockOf(withHeading, 'logoRow').logos.map((l) => l.name)).toEqual(['Acme', 'Globex'])
     expect(blockOf(withHeading, 'heading')).toMatchObject({ level: 2, text: 'Trusted by' })
@@ -38,10 +41,7 @@ describe('serviceList', () => {
   it('carries an optional badge per service', () => {
     const section = serviceList({
       heading: 'Services',
-      services: [
-        { title: 'Review', description: 'A read', badge: 'Pro' },
-        { title: 'Support' },
-      ],
+      services: [{ title: 'Review', description: 'A read', badge: 'Pro' }, { title: 'Support' }],
     })
 
     const items = blockOf(section, 'itemList').items
@@ -96,13 +96,7 @@ describe('the generator covers every Preset without a hand-written block', () =>
 
     expect(blocks).toHaveLength(Object.keys(presetRegistry).length)
     expect(blocks.map((b) => b.slug)).toEqual(
-      expect.arrayContaining([
-        'logoWall',
-        'serviceList',
-        'ctaBanner',
-        'community',
-        'faqAccordion',
-      ]),
+      expect.arrayContaining(['logoWall', 'serviceList', 'ctaBanner', 'community', 'faqAccordion']),
     )
   })
 
