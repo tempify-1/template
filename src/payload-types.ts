@@ -178,6 +178,8 @@ export interface Page {
         | BenefitsGridBlock
         | FeatureGridBlock
         | ServiceListBlock
+        | TestimonialCarouselBlock
+        | TeamGridBlock
         | CtaBannerBlock
         | CommunityBlock
         | FaqAccordionBlock
@@ -303,6 +305,48 @@ export interface ServiceListBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'serviceList';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TestimonialCarouselBlock".
+ */
+export interface TestimonialCarouselBlock {
+  heading: string;
+  subheading?: string | null;
+  testimonials: {
+    quote: string;
+    name: string;
+    title?: string | null;
+    image?: (number | null) | Media;
+    id?: string | null;
+  }[];
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'testimonialCarousel';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TeamGridBlock".
+ */
+export interface TeamGridBlock {
+  heading: string;
+  subheading?: string | null;
+  members: {
+    name: string;
+    role: string;
+    image?: (number | null) | Media;
+    links?:
+      | {
+          label: string;
+          href: string;
+          id?: string | null;
+        }[]
+      | null;
+    id?: string | null;
+  }[];
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'teamGrid';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -496,6 +540,8 @@ export interface PagesSelect<T extends boolean = true> {
         benefitsGrid?: T | BenefitsGridBlockSelect<T>;
         featureGrid?: T | FeatureGridBlockSelect<T>;
         serviceList?: T | ServiceListBlockSelect<T>;
+        testimonialCarousel?: T | TestimonialCarouselBlockSelect<T>;
+        teamGrid?: T | TeamGridBlockSelect<T>;
         ctaBanner?: T | CtaBannerBlockSelect<T>;
         community?: T | CommunityBlockSelect<T>;
         faqAccordion?: T | FaqAccordionBlockSelect<T>;
@@ -598,6 +644,50 @@ export interface ServiceListBlockSelect<T extends boolean = true> {
         title?: T;
         description?: T;
         badge?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TestimonialCarouselBlock_select".
+ */
+export interface TestimonialCarouselBlockSelect<T extends boolean = true> {
+  heading?: T;
+  subheading?: T;
+  testimonials?:
+    | T
+    | {
+        quote?: T;
+        name?: T;
+        title?: T;
+        image?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TeamGridBlock_select".
+ */
+export interface TeamGridBlockSelect<T extends boolean = true> {
+  heading?: T;
+  subheading?: T;
+  members?:
+    | T
+    | {
+        name?: T;
+        role?: T;
+        image?: T;
+        links?:
+          | T
+          | {
+              label?: T;
+              href?: T;
+              id?: T;
+            };
         id?: T;
       };
   id?: T;

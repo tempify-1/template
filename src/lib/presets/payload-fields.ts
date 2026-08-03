@@ -10,6 +10,7 @@ export interface PayloadFieldHint {
   plural?: string
   itemField?: string
   hidden?: boolean
+  minRows?: number
 }
 
 const WRAPPER_KINDS = new Set(['optional', 'nullable', 'default', 'nullish', 'catch', 'readonly'])
@@ -159,7 +160,7 @@ function fieldFor(name: string, raw: z.ZodType, blankable = false): Field {
   if (kind === 'array') {
     const rawElement = def(schema).element as z.ZodType
     const element = unwrap(rawElement).schema
-    const minRows = boundOf(schema, 'min_length')
+    const minRows = hint.minRows ?? boundOf(schema, 'min_length')
     const maxRows = boundOf(schema, 'max_length')
     const elementHint = { ...hintFor(element), ...hintFor(rawElement) }
     const isObjectElement =

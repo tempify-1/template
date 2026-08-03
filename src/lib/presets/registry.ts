@@ -9,6 +9,8 @@ import { heroCentered, heroCenteredArgs } from './hero-centered'
 import { logoWall, logoWallArgs } from './logo-wall'
 import { blockFromSchema } from './payload-fields'
 import { serviceList, serviceListArgs } from './service-list'
+import { teamGrid, teamGridArgs } from './team-grid'
+import { testimonialCarousel, testimonialCarouselArgs } from './testimonial-carousel'
 
 export const presetRegistry = {
   heroCentered: {
@@ -40,6 +42,18 @@ export const presetRegistry = {
     factory: serviceList,
     singular: 'Service list',
     plural: 'Service lists',
+  },
+  testimonialCarousel: {
+    schema: testimonialCarouselArgs,
+    factory: testimonialCarousel,
+    singular: 'Testimonial carousel',
+    plural: 'Testimonial carousels',
+  },
+  teamGrid: {
+    schema: teamGridArgs,
+    factory: teamGrid,
+    singular: 'Team grid',
+    plural: 'Team grids',
   },
   ctaBanner: {
     schema: ctaBannerArgs,

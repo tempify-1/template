@@ -6,6 +6,8 @@ import { featureGrid } from '@/lib/presets/feature-grid'
 import { heroCentered } from '@/lib/presets/hero-centered'
 import { logoWall } from '@/lib/presets/logo-wall'
 import { serviceList } from '@/lib/presets/service-list'
+import { teamGrid } from '@/lib/presets/team-grid'
+import { testimonialCarousel } from '@/lib/presets/testimonial-carousel'
 import type { SectionDefinition } from '@/lib/presets/types'
 
 export const homeSections: SectionDefinition[] = [
@@ -56,6 +58,42 @@ export const homeSections: SectionDefinition[] = [
       { title: 'Design system audit', description: 'Token, component and accessibility pass against your brand.', badge: 'Pro' },
       { title: 'Migration support', description: 'Move an existing site onto the preset model without a rewrite.' },
       { title: 'Ongoing maintenance', description: 'Dependency and upstream shadcn updates handled for you.' },
+    ],
+  }),
+
+  testimonialCarousel({
+    heading: 'Loved by the teams using it',
+    subheading: 'What people say after their first project on the template.',
+    testimonials: [
+      {
+        quote:
+          'We had a marketing site in front of stakeholders on day two, and the editors never once asked us to change a layout for them.',
+        name: 'Priya Raman',
+        title: 'Head of Engineering, Northwind',
+      },
+      {
+        quote:
+          'The generated admin panel is the part that sold it. Nobody maintains a second schema, so nothing drifts.',
+        name: 'Tom Beckett',
+        title: 'Technical Director, Globex',
+      },
+      {
+        quote:
+          'Our designers stopped filing tickets to fix off-brand pages, because the presets simply do not allow them.',
+        name: 'Sofia Almeida',
+        title: 'Design Lead, Initech',
+      },
+    ],
+  }),
+
+  teamGrid({
+    heading: 'The people behind it',
+    subheading: 'A small team that ships and answers its own support.',
+    members: [
+      { name: 'Priya Raman', role: 'Engineering', links: [{ label: 'Profile', href: '/team/priya' }] },
+      { name: 'Tom Beckett', role: 'Design', links: [{ label: 'Profile', href: '/team/tom' }] },
+      { name: 'Sofia Almeida', role: 'Product', links: [{ label: 'Profile', href: '/team/sofia' }] },
+      { name: 'Ade Okonkwo', role: 'Support', links: [{ label: 'Profile', href: '/team/ade' }] },
     ],
   }),
 

@@ -7,6 +7,7 @@ import { responsiveVars } from '@/lib/presets/types'
 import { cn } from '@/lib/utils'
 import type {
   BadgeRowBlock,
+  PersonGridBlock,
   ButtonRowBlock,
   CardGridBlock,
   HeadingBlock,
@@ -72,7 +73,10 @@ export function ButtonRow({ block }: { block: ButtonRowBlock }) {
 
 export function CardGrid({ block }: { block: CardGridBlock }) {
   return (
-    <ul className="ds-card-grid" style={responsiveVars('cards', block.columns ?? { base: 1, sm: 2, lg: 4 })}>
+    <ul
+      className="ds-card-grid"
+      style={responsiveVars('cards', block.columns ?? { base: 1, sm: 2, lg: 4 })}
+    >
       {block.cards.map((card, index) => {
         const Icon = iconFor(card.icon)
 
@@ -147,6 +151,51 @@ export function ItemList({ block }: { block: ItemListBlock }) {
           </div>
           {item.description ? (
             <p className="text-sm text-pretty text-muted-foreground">{item.description}</p>
+          ) : null}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+export function PersonGrid({ block }: { block: PersonGridBlock }) {
+  return (
+    <ul
+      className="ds-card-grid"
+      style={responsiveVars('cards', block.columns ?? { base: 1, sm: 2, lg: 4 })}
+    >
+      {block.people.map((person, index) => (
+        <li
+          key={`${person.name}-${index}`}
+          className="flex flex-col items-center gap-3 rounded-lg border border-border bg-card p-5 text-center"
+        >
+          {person.image ? (
+            <Image
+              src={person.image.src}
+              alt={person.image.alt}
+              width={person.image.width}
+              height={person.image.height}
+              className="size-24 rounded-full object-cover"
+            />
+          ) : null}
+          <span className="flex flex-col gap-0.5">
+            <h3 className="text-base font-medium text-foreground">{person.name}</h3>
+            <span className="text-sm text-muted-foreground">{person.role}</span>
+          </span>
+          {person.links && person.links.length > 0 ? (
+            <ul className="ds-row gap-3">
+              {person.links.map((link) => (
+                <li key={link.href}>
+                  <a
+                    href={link.href}
+                    aria-label={`${link.label} — ${person.name}`}
+                    className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
           ) : null}
         </li>
       ))}

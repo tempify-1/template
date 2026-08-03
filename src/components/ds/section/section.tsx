@@ -13,7 +13,11 @@ export function Section({ definition }: { definition: SectionDefinition }) {
   } as CSSProperties
 
   return (
-    <Tag className="ds-section bg-background text-foreground" style={style} data-gutter={definition.gutter}>
+    <Tag
+      className="ds-section bg-background text-foreground"
+      style={style}
+      data-gutter={definition.gutter}
+    >
       <div className="ds-grid">
         {(definition.columns ?? []).map((column, index) => (
           <Column key={index} definition={column} index={index} />
