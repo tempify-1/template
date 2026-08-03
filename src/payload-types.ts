@@ -439,6 +439,9 @@ export interface FaqAccordionBlock {
  */
 export interface FormSubmission {
   id: number;
+  /**
+   * One of: contact, newsletter
+   */
   form: string;
   summary?: string | null;
   data:

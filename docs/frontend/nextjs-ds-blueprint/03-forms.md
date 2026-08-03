@@ -209,8 +209,14 @@ Client-side validation is a convenience; a form post is an anonymous HTTP reques
 treats it as one. Failure returns a message the visitor sees rather than throwing — a swallowed
 error reads to a visitor as a form that does nothing.
 
-Submissions land in the `form-submissions` collection: public `create`, authenticated everything
-else. `create: () => true` is deliberate and is the one open access rule in the project.
+Submissions land in the `form-submissions` collection, whose `create` access is `() => false`.
+Payload generates a REST/GraphQL endpoint for every collection, so a public `create` rule would
+let anyone POST straight to `/api/form-submissions` with an arbitrary `form` name and arbitrary
+JSON — the action's zod re-validation would not be a boundary at all, merely the polite path in.
+The action therefore writes with `overrideAccess: true`: it is the only writer, and it has
+already validated. The `form` field additionally validates against `FORM_NAMES`, so a row can
+never name a form that does not exist. It stays a `text` field rather than a `select` because
+forms are code — adding one should not require a database migration.
 
 ## CMS integration
 

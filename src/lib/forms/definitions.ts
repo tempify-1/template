@@ -1,7 +1,6 @@
 import type { FieldConfig } from './types'
 
 export interface FormDefinition {
-  name: string
   fields: FieldConfig[]
   submitLabel: string
   successMessage: string
@@ -9,7 +8,6 @@ export interface FormDefinition {
 }
 
 const contact: FormDefinition = {
-  name: 'contact',
   submitLabel: 'Send message',
   successMessage: 'Thanks — we have your message and will reply shortly.',
   summaryField: 'email',
@@ -29,7 +27,6 @@ const contact: FormDefinition = {
 }
 
 const newsletter: FormDefinition = {
-  name: 'newsletter',
   submitLabel: 'Subscribe',
   successMessage: 'You are on the list. Check your inbox to confirm.',
   summaryField: 'email',
@@ -46,5 +43,5 @@ export type FormName = keyof typeof formDefinitions
 export const FORM_NAMES = Object.keys(formDefinitions) as [FormName, ...FormName[]]
 
 export function isFormName(value: string): value is FormName {
-  return value in formDefinitions
+  return Object.hasOwn(formDefinitions, value)
 }

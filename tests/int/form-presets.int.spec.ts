@@ -5,7 +5,8 @@ import { submitForm } from '@/app/actions/submit-form'
 import { contactForm } from '@/lib/presets/contact-form'
 import { newsletter } from '@/lib/presets/newsletter'
 import { presetBlocks } from '@/lib/presets/registry'
-import { formDefinitions } from '@/lib/forms/definitions'
+import { FORM_NAMES, formDefinitions, isFormName } from '@/lib/forms/definitions'
+import { inputFields } from '@/lib/forms/types'
 import { mapPageResult } from '@/mappers/page'
 import type { Block, FormBlock, SectionDefinition } from '@/lib/presets/types'
 import config from '@/payload.config'
@@ -61,6 +62,23 @@ describe('contactForm and newsletter Presets', () => {
       'contact',
       'newsletter',
     ])
+  })
+})
+
+describe('form definitions', () => {
+  it('names a real field as each form\u2019s submission summary', () => {
+    for (const name of FORM_NAMES) {
+      const definition = formDefinitions[name]
+      const fieldNames = inputFields(definition.fields).map((field) => field.name)
+
+      expect(fieldNames).toContain(definition.summaryField)
+    }
+  })
+
+  it('does not treat an inherited Object key as a form', () => {
+    for (const inherited of ['constructor', 'toString', 'valueOf', 'hasOwnProperty']) {
+      expect(isFormName(inherited)).toBe(false)
+    }
   })
 })
 
@@ -131,6 +149,34 @@ describe('submitForm', () => {
     expect(result.ok).toBe(false)
     const stored = await submissionsFor('bank-details')
     expect(stored.totalDocs).toBe(0)
+  })
+
+  it('returns a message for an inherited Object key rather than throwing out of the action', async () => {
+    for (const inherited of ['constructor', 'toString', '__proto__']) {
+      await expect(submitForm(inherited, { email: 'a@b.com' })).resolves.toMatchObject({
+        ok: false,
+      })
+    }
+  })
+
+  it('refuses an anonymous create, so the action is the only way in', async () => {
+    await expect(
+      payload.create({
+        collection: 'form-submissions',
+        data: { form: 'contact', summary: 'injected', data: { anything: 'at all' } },
+        overrideAccess: false,
+      }),
+    ).rejects.toThrow()
+  })
+
+  it('refuses a submission row naming a form that does not exist', async () => {
+    await expect(
+      payload.create({
+        collection: 'form-submissions',
+        data: { form: 'not-a-real-form', summary: 'x', data: {} },
+        overrideAccess: true,
+      }),
+    ).rejects.toThrow()
   })
 
   it('keeps submissions unreadable without a logged-in user', async () => {

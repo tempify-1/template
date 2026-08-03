@@ -71,13 +71,15 @@ export function ConfigForm({ fields, defaultValues, onSubmit, submitLabel }: Con
 
           const message = errorMessageAt(form.formState.errors, config.name)
           const id = controlId(config.name)
-          const describedBy = config.description ? `${id}-description` : undefined
+          const descriptionId = config.description ? `${id}-description` : undefined
+          const errorId = message ? `${id}-error` : undefined
+          const describedBy = [descriptionId, errorId].filter(Boolean).join(' ') || undefined
 
           const label = config.label ? <FieldLabel htmlFor={id}>{config.label}</FieldLabel> : null
           const description = config.description ? (
-            <FieldDescription id={describedBy}>{config.description}</FieldDescription>
+            <FieldDescription id={descriptionId}>{config.description}</FieldDescription>
           ) : null
-          const error = message ? <FieldError>{message}</FieldError> : null
+          const error = message ? <FieldError id={errorId}>{message}</FieldError> : null
 
           const control = (
             <Controller

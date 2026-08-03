@@ -1,3 +1,5 @@
+import type { FormName } from '@/lib/forms/definitions'
+
 import type { CSSProperties } from 'react'
 
 export const BREAKPOINTS = ['sm', 'md', 'lg', 'xl', '2xl'] as const
@@ -118,7 +120,7 @@ export interface PersonSpec {
 
 export interface FormBlock {
   blockType: 'form'
-  formName: string
+  formName: FormName
 }
 
 export interface PersonGridBlock {

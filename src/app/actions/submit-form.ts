@@ -1,6 +1,6 @@
 'use server'
 
-import { getPayload } from 'payload'
+import { getPayload, type Payload } from 'payload'
 
 import { formDefinitions, isFormName } from '@/lib/forms/definitions'
 import { buildSchema } from '@/lib/forms/schema-builder'
@@ -11,6 +11,8 @@ export interface SubmitResult {
   ok: boolean
   message: string
 }
+
+const UNAVAILABLE = 'We could not record that just now. Please try again in a moment.'
 
 export async function submitForm(formName: string, values: FormValues): Promise<SubmitResult> {
   if (!isFormName(formName)) {
@@ -24,8 +26,15 @@ export async function submitForm(formName: string, values: FormValues): Promise<
     return { ok: false, message: 'Some answers were rejected. Please check the form and try again.' }
   }
 
+  let payload: Payload
   try {
-    const payload = await getPayload({ config: await config })
+    payload = await getPayload({ config: await config })
+  } catch (error) {
+    console.error(`form-submissions: Payload unavailable for "${formName}"`, error)
+    return { ok: false, message: UNAVAILABLE }
+  }
+
+  try {
     const summary = parsed.data[definition.summaryField]
 
     await payload.create({
@@ -35,14 +44,12 @@ export async function submitForm(formName: string, values: FormValues): Promise<
         summary: typeof summary === 'string' ? summary : undefined,
         data: parsed.data,
       },
-      overrideAccess: false,
+      overrideAccess: true,
     })
 
     return { ok: true, message: definition.successMessage }
-  } catch {
-    return {
-      ok: false,
-      message: 'We could not record that just now. Please try again in a moment.',
-    }
+  } catch (error) {
+    payload.logger.error({ err: error, form: formName }, 'form-submissions: create failed')
+    return { ok: false, message: UNAVAILABLE }
   }
 }

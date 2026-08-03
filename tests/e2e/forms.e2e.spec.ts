@@ -14,7 +14,9 @@ test.describe('Newsletter Preset', () => {
     const form = newsletterForm(page)
     await form.getByRole('button', { name: 'Subscribe' }).click()
 
-    await expect(form.locator('[data-field="email"]')).toContainText(/required/i)
+    await expect(form.locator('[data-field="email"] [data-slot="field-error"]')).toHaveText(
+      'Email is required',
+    )
     await expect(page.getByText('You are on the list')).toHaveCount(0)
   })
 
@@ -23,7 +25,9 @@ test.describe('Newsletter Preset', () => {
     await form.getByLabel('Email').fill('not-an-email')
     await form.getByRole('button', { name: 'Subscribe' }).click()
 
-    await expect(form.locator('[data-field="email"]')).toContainText(/email/i)
+    await expect(form.locator('[data-field="email"] [data-slot="field-error"]')).toHaveText(
+      'Enter a valid email address',
+    )
   })
 
   test('confirms a successful subscription in place of the form', async ({ page }) => {
@@ -33,6 +37,7 @@ test.describe('Newsletter Preset', () => {
 
     await expect(page.getByText('You are on the list')).toBeVisible()
     await expect(newsletterForm(page)).toHaveCount(0)
+    await expect(page.locator('p:focus')).toContainText('You are on the list')
   })
 })
 
@@ -51,7 +56,9 @@ test.describe('Contact Preset', () => {
     await form.getByRole('button', { name: 'Send message' }).click()
 
     for (const field of ['name', 'email', 'subject', 'message']) {
-      await expect(form.locator(`[data-field="${field}"]`)).toContainText(/required/i)
+      await expect(form.locator(`[data-field="${field}"] [data-slot="field-error"]`)).toContainText(
+        /is required$/,
+      )
     }
   })
 
