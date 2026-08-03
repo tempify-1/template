@@ -1,14 +1,14 @@
 import { test, expect } from '@playwright/test'
 
-const DASHBOARD = 'http://localhost:3000/dashboard'
-const CHARTS = 'http://localhost:3000/dashboard/charts'
+const DASHBOARD = '/dashboard'
+const CHARTS = '/dashboard/charts'
 
 test.describe('Dashboard', () => {
   test('is reachable without authentication', async ({ page }) => {
     const response = await page.goto(DASHBOARD)
 
     expect(response?.status()).toBe(200)
-    await expect(page).toHaveURL(DASHBOARD)
+    await expect(page).toHaveURL(new RegExp('/dashboard$'))
     await expect(page.getByRole('link', { name: 'Acme Inc.' })).toBeVisible()
   })
 
@@ -38,6 +38,12 @@ test.describe('Dashboard', () => {
     await expect(page.getByRole('button', { name: 'Last 3 months' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Last 7 days' })).toBeVisible()
     await expect(page.locator('.recharts-responsive-container').first()).toBeVisible()
+  })
+
+  test('mounts a toaster so the block toast calls are not dropped', async ({ page }) => {
+    await page.goto(DASHBOARD)
+
+    await expect(page.locator('section[aria-label*="Notifications"]')).toBeAttached()
   })
 
   test('renders the data table with rows from the sample data', async ({ page }) => {
@@ -73,7 +79,7 @@ test.describe('Charts route', () => {
 
 test.describe('Landing page is unaffected by the dashboard shell', () => {
   test('root route still renders the hero and no sidebar', async ({ page }) => {
-    await page.goto('http://localhost:3000')
+    await page.goto('/')
 
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(
       'Build your site at the speed of thought',
