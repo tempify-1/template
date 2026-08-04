@@ -49,23 +49,35 @@ describe('the pricing Preset', () => {
     expect(block.tiers[0]!.cta).toEqual({ label: 'Start', href: '/signup' })
   })
 
-  it('defaults to monthly billing in the dollar, so a minimal config renders', () => {
+  it('defaults to monthly billing in US dollars, so a minimal config renders', () => {
     const block = blockOf(pricing({ heading: 'P', tiers: [tier] }), 'pricingTable')
 
     expect(block.defaultPeriod).toBe('monthly')
-    expect(block.currency).toBe('$')
+    expect(block.currency).toBe('USD')
+    expect(block.locale).toBe('en-US')
   })
 
-  it('refuses a tier with no features, since an empty card sells nothing', () => {
-    expect(() => pricing({ heading: 'P', tiers: [{ ...tier, features: [] }] })).toThrow()
+  it('keeps the Section header when no tier survives, rather than losing the Section', () => {
+    const section = pricing({ heading: 'Still here', tiers: [] })
+
+    expect(blockOf(section, 'heading')).toMatchObject({ text: 'Still here' })
+    expect(blockOf(section, 'pricingTable')).toBeUndefined()
   })
 
-  it('refuses a negative price rather than rendering one', () => {
-    expect(() => pricing({ heading: 'P', tiers: [{ ...tier, monthlyPrice: -1 }] })).toThrow()
-  })
+  it('highlights only the first tier that asks to be highlighted', () => {
+    const block = blockOf(
+      pricing({
+        heading: 'P',
+        tiers: [
+          { ...tier, name: 'A', featured: true },
+          { ...tier, name: 'B', featured: true },
+          { ...tier, name: 'C', featured: true },
+        ],
+      }),
+      'pricingTable',
+    )
 
-  it('refuses a Section with no tiers at all', () => {
-    expect(() => pricing({ heading: 'P', tiers: [] })).toThrow()
+    expect(block.tiers.map((t) => t.featured)).toEqual([true, false, false])
   })
 
   it('marks a tier unfeatured unless it says otherwise', () => {
@@ -170,5 +182,109 @@ describe('the client boundary', () => {
     for (const hook of ['useState', 'useEffect', 'useReducer', 'onClick']) {
       expect(source, hook).not.toContain(hook)
     }
+  })
+})
+
+describe('content an editor can save never deletes the Section', () => {
+  const base = {
+    blockType: 'pricing',
+    heading: 'Pricing',
+    tiers: [
+      {
+        name: 'Starter',
+        monthlyPrice: 29,
+        annualPrice: 290,
+        features: [{ text: 'One site' }],
+        ctaLabel: 'Start',
+        ctaHref: '/signup',
+      },
+    ],
+  }
+
+  function sectionsFrom(overrides: Record<string, unknown>) {
+    return mapPageResult({ sections: [{ ...base, ...overrides }] } as never)
+  }
+
+  it('keeps the Section when the currency was cleared', () => {
+    const { sections, skipped } = sectionsFrom({ currency: '' })
+
+    expect(skipped).toHaveLength(0)
+    expect(blockOf(sections[0]!, 'pricingTable').currency).toBe('USD')
+  })
+
+  it('keeps the Section when the locale was cleared', () => {
+    const { sections, skipped } = sectionsFrom({ locale: '' })
+
+    expect(skipped).toHaveLength(0)
+    expect(blockOf(sections[0]!, 'pricingTable').locale).toBe('en-US')
+  })
+
+  it('keeps the Section when a tier has only whitespace features', () => {
+    const { sections, skipped, warnings } = sectionsFrom({
+      tiers: [{ ...base.tiers[0]!, features: [{ text: '   ' }] }],
+    })
+
+    expect(skipped).toHaveLength(0)
+    expect(blockOf(sections[0]!, 'pricingTable')).toBeUndefined()
+    expect(warnings[0]!.reason).toContain('tier row(s) dropped')
+  })
+
+  it('keeps the Section when every tier is half-filled, as during a live edit', () => {
+    const { sections, skipped } = sectionsFrom({
+      tiers: [
+        {
+          name: 'Draft tier',
+          monthlyPrice: 0,
+          annualPrice: 0,
+          features: [],
+          ctaLabel: '',
+          ctaHref: '',
+        },
+      ],
+    })
+
+    expect(skipped).toHaveLength(0)
+    expect(blockOf(sections[0]!, 'heading')).toMatchObject({ text: 'Pricing' })
+  })
+
+  it('drops a tier with a negative price rather than losing the Section', () => {
+    const { sections, skipped } = sectionsFrom({
+      tiers: [{ ...base.tiers[0]!, name: 'Bad', monthlyPrice: -10 }, base.tiers[0]!],
+    })
+
+    expect(skipped).toHaveLength(0)
+    expect(blockOf(sections[0]!, 'pricingTable').tiers.map((t) => t.name)).toEqual(['Starter'])
+  })
+
+  it('never lets a stored pricing block be skipped, whatever the row content', () => {
+    const nasty = [
+      { currency: '  ' },
+      { locale: 'not-a-locale' },
+      { defaultPeriod: null },
+      { tiers: [] },
+      { tiers: [{ ...base.tiers[0]!, ctaHref: '   ' }] },
+      { tiers: [{ ...base.tiers[0]!, monthlyPrice: -1, annualPrice: -1 }] },
+    ]
+
+    for (const overrides of nasty) {
+      const { skipped } = sectionsFrom(overrides)
+      expect(skipped, JSON.stringify(overrides)).toHaveLength(0)
+    }
+  })
+})
+
+describe('the generated block matches what the Preset accepts', () => {
+  it('stops an editor entering a negative price in the admin', () => {
+    const tiers = byName(presetBlocks().find((b) => b.slug === 'pricing')!.fields, 'tiers')
+
+    expect(byName(tiers.fields as Field[], 'monthlyPrice')).toMatchObject({ min: 0 })
+    expect(byName(tiers.fields as Field[], 'annualPrice')).toMatchObject({ min: 0 })
+  })
+
+  it('asks for at least one tier and at least one feature', () => {
+    const tiers = byName(presetBlocks().find((b) => b.slug === 'pricing')!.fields, 'tiers')
+
+    expect(tiers).toMatchObject({ minRows: 1, required: true })
+    expect(byName(tiers.fields as Field[], 'features')).toMatchObject({ minRows: 1 })
   })
 })

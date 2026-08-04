@@ -55,9 +55,29 @@ test.describe('Pricing Preset', () => {
     await expect(note).toBeVisible()
   })
 
-  test('marks the highlighted tier and only that one', async ({ page }) => {
-    await expect(pricingSection(page).locator('li[data-featured]')).toHaveCount(1)
+  test('marks the highlighted tier in text, not colour alone', async ({ page }) => {
+    await expect(pricingSection(page).locator('li[data-tier][data-featured]')).toHaveCount(1)
     await expect(tier(page, 'Team')).toHaveAttribute('data-featured', 'true')
+    await expect(tier(page, 'Team').getByText('Most popular')).toBeVisible()
+    await expect(tier(page, 'Starter').getByText('Most popular')).toHaveCount(0)
+  })
+
+  test('sends every tier call to action to its configured destination', async ({ page }) => {
+    for (const [name, href] of [
+      ['Starter', '/signup'],
+      ['Team', '/signup'],
+      ['Scale', '/contact'],
+    ] as [string, string][]) {
+      await expect(tier(page, name).getByRole('link')).toHaveAttribute('href', href)
+    }
+  })
+
+  test('announces the billing period change to assistive technology', async ({ page }) => {
+    const status = pricingSection(page).locator('[aria-live="polite"]')
+
+    await expect(status).toHaveText('Showing monthly pricing')
+    await page.getByRole('button', { name: 'Annual' }).click()
+    await expect(status).toHaveText('Showing annual pricing')
   })
 
   test('names the toggle for assistive technology and reports its state', async ({ page }) => {

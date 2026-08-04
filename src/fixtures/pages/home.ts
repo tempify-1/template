@@ -173,7 +173,7 @@ export const homeSections: SectionDefinition[] = [
   pricing({
     heading: 'Pricing that scales with the work, not the seat count',
     subheading: 'Every tier ships the whole template. The difference is support and scale.',
-    currency: '$',
+    currency: 'USD',
     defaultPeriod: 'monthly',
     annualNote: 'Two months free on annual billing.',
     tiers: [

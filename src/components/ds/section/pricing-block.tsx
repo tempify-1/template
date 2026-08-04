@@ -1,36 +1,68 @@
 import { CheckIcon } from 'lucide-react'
 import Link from 'next/link'
 
+import { Badge } from '@/components/ui/badge'
 import { buttonVariants } from '@/components/ui/button'
 import type { PricingTableBlock, PricingTierSpec } from '@/lib/presets/types'
 import { cn } from '@/lib/utils'
 
 import { PricingPeriodScope } from './pricing-period'
 
-function formatPrice(amount: number, currency: string): string {
-  return `${currency}${amount.toLocaleString('en-US')}`
+function formatPrice(amount: number, currency: string, locale: string): string {
+  const options: Intl.NumberFormatOptions = {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: Number.isInteger(amount) ? 0 : 2,
+    maximumFractionDigits: 2,
+  }
+
+  try {
+    return new Intl.NumberFormat(locale, options).format(amount)
+  } catch {
+    return new Intl.NumberFormat('en-US', { ...options, currency: 'USD' }).format(amount)
+  }
 }
 
-function Price({ tier, currency }: { tier: PricingTierSpec; currency: string }) {
+function Price({
+  tier,
+  currency,
+  locale,
+}: {
+  tier: PricingTierSpec
+  currency: string
+  locale: string
+}) {
   return (
     <p className="flex items-baseline gap-1">
       <span className="text-4xl font-semibold tracking-tight tabular-nums">
-        <span className="group-data-[period=annual]/pricing:hidden">
-          {formatPrice(tier.monthlyPrice, currency)}
+        <span data-price="monthly" className="group-data-[period=annual]/pricing:hidden">
+          {formatPrice(tier.monthlyPrice, currency, locale)}
         </span>
-        <span className="group-data-[period=monthly]/pricing:hidden">
-          {formatPrice(tier.annualPrice, currency)}
+        <span data-price="annual" className="group-data-[period=monthly]/pricing:hidden">
+          {formatPrice(tier.annualPrice, currency, locale)}
         </span>
       </span>
       <span className="text-sm text-muted-foreground">
-        <span className="group-data-[period=annual]/pricing:hidden">per month</span>
-        <span className="group-data-[period=monthly]/pricing:hidden">per year</span>
+        <span data-price="monthly" className="group-data-[period=annual]/pricing:hidden">
+          per month
+        </span>
+        <span data-price="annual" className="group-data-[period=monthly]/pricing:hidden">
+          per year
+        </span>
       </span>
     </p>
   )
 }
 
-function Tier({ tier, currency }: { tier: PricingTierSpec; currency: string }) {
+function Tier({
+  tier,
+  currency,
+  locale,
+}: {
+  tier: PricingTierSpec
+  currency: string
+  locale: string
+}) {
   return (
     <li
       data-tier={tier.name}
@@ -41,13 +73,16 @@ function Tier({ tier, currency }: { tier: PricingTierSpec; currency: string }) {
       )}
     >
       <div className="flex flex-col gap-2">
-        <h3 className="text-lg font-medium">{tier.name}</h3>
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-lg font-medium">{tier.name}</h3>
+          {tier.featured ? <Badge>Most popular</Badge> : null}
+        </div>
         {tier.description ? (
           <p className="text-sm text-muted-foreground">{tier.description}</p>
         ) : null}
       </div>
 
-      <Price tier={tier} currency={currency} />
+      <Price tier={tier} currency={currency} locale={locale} />
 
       <ul className="flex flex-col gap-3">
         {tier.features.map((feature) => (
@@ -76,7 +111,7 @@ export function PricingTable({ block }: { block: PricingTableBlock }) {
     <PricingPeriodScope defaultPeriod={block.defaultPeriod} annualNote={block.annualNote}>
       <ul className="grid w-full gap-6 md:grid-cols-3">
         {block.tiers.map((tier) => (
-          <Tier key={tier.name} tier={tier} currency={block.currency} />
+          <Tier key={tier.name} tier={tier} currency={block.currency} locale={block.locale} />
         ))}
       </ul>
     </PricingPeriodScope>

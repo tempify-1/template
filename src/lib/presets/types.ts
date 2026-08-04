@@ -139,6 +139,7 @@ export interface PricingTierSpec {
 export interface PricingTableBlock {
   blockType: 'pricingTable'
   currency: string
+  locale: string
   defaultPeriod: BillingPeriod
   annualNote?: string
   tiers: PricingTierSpec[]

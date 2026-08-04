@@ -171,16 +171,30 @@ const presetMappers = {
       heading: block.heading,
       subheading: block.subheading ?? undefined,
     }),
-  pricing: (block: Extract<SectionBlock, { blockType: 'pricing' }>, onProblem: MediaProblem) =>
-    pricing({
+  pricing: (block: Extract<SectionBlock, { blockType: 'pricing' }>, onProblem: MediaProblem) => {
+    const withFeatures = (block.tiers ?? []).map((tier) => ({
+      ...tier,
+      kept: (tier.features ?? []).map((entry) => entry.text).filter(filled),
+    }))
+
+    return pricing({
       heading: block.heading,
       subheading: block.subheading ?? undefined,
-      currency: block.currency ?? undefined,
+      currency: filled(block.currency) ? block.currency! : undefined,
+      locale: filled(block.locale) ? block.locale! : undefined,
       defaultPeriod: block.defaultPeriod ?? undefined,
       annualNote: block.annualNote ?? undefined,
       tiers: keepRows(
-        block.tiers ?? [],
-        (tier) => filled(tier.name) && filled(tier.ctaLabel) && filled(tier.ctaHref),
+        withFeatures,
+        (tier) =>
+          filled(tier.name) &&
+          filled(tier.ctaLabel) &&
+          filled(tier.ctaHref) &&
+          tier.kept.length > 0 &&
+          Number.isFinite(tier.monthlyPrice) &&
+          Number.isFinite(tier.annualPrice) &&
+          tier.monthlyPrice >= 0 &&
+          tier.annualPrice >= 0,
         onProblem,
         'tier',
       ).map((tier) => ({
@@ -188,12 +202,13 @@ const presetMappers = {
         description: tier.description ?? undefined,
         monthlyPrice: tier.monthlyPrice,
         annualPrice: tier.annualPrice,
-        features: (tier.features ?? []).map((entry) => entry.text).filter(filled),
+        features: tier.kept,
         ctaLabel: tier.ctaLabel,
         ctaHref: tier.ctaHref,
         featured: tier.featured ?? undefined,
       })),
-    }),
+    })
+  },
 } satisfies Record<
   SectionBlock['blockType'],
   (block: never, onProblem: MediaProblem) => SectionDefinition

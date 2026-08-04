@@ -469,7 +469,14 @@ export interface NewsletterBlock {
 export interface PricingBlock {
   heading: string;
   subheading?: string | null;
+  /**
+   * ISO currency code, e.g. USD, GBP, EUR.
+   */
   currency?: string | null;
+  /**
+   * Formats the figures, e.g. en-US, en-GB, de-DE.
+   */
+  locale?: string | null;
   defaultPeriod?: ('monthly' | 'annual') | null;
   /**
    * Shown beside the toggle, e.g. "Save 20%".
@@ -913,6 +920,7 @@ export interface PricingBlockSelect<T extends boolean = true> {
   heading?: T;
   subheading?: T;
   currency?: T;
+  locale?: T;
   defaultPeriod?: T;
   annualNote?: T;
   tiers?:

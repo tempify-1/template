@@ -18,7 +18,7 @@ export function PricingPeriodScope({
 
   return (
     <div className="group/pricing flex w-full flex-col items-center gap-8" data-period={period}>
-      <div className="flex flex-col items-center gap-2">
+      <div data-billing-toggle className="flex flex-col items-center gap-2">
         <ToggleGroup
           multiple={false}
           value={[period]}
@@ -35,6 +35,10 @@ export function PricingPeriodScope({
           </p>
         ) : null}
       </div>
+
+      <p aria-live="polite" className="sr-only">
+        {period === 'annual' ? 'Showing annual pricing' : 'Showing monthly pricing'}
+      </p>
 
       {children}
     </div>
