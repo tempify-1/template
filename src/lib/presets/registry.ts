@@ -10,6 +10,7 @@ import { heroCentered, heroCenteredArgs } from './hero-centered'
 import { logoWall, logoWallArgs } from './logo-wall'
 import { newsletter, newsletterArgs } from './newsletter'
 import { blockFromSchema } from './payload-fields'
+import { pricing, pricingArgs } from './pricing'
 import { serviceList, serviceListArgs } from './service-list'
 import { themeArgs } from './theme'
 import { teamGrid, teamGridArgs } from './team-grid'
@@ -81,6 +82,12 @@ export const presetRegistry = {
     factory: newsletter,
     singular: 'Newsletter signup',
     plural: 'Newsletter signups',
+  },
+  pricing: {
+    schema: pricingArgs,
+    factory: pricing,
+    singular: 'Pricing table',
+    plural: 'Pricing tables',
   },
   faqAccordion: {
     schema: faqAccordionArgs,

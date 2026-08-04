@@ -186,6 +186,7 @@ export interface Page {
         | CommunityBlock
         | ContactFormBlock
         | NewsletterBlock
+        | PricingBlock
         | FaqAccordionBlock
       )[]
     | null;
@@ -471,6 +472,51 @@ export interface NewsletterBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PricingBlock".
+ */
+export interface PricingBlock {
+  heading: string;
+  subheading?: string | null;
+  /**
+   * ISO currency code, e.g. USD, GBP, EUR.
+   */
+  currency?: string | null;
+  /**
+   * Formats the figures, e.g. en-US, en-GB, de-DE.
+   */
+  locale?: string | null;
+  defaultPeriod?: ('monthly' | 'annual') | null;
+  /**
+   * Shown beside the toggle, e.g. "Save 20%".
+   */
+  annualNote?: string | null;
+  tiers: {
+    name: string;
+    description?: string | null;
+    monthlyPrice: number;
+    annualPrice: number;
+    features: {
+      text: string;
+      id?: string | null;
+    }[];
+    ctaLabel: string;
+    ctaHref: string;
+    /**
+     * Only one tier should be highlighted.
+     */
+    featured?: boolean | null;
+    id?: string | null;
+  }[];
+  /**
+   * Recolours this Section and everything in it. Leave empty for the page Theme.
+   */
+  theme?: ('muted' | 'accent' | 'brand') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'pricing';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "FaqAccordionBlock".
  */
 export interface FaqAccordionBlock {
@@ -655,6 +701,7 @@ export interface PagesSelect<T extends boolean = true> {
         community?: T | CommunityBlockSelect<T>;
         contactForm?: T | ContactFormBlockSelect<T>;
         newsletter?: T | NewsletterBlockSelect<T>;
+        pricing?: T | PricingBlockSelect<T>;
         faqAccordion?: T | FaqAccordionBlockSelect<T>;
       };
   meta?:
@@ -876,6 +923,39 @@ export interface ContactFormBlockSelect<T extends boolean = true> {
 export interface NewsletterBlockSelect<T extends boolean = true> {
   heading?: T;
   subheading?: T;
+  theme?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PricingBlock_select".
+ */
+export interface PricingBlockSelect<T extends boolean = true> {
+  heading?: T;
+  subheading?: T;
+  currency?: T;
+  locale?: T;
+  defaultPeriod?: T;
+  annualNote?: T;
+  tiers?:
+    | T
+    | {
+        name?: T;
+        description?: T;
+        monthlyPrice?: T;
+        annualPrice?: T;
+        features?:
+          | T
+          | {
+              text?: T;
+              id?: T;
+            };
+        ctaLabel?: T;
+        ctaHref?: T;
+        featured?: T;
+        id?: T;
+      };
   theme?: T;
   id?: T;
   blockName?: T;
