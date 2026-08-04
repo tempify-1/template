@@ -72,14 +72,36 @@ describe('metadataForPage', () => {
   it('emits an absolute social image and the large card when an image is set', () => {
     const meta = metadataForPage(
       pageWith({
-        meta: { title: 'About', image: { id: 3, url: '/api/media/file/og.png' } as never },
+        meta: {
+          title: 'About',
+          image: {
+            id: 3,
+            url: '/api/media/file/og.png',
+            alt: 'Sharing image',
+            width: 1200,
+            height: 630,
+          } as never,
+        },
       }),
     )
 
     expect(meta.openGraph?.images).toEqual([
-      { url: absoluteUrl('/api/media/file/og.png'), alt: 'About' },
+      {
+        url: absoluteUrl('/api/media/file/og.png'),
+        alt: 'Sharing image',
+        width: 1200,
+        height: 630,
+      },
     ])
     expect(meta.twitter).toMatchObject({ card: 'summary_large_image' })
+  })
+
+  it('omits an image the media helper cannot fully resolve, rather than a partial tag', () => {
+    const meta = metadataForPage(
+      pageWith({ meta: { image: { id: 3, url: '/api/media/file/og.png' } as never } }),
+    )
+
+    expect(meta.openGraph?.images).toBeUndefined()
   })
 
   it('omits the image rather than emitting an unresolved relationship id', () => {

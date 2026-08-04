@@ -1,4 +1,5 @@
 import { draftMode, headers as getHeaders } from 'next/headers'
+import { cache } from 'react'
 import { getPayload } from 'payload'
 
 import { mapPageResult } from '@/mappers/page'
@@ -44,7 +45,7 @@ export async function publishedPages(): Promise<Pick<Page, 'slug' | 'updatedAt'>
   const { docs } = await payload.find({
     collection: 'pages',
     where: { _status: { equals: 'published' } },
-    limit: 1000,
+    pagination: false,
     depth: 0,
     select: { slug: true, updatedAt: true },
     overrideAccess: false,

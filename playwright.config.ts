@@ -45,6 +45,6 @@ export default defineConfig({
     reuseExistingServer: false,
     url: BASE_URL,
     timeout: 180_000,
-    env: { ...process.env, DATABASE_URL, PORT },
+    env: { ...process.env, DATABASE_URL, PORT, NEXT_PUBLIC_SERVER_URL: BASE_URL },
   },
 })

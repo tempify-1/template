@@ -172,6 +172,9 @@ export interface Media {
 export interface Page {
   id: number;
   title: string;
+  /**
+   * Lower-case words separated by hyphens, e.g. about-us.
+   */
   slug: string;
   sections?:
     | (
