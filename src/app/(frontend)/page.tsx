@@ -1,45 +1,24 @@
-import { draftMode, headers as getHeaders } from 'next/headers'
-import { getPayload } from 'payload'
+import type { Metadata } from 'next'
 import React from 'react'
 
 import { Page } from '@/components/ds/section/page'
 import { homeSections } from '@/fixtures/pages/home'
-import { mapPageResult } from '@/mappers/page'
-import type { SectionDefinition } from '@/lib/presets/types'
-import config from '@/payload.config'
+import { metadataForPage } from '@/lib/metadata'
+import { findPage, sectionsFor } from '@/lib/pages'
+import { SITE_NAME } from '@/lib/site'
 
 import '../globals.css'
 
-async function loadHomeSections(): Promise<SectionDefinition[]> {
-  const { isEnabled: isDraft } = await draftMode()
-  const payload = await getPayload({ config: await config })
-  const { user } = await payload.auth({ headers: await getHeaders() })
+export async function generateMetadata(): Promise<Metadata> {
+  const page = await findPage('home')
+  if (!page) return { title: SITE_NAME }
 
-  const { docs } = await payload.find({
-    collection: 'pages',
-    where: { slug: { equals: 'home' } },
-    limit: 1,
-    draft: isDraft,
-    user,
-    overrideAccess: false,
-  })
-
-  const page = docs[0]
-  if (!page) return homeSections
-
-  const { sections, skipped, warnings } = mapPageResult(page)
-
-  for (const { blockType, reason } of skipped) {
-    payload.logger.error(`Dropped "${blockType}" section on page "home": ${reason}`)
-  }
-
-  for (const { blockType, reason } of warnings) {
-    payload.logger.warn(`Rendered "${blockType}" section on page "home" without media: ${reason}`)
-  }
-
-  return sections
+  return metadataForPage(page)
 }
 
 export default async function HomePage() {
-  return <Page sections={await loadHomeSections()} />
+  const page = await findPage('home')
+  const sections = page ? await sectionsFor(page) : homeSections
+
+  return <Page sections={sections} />
 }

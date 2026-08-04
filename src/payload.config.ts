@@ -1,4 +1,5 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
+import { seoPlugin } from '@payloadcms/plugin-seo'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig } from 'payload'
@@ -9,6 +10,7 @@ import { Users } from './collections/Users'
 import { Media } from './collections/Media'
 import { FormSubmissions } from './collections/FormSubmissions'
 import { Pages } from './collections/Pages'
+import { SITE_NAME, absoluteUrl, pathForSlug } from './lib/site'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -32,5 +34,13 @@ export default buildConfig({
     },
   }),
   sharp,
-  plugins: [],
+  plugins: [
+    seoPlugin({
+      collections: ['pages'],
+      uploadsCollection: 'media',
+      tabbedUI: true,
+      generateTitle: ({ doc }) => (doc?.title ? `${doc.title} | ${SITE_NAME}` : SITE_NAME),
+      generateURL: ({ doc }) => absoluteUrl(doc?.slug ? pathForSlug(doc.slug) : '/'),
+    }),
+  ],
 })

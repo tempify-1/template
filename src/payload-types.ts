@@ -59,121 +59,120 @@ export type SupportedTimezones =
   | 'Pacific/Guam'
   | 'Pacific/Noumea'
   | 'Pacific/Auckland'
-  | 'Pacific/Fiji'
+  | 'Pacific/Fiji';
 
 export interface Config {
   auth: {
-    users: UserAuthOperations
-  }
-  blocks: {}
+    users: UserAuthOperations;
+  };
+  blocks: {};
   collections: {
-    users: User
-    media: Media
-    pages: Page
-    'form-submissions': FormSubmission
-    'payload-kv': PayloadKv
-    'payload-locked-documents': PayloadLockedDocument
-    'payload-preferences': PayloadPreference
-    'payload-migrations': PayloadMigration
-  }
-  collectionsJoins: {}
+    users: User;
+    media: Media;
+    pages: Page;
+    'form-submissions': FormSubmission;
+    'payload-kv': PayloadKv;
+    'payload-locked-documents': PayloadLockedDocument;
+    'payload-preferences': PayloadPreference;
+    'payload-migrations': PayloadMigration;
+  };
+  collectionsJoins: {};
   collectionsSelect: {
-    users: UsersSelect<false> | UsersSelect<true>
-    media: MediaSelect<false> | MediaSelect<true>
-    pages: PagesSelect<false> | PagesSelect<true>
-    'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>
-    'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>
-    'payload-locked-documents':
-      PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>
-    'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>
-    'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>
-  }
+    users: UsersSelect<false> | UsersSelect<true>;
+    media: MediaSelect<false> | MediaSelect<true>;
+    pages: PagesSelect<false> | PagesSelect<true>;
+    'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
+    'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
+    'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
+    'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
+    'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
+  };
   db: {
-    defaultIDType: number
-  }
-  fallbackLocale: null
-  globals: {}
-  globalsSelect: {}
-  locale: null
+    defaultIDType: number;
+  };
+  fallbackLocale: null;
+  globals: {};
+  globalsSelect: {};
+  locale: null;
   widgets: {
-    collections: CollectionsWidget
-  }
-  user: User
+    collections: CollectionsWidget;
+  };
+  user: User;
   jobs: {
-    tasks: unknown
-    workflows: unknown
-  }
+    tasks: unknown;
+    workflows: unknown;
+  };
 }
 export interface UserAuthOperations {
   forgotPassword: {
-    email: string
-    password: string
-  }
+    email: string;
+    password: string;
+  };
   login: {
-    email: string
-    password: string
-  }
+    email: string;
+    password: string;
+  };
   registerFirstUser: {
-    email: string
-    password: string
-  }
+    email: string;
+    password: string;
+  };
   unlock: {
-    email: string
-    password: string
-  }
+    email: string;
+    password: string;
+  };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
 export interface User {
-  id: number
-  updatedAt: string
-  createdAt: string
-  email: string
-  resetPasswordToken?: string | null
-  resetPasswordExpiration?: string | null
-  salt?: string | null
-  hash?: string | null
-  loginAttempts?: number | null
-  lockUntil?: string | null
+  id: number;
+  updatedAt: string;
+  createdAt: string;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
   sessions?:
     | {
-        id: string
-        createdAt?: string | null
-        expiresAt: string
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
       }[]
-    | null
-  password?: string | null
-  collection: 'users'
+    | null;
+  password?: string | null;
+  collection: 'users';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
  */
 export interface Media {
-  id: number
-  alt: string
-  updatedAt: string
-  createdAt: string
-  url?: string | null
-  thumbnailURL?: string | null
-  filename?: string | null
-  mimeType?: string | null
-  filesize?: number | null
-  width?: number | null
-  height?: number | null
-  focalX?: number | null
-  focalY?: number | null
+  id: number;
+  alt: string;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "pages".
  */
 export interface Page {
-  id: number
-  title: string
-  slug: string
+  id: number;
+  title: string;
+  slug: string;
   sections?:
     | (
         | HeroCenteredBlock
@@ -189,97 +188,105 @@ export interface Page {
         | NewsletterBlock
         | FaqAccordionBlock
       )[]
-    | null
-  updatedAt: string
-  createdAt: string
-  _status?: ('draft' | 'published') | null
+    | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+  };
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "HeroCenteredBlock".
  */
 export interface HeroCenteredBlock {
-  heading: string
-  subheading?: string | null
+  heading: string;
+  subheading?: string | null;
   /**
    * Leave both fields empty to omit this call to action.
    */
   primaryCta?: {
-    label?: string | null
-    href?: string | null
-  }
+    label?: string | null;
+    href?: string | null;
+  };
   /**
    * Leave both fields empty to omit this call to action.
    */
   secondaryCta?: {
-    label?: string | null
-    href?: string | null
-  }
+    label?: string | null;
+    href?: string | null;
+  };
   trustBadges?:
     | {
-        text: string
-        id?: string | null
+        text: string;
+        id?: string | null;
       }[]
-    | null
-  image?: (number | null) | Media
-  minHeight?: string | null
+    | null;
+  image?: (number | null) | Media;
+  minHeight?: string | null;
   /**
    * Recolours this Section and everything in it. Leave empty for the page Theme.
    */
-  theme?: ('muted' | 'accent' | 'brand') | null
-  id?: string | null
-  blockName?: string | null
-  blockType: 'heroCentered'
+  theme?: ('muted' | 'accent' | 'brand') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'heroCentered';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "LogoWallBlock".
  */
 export interface LogoWallBlock {
-  heading?: string | null
+  heading?: string | null;
   logos: {
-    name: string
-    image?: (number | null) | Media
-    id?: string | null
-  }[]
+    name: string;
+    image?: (number | null) | Media;
+    id?: string | null;
+  }[];
   /**
    * Recolours this Section and everything in it. Leave empty for the page Theme.
    */
-  theme?: ('muted' | 'accent' | 'brand') | null
-  id?: string | null
-  blockName?: string | null
-  blockType: 'logoWall'
+  theme?: ('muted' | 'accent' | 'brand') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'logoWall';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "BenefitsGridBlock".
  */
 export interface BenefitsGridBlock {
-  heading: string
-  subheading?: string | null
+  heading: string;
+  subheading?: string | null;
   /**
    * Numbered automatically in the order listed here.
    */
   benefits: {
-    title: string
-    description?: string | null
-    id?: string | null
-  }[]
+    title: string;
+    description?: string | null;
+    id?: string | null;
+  }[];
   /**
    * Recolours this Section and everything in it. Leave empty for the page Theme.
    */
-  theme?: ('muted' | 'accent' | 'brand') | null
-  id?: string | null
-  blockName?: string | null
-  blockType: 'benefitsGrid'
+  theme?: ('muted' | 'accent' | 'brand') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'benefitsGrid';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "FeatureGridBlock".
  */
 export interface FeatureGridBlock {
-  heading: string
-  subheading?: string | null
+  heading: string;
+  subheading?: string | null;
   features: {
     icon:
       | 'activity'
@@ -297,643 +304,650 @@ export interface FeatureGridBlock {
       | 'sparkles'
       | 'users'
       | 'workflow'
-      | 'zap'
-    title: string
-    description?: string | null
-    id?: string | null
-  }[]
+      | 'zap';
+    title: string;
+    description?: string | null;
+    id?: string | null;
+  }[];
   /**
    * Recolours this Section and everything in it. Leave empty for the page Theme.
    */
-  theme?: ('muted' | 'accent' | 'brand') | null
-  id?: string | null
-  blockName?: string | null
-  blockType: 'featureGrid'
+  theme?: ('muted' | 'accent' | 'brand') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'featureGrid';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "ServiceListBlock".
  */
 export interface ServiceListBlock {
-  heading: string
-  subheading?: string | null
+  heading: string;
+  subheading?: string | null;
   services: {
-    title: string
-    description?: string | null
-    badge?: string | null
-    id?: string | null
-  }[]
+    title: string;
+    description?: string | null;
+    badge?: string | null;
+    id?: string | null;
+  }[];
   /**
    * Recolours this Section and everything in it. Leave empty for the page Theme.
    */
-  theme?: ('muted' | 'accent' | 'brand') | null
-  id?: string | null
-  blockName?: string | null
-  blockType: 'serviceList'
+  theme?: ('muted' | 'accent' | 'brand') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'serviceList';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "TestimonialCarouselBlock".
  */
 export interface TestimonialCarouselBlock {
-  heading: string
-  subheading?: string | null
+  heading: string;
+  subheading?: string | null;
   testimonials: {
-    quote: string
-    name: string
-    title?: string | null
-    image?: (number | null) | Media
-    id?: string | null
-  }[]
+    quote: string;
+    name: string;
+    title?: string | null;
+    image?: (number | null) | Media;
+    id?: string | null;
+  }[];
   /**
    * Recolours this Section and everything in it. Leave empty for the page Theme.
    */
-  theme?: ('muted' | 'accent' | 'brand') | null
-  id?: string | null
-  blockName?: string | null
-  blockType: 'testimonialCarousel'
+  theme?: ('muted' | 'accent' | 'brand') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'testimonialCarousel';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "TeamGridBlock".
  */
 export interface TeamGridBlock {
-  heading: string
-  subheading?: string | null
+  heading: string;
+  subheading?: string | null;
   members: {
-    name: string
-    role: string
-    image?: (number | null) | Media
+    name: string;
+    role: string;
+    image?: (number | null) | Media;
     links?:
       | {
-          label: string
-          href: string
-          id?: string | null
+          label: string;
+          href: string;
+          id?: string | null;
         }[]
-      | null
-    id?: string | null
-  }[]
+      | null;
+    id?: string | null;
+  }[];
   /**
    * Recolours this Section and everything in it. Leave empty for the page Theme.
    */
-  theme?: ('muted' | 'accent' | 'brand') | null
-  id?: string | null
-  blockName?: string | null
-  blockType: 'teamGrid'
+  theme?: ('muted' | 'accent' | 'brand') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'teamGrid';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "CtaBannerBlock".
  */
 export interface CtaBannerBlock {
-  heading: string
-  subheading?: string | null
+  heading: string;
+  subheading?: string | null;
   /**
    * Leave both fields empty to omit this call to action.
    */
   primaryCta?: {
-    label?: string | null
-    href?: string | null
-  }
+    label?: string | null;
+    href?: string | null;
+  };
   /**
    * Leave both fields empty to omit this call to action.
    */
   secondaryCta?: {
-    label?: string | null
-    href?: string | null
-  }
+    label?: string | null;
+    href?: string | null;
+  };
   /**
    * Recolours this Section and everything in it. Leave empty for the page Theme.
    */
-  theme?: ('muted' | 'accent' | 'brand') | null
-  id?: string | null
-  blockName?: string | null
-  blockType: 'ctaBanner'
+  theme?: ('muted' | 'accent' | 'brand') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'ctaBanner';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "CommunityBlock".
  */
 export interface CommunityBlock {
-  heading: string
-  body?: string | null
+  heading: string;
+  body?: string | null;
   /**
    * Leave both fields empty to omit the button.
    */
   cta?: {
-    label?: string | null
-    href?: string | null
-  }
+    label?: string | null;
+    href?: string | null;
+  };
   /**
    * Recolours this Section and everything in it. Leave empty for the page Theme.
    */
-  theme?: ('muted' | 'accent' | 'brand') | null
-  id?: string | null
-  blockName?: string | null
-  blockType: 'community'
+  theme?: ('muted' | 'accent' | 'brand') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'community';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "ContactFormBlock".
  */
 export interface ContactFormBlock {
-  heading: string
-  subheading?: string | null
+  heading: string;
+  subheading?: string | null;
   /**
    * Recolours this Section and everything in it. Leave empty for the page Theme.
    */
-  theme?: ('muted' | 'accent' | 'brand') | null
-  id?: string | null
-  blockName?: string | null
-  blockType: 'contactForm'
+  theme?: ('muted' | 'accent' | 'brand') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'contactForm';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "NewsletterBlock".
  */
 export interface NewsletterBlock {
-  heading: string
-  subheading?: string | null
+  heading: string;
+  subheading?: string | null;
   /**
    * Recolours this Section and everything in it. Leave empty for the page Theme.
    */
-  theme?: ('muted' | 'accent' | 'brand') | null
-  id?: string | null
-  blockName?: string | null
-  blockType: 'newsletter'
+  theme?: ('muted' | 'accent' | 'brand') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'newsletter';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "FaqAccordionBlock".
  */
 export interface FaqAccordionBlock {
-  heading: string
-  subheading?: string | null
+  heading: string;
+  subheading?: string | null;
   questions: {
-    question: string
-    answer: string
-    id?: string | null
-  }[]
+    question: string;
+    answer: string;
+    id?: string | null;
+  }[];
   /**
    * Recolours this Section and everything in it. Leave empty for the page Theme.
    */
-  theme?: ('muted' | 'accent' | 'brand') | null
-  id?: string | null
-  blockName?: string | null
-  blockType: 'faqAccordion'
+  theme?: ('muted' | 'accent' | 'brand') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'faqAccordion';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "form-submissions".
  */
 export interface FormSubmission {
-  id: number
+  id: number;
   /**
    * One of: contact, newsletter
    */
-  form: string
-  summary?: string | null
+  form: string;
+  summary?: string | null;
   data:
     | {
-        [k: string]: unknown
+        [k: string]: unknown;
       }
     | unknown[]
     | string
     | number
     | boolean
-    | null
-  updatedAt: string
-  createdAt: string
+    | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
-  id: number
-  key: string
+  id: number;
+  key: string;
   data:
     | {
-        [k: string]: unknown
+        [k: string]: unknown;
       }
     | unknown[]
     | string
     | number
     | boolean
-    | null
+    | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
-  id: number
+  id: number;
   document?:
     | ({
-        relationTo: 'users'
-        value: number | User
+        relationTo: 'users';
+        value: number | User;
       } | null)
     | ({
-        relationTo: 'media'
-        value: number | Media
+        relationTo: 'media';
+        value: number | Media;
       } | null)
     | ({
-        relationTo: 'pages'
-        value: number | Page
+        relationTo: 'pages';
+        value: number | Page;
       } | null)
     | ({
-        relationTo: 'form-submissions'
-        value: number | FormSubmission
-      } | null)
-  globalSlug?: string | null
+        relationTo: 'form-submissions';
+        value: number | FormSubmission;
+      } | null);
+  globalSlug?: string | null;
   user: {
-    relationTo: 'users'
-    value: number | User
-  }
-  updatedAt: string
-  createdAt: string
+    relationTo: 'users';
+    value: number | User;
+  };
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-preferences".
  */
 export interface PayloadPreference {
-  id: number
+  id: number;
   user: {
-    relationTo: 'users'
-    value: number | User
-  }
-  key?: string | null
+    relationTo: 'users';
+    value: number | User;
+  };
+  key?: string | null;
   value?:
     | {
-        [k: string]: unknown
+        [k: string]: unknown;
       }
     | unknown[]
     | string
     | number
     | boolean
-    | null
-  updatedAt: string
-  createdAt: string
+    | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-migrations".
  */
 export interface PayloadMigration {
-  id: number
-  name?: string | null
-  batch?: number | null
-  updatedAt: string
-  createdAt: string
+  id: number;
+  name?: string | null;
+  batch?: number | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
-  updatedAt?: T
-  createdAt?: T
-  email?: T
-  resetPasswordToken?: T
-  resetPasswordExpiration?: T
-  salt?: T
-  hash?: T
-  loginAttempts?: T
-  lockUntil?: T
+  updatedAt?: T;
+  createdAt?: T;
+  email?: T;
+  resetPasswordToken?: T;
+  resetPasswordExpiration?: T;
+  salt?: T;
+  hash?: T;
+  loginAttempts?: T;
+  lockUntil?: T;
   sessions?:
     | T
     | {
-        id?: T
-        createdAt?: T
-        expiresAt?: T
-      }
+        id?: T;
+        createdAt?: T;
+        expiresAt?: T;
+      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media_select".
  */
 export interface MediaSelect<T extends boolean = true> {
-  alt?: T
-  updatedAt?: T
-  createdAt?: T
-  url?: T
-  thumbnailURL?: T
-  filename?: T
-  mimeType?: T
-  filesize?: T
-  width?: T
-  height?: T
-  focalX?: T
-  focalY?: T
+  alt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "pages_select".
  */
 export interface PagesSelect<T extends boolean = true> {
-  title?: T
-  slug?: T
+  title?: T;
+  slug?: T;
   sections?:
     | T
     | {
-        heroCentered?: T | HeroCenteredBlockSelect<T>
-        logoWall?: T | LogoWallBlockSelect<T>
-        benefitsGrid?: T | BenefitsGridBlockSelect<T>
-        featureGrid?: T | FeatureGridBlockSelect<T>
-        serviceList?: T | ServiceListBlockSelect<T>
-        testimonialCarousel?: T | TestimonialCarouselBlockSelect<T>
-        teamGrid?: T | TeamGridBlockSelect<T>
-        ctaBanner?: T | CtaBannerBlockSelect<T>
-        community?: T | CommunityBlockSelect<T>
-        contactForm?: T | ContactFormBlockSelect<T>
-        newsletter?: T | NewsletterBlockSelect<T>
-        faqAccordion?: T | FaqAccordionBlockSelect<T>
-      }
-  updatedAt?: T
-  createdAt?: T
-  _status?: T
+        heroCentered?: T | HeroCenteredBlockSelect<T>;
+        logoWall?: T | LogoWallBlockSelect<T>;
+        benefitsGrid?: T | BenefitsGridBlockSelect<T>;
+        featureGrid?: T | FeatureGridBlockSelect<T>;
+        serviceList?: T | ServiceListBlockSelect<T>;
+        testimonialCarousel?: T | TestimonialCarouselBlockSelect<T>;
+        teamGrid?: T | TeamGridBlockSelect<T>;
+        ctaBanner?: T | CtaBannerBlockSelect<T>;
+        community?: T | CommunityBlockSelect<T>;
+        contactForm?: T | ContactFormBlockSelect<T>;
+        newsletter?: T | NewsletterBlockSelect<T>;
+        faqAccordion?: T | FaqAccordionBlockSelect<T>;
+      };
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "HeroCenteredBlock_select".
  */
 export interface HeroCenteredBlockSelect<T extends boolean = true> {
-  heading?: T
-  subheading?: T
+  heading?: T;
+  subheading?: T;
   primaryCta?:
     | T
     | {
-        label?: T
-        href?: T
-      }
+        label?: T;
+        href?: T;
+      };
   secondaryCta?:
     | T
     | {
-        label?: T
-        href?: T
-      }
+        label?: T;
+        href?: T;
+      };
   trustBadges?:
     | T
     | {
-        text?: T
-        id?: T
-      }
-  image?: T
-  minHeight?: T
-  theme?: T
-  id?: T
-  blockName?: T
+        text?: T;
+        id?: T;
+      };
+  image?: T;
+  minHeight?: T;
+  theme?: T;
+  id?: T;
+  blockName?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "LogoWallBlock_select".
  */
 export interface LogoWallBlockSelect<T extends boolean = true> {
-  heading?: T
+  heading?: T;
   logos?:
     | T
     | {
-        name?: T
-        image?: T
-        id?: T
-      }
-  theme?: T
-  id?: T
-  blockName?: T
+        name?: T;
+        image?: T;
+        id?: T;
+      };
+  theme?: T;
+  id?: T;
+  blockName?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "BenefitsGridBlock_select".
  */
 export interface BenefitsGridBlockSelect<T extends boolean = true> {
-  heading?: T
-  subheading?: T
+  heading?: T;
+  subheading?: T;
   benefits?:
     | T
     | {
-        title?: T
-        description?: T
-        id?: T
-      }
-  theme?: T
-  id?: T
-  blockName?: T
+        title?: T;
+        description?: T;
+        id?: T;
+      };
+  theme?: T;
+  id?: T;
+  blockName?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "FeatureGridBlock_select".
  */
 export interface FeatureGridBlockSelect<T extends boolean = true> {
-  heading?: T
-  subheading?: T
+  heading?: T;
+  subheading?: T;
   features?:
     | T
     | {
-        icon?: T
-        title?: T
-        description?: T
-        id?: T
-      }
-  theme?: T
-  id?: T
-  blockName?: T
+        icon?: T;
+        title?: T;
+        description?: T;
+        id?: T;
+      };
+  theme?: T;
+  id?: T;
+  blockName?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "ServiceListBlock_select".
  */
 export interface ServiceListBlockSelect<T extends boolean = true> {
-  heading?: T
-  subheading?: T
+  heading?: T;
+  subheading?: T;
   services?:
     | T
     | {
-        title?: T
-        description?: T
-        badge?: T
-        id?: T
-      }
-  theme?: T
-  id?: T
-  blockName?: T
+        title?: T;
+        description?: T;
+        badge?: T;
+        id?: T;
+      };
+  theme?: T;
+  id?: T;
+  blockName?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "TestimonialCarouselBlock_select".
  */
 export interface TestimonialCarouselBlockSelect<T extends boolean = true> {
-  heading?: T
-  subheading?: T
+  heading?: T;
+  subheading?: T;
   testimonials?:
     | T
     | {
-        quote?: T
-        name?: T
-        title?: T
-        image?: T
-        id?: T
-      }
-  theme?: T
-  id?: T
-  blockName?: T
+        quote?: T;
+        name?: T;
+        title?: T;
+        image?: T;
+        id?: T;
+      };
+  theme?: T;
+  id?: T;
+  blockName?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "TeamGridBlock_select".
  */
 export interface TeamGridBlockSelect<T extends boolean = true> {
-  heading?: T
-  subheading?: T
+  heading?: T;
+  subheading?: T;
   members?:
     | T
     | {
-        name?: T
-        role?: T
-        image?: T
+        name?: T;
+        role?: T;
+        image?: T;
         links?:
           | T
           | {
-              label?: T
-              href?: T
-              id?: T
-            }
-        id?: T
-      }
-  theme?: T
-  id?: T
-  blockName?: T
+              label?: T;
+              href?: T;
+              id?: T;
+            };
+        id?: T;
+      };
+  theme?: T;
+  id?: T;
+  blockName?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "CtaBannerBlock_select".
  */
 export interface CtaBannerBlockSelect<T extends boolean = true> {
-  heading?: T
-  subheading?: T
+  heading?: T;
+  subheading?: T;
   primaryCta?:
     | T
     | {
-        label?: T
-        href?: T
-      }
+        label?: T;
+        href?: T;
+      };
   secondaryCta?:
     | T
     | {
-        label?: T
-        href?: T
-      }
-  theme?: T
-  id?: T
-  blockName?: T
+        label?: T;
+        href?: T;
+      };
+  theme?: T;
+  id?: T;
+  blockName?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "CommunityBlock_select".
  */
 export interface CommunityBlockSelect<T extends boolean = true> {
-  heading?: T
-  body?: T
+  heading?: T;
+  body?: T;
   cta?:
     | T
     | {
-        label?: T
-        href?: T
-      }
-  theme?: T
-  id?: T
-  blockName?: T
+        label?: T;
+        href?: T;
+      };
+  theme?: T;
+  id?: T;
+  blockName?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "ContactFormBlock_select".
  */
 export interface ContactFormBlockSelect<T extends boolean = true> {
-  heading?: T
-  subheading?: T
-  theme?: T
-  id?: T
-  blockName?: T
+  heading?: T;
+  subheading?: T;
+  theme?: T;
+  id?: T;
+  blockName?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "NewsletterBlock_select".
  */
 export interface NewsletterBlockSelect<T extends boolean = true> {
-  heading?: T
-  subheading?: T
-  theme?: T
-  id?: T
-  blockName?: T
+  heading?: T;
+  subheading?: T;
+  theme?: T;
+  id?: T;
+  blockName?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "FaqAccordionBlock_select".
  */
 export interface FaqAccordionBlockSelect<T extends boolean = true> {
-  heading?: T
-  subheading?: T
+  heading?: T;
+  subheading?: T;
   questions?:
     | T
     | {
-        question?: T
-        answer?: T
-        id?: T
-      }
-  theme?: T
-  id?: T
-  blockName?: T
+        question?: T;
+        answer?: T;
+        id?: T;
+      };
+  theme?: T;
+  id?: T;
+  blockName?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "form-submissions_select".
  */
 export interface FormSubmissionsSelect<T extends boolean = true> {
-  form?: T
-  summary?: T
-  data?: T
-  updatedAt?: T
-  createdAt?: T
+  form?: T;
+  summary?: T;
+  data?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv_select".
  */
 export interface PayloadKvSelect<T extends boolean = true> {
-  key?: T
-  data?: T
+  key?: T;
+  data?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents_select".
  */
 export interface PayloadLockedDocumentsSelect<T extends boolean = true> {
-  document?: T
-  globalSlug?: T
-  user?: T
-  updatedAt?: T
-  createdAt?: T
+  document?: T;
+  globalSlug?: T;
+  user?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-preferences_select".
  */
 export interface PayloadPreferencesSelect<T extends boolean = true> {
-  user?: T
-  key?: T
-  value?: T
-  updatedAt?: T
-  createdAt?: T
+  user?: T;
+  key?: T;
+  value?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-migrations_select".
  */
 export interface PayloadMigrationsSelect<T extends boolean = true> {
-  name?: T
-  batch?: T
-  updatedAt?: T
-  createdAt?: T
+  name?: T;
+  batch?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -941,17 +955,18 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
  */
 export interface CollectionsWidget {
   data?: {
-    [k: string]: unknown
-  }
-  width: 'full'
+    [k: string]: unknown;
+  };
+  width: 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "auth".
  */
 export interface Auth {
-  [k: string]: unknown
+  [k: string]: unknown;
 }
+
 
 declare module 'payload' {
   export interface GeneratedTypes extends Config {}
