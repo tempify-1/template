@@ -110,6 +110,42 @@ const blockRegistry = {
   rules into one `calc()`.
 - Headings split into `<span data-word>` per word (whitespace preserved) for the word cascade.
 
+## Interactive state inside a Section (decision 13)
+
+A Preset argument is serializable data and cannot carry state, so where does a pricing
+monthly/annual toggle live? **In the Block.** The config carries data; the Block owns whatever
+state it needs to present that data.
+
+This is not a new mechanism — it is what the system already does twice. `AccordionList` holds
+which panel is open and `TestimonialCarousel` holds the carousel position; both receive plain
+data and delegate state to the shadcn primitive. Pricing is the same shape, because the toggle
+chooses between two price sets that are *both already in the config*:
+
+```ts
+interface PricingTableBlock {
+  blockType: 'pricingTable'
+  plans: { name: string; monthly: Money; annual: Money; features: string[] }[]
+  defaultPeriod: 'monthly' | 'annual'
+}
+```
+
+The rule beyond pricing: **presentation-only state that need not survive navigation lives in the
+Block; state that should be linkable, or that changes what gets fetched, goes in the URL.**
+Accordions, carousels, tabs and the pricing toggle fall on the first side. A filtered or
+paginated listing falls on the second, where a search param keeps the Block a Server Component
+and makes the view shareable.
+
+The rejected alternative was a configuration affordance for state — a declared `state` block that
+the renderer wires up. It is a state machine expressed in JSON: unbounded in scope, and nothing
+in v1 needs it. The second alternative, putting the billing period in a search param, is not
+wrong; it would keep the Block a Server Component and make annual pricing linkable, at the cost
+of a round trip for data already on the page. The rule above leaves that route open for any case
+that genuinely needs it, without changing the config shape.
+
+**No ADR.** It fails two of the three tests: it is not hard to reverse, since a Block's internal
+state management is a local change, and it is not surprising — "a component owns its own state"
+is the default React answer, so the decision worth recording would have been the opposite one.
+
 ## Scroll-entrance animation (the Framer feel, CSS-first)
 
 No JS animation library for entrances. The whole system:
