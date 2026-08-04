@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache'
 import { draftMode, headers as getHeaders } from 'next/headers'
 import { getPayload } from 'payload'
 
@@ -6,21 +7,54 @@ import type { SectionDefinition } from '@/lib/presets/types'
 import type { Page } from '@/payload-types'
 import config from '@/payload.config'
 
-export async function findPage(slug: string): Promise<Page | null> {
-  const { isEnabled: isDraft } = await draftMode()
+export const PAGES_TAG = 'pages'
+
+export function pageTag(slug: string): string {
+  return `page:${slug}`
+}
+
+async function findPublished(slug: string): Promise<Page | null> {
+  const payload = await getPayload({ config: await config })
+
+  const { docs } = await payload.find({
+    collection: 'pages',
+    where: { and: [{ slug: { equals: slug } }, { _status: { equals: 'published' } }] },
+    limit: 1,
+    draft: false,
+    overrideAccess: false,
+  })
+
+  return docs[0] ?? null
+}
+
+function cachedPublished(slug: string): Promise<Page | null> {
+  return unstable_cache(() => findPublished(slug), ['page', slug], {
+    tags: [PAGES_TAG, pageTag(slug)],
+  })()
+}
+
+async function findDraft(slug: string): Promise<Page | null> {
   const payload = await getPayload({ config: await config })
   const { user } = await payload.auth({ headers: await getHeaders() })
+
+  if (!user) return findPublished(slug)
 
   const { docs } = await payload.find({
     collection: 'pages',
     where: { slug: { equals: slug } },
     limit: 1,
-    draft: isDraft,
+    draft: true,
     user,
     overrideAccess: false,
   })
 
   return docs[0] ?? null
+}
+
+export async function findPage(slug: string): Promise<Page | null> {
+  const { isEnabled: isDraft } = await draftMode()
+
+  return isDraft ? findDraft(slug) : cachedPublished(slug)
 }
 
 export async function sectionsFor(page: Page): Promise<SectionDefinition[]> {
@@ -38,7 +72,7 @@ export async function sectionsFor(page: Page): Promise<SectionDefinition[]> {
   return sections
 }
 
-export async function publishedPages(): Promise<Pick<Page, 'slug' | 'updatedAt'>[]> {
+async function findPublishedPages(): Promise<Pick<Page, 'slug' | 'updatedAt'>[]> {
   const payload = await getPayload({ config: await config })
 
   const { docs } = await payload.find({
@@ -51,4 +85,8 @@ export async function publishedPages(): Promise<Pick<Page, 'slug' | 'updatedAt'>
   })
 
   return docs.map((doc) => ({ slug: doc.slug, updatedAt: doc.updatedAt }))
+}
+
+export function publishedPages(): Promise<Pick<Page, 'slug' | 'updatedAt'>[]> {
+  return unstable_cache(findPublishedPages, ['published-pages'], { tags: [PAGES_TAG] })()
 }
