@@ -207,7 +207,7 @@ equality, so a deployment reached on any origin other than the configured one wo
 refreshing. It also renders an exit-preview control: without one, an editor who enters draft mode
 has no way out, since the cookie survives navigation.
 
-`PAGES_TAG` and `pageTag` live in `src/lib/cache-tags.ts` with no Next imports. The Payload config
+`pageTag` lives in `src/lib/cache-tags.ts` with no Next imports. The Payload config
 imports the Pages collection, and the config must load outside a Next runtime — vitest, the
 Payload CLI — so anything it reaches must not statically import `next/cache`.
 

@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest'
 
 import { FIXTURE_NAMES, isFixtureName, presetFixtures } from '@/fixtures/presets'
 import { presetRegistry } from '@/lib/presets/registry'
-import { decodeSections, MAX_ENCODED_LENGTH } from '@/lib/preview-config'
+import { blockRegistry } from '@/components/ds/section/block-renderer'
+import { BLOCK_TYPES, decodeSections, MAX_ENCODED_LENGTH } from '@/lib/preview-config'
 import type { SectionDefinition } from '@/lib/presets/types'
 
 function encode(value: unknown): string {
@@ -37,6 +38,13 @@ describe('every Preset has a Fixture', () => {
     for (const other of ['', 'constructor', '__proto__', 'nope']) {
       expect(isFixtureName(other), other).toBe(false)
     }
+  })
+})
+
+describe('the block vocabulary stays in one piece', () => {
+  it('validates exactly the block types the renderer can draw', () => {
+    expect(BLOCK_TYPES.length).toBeGreaterThan(0)
+    expect([...BLOCK_TYPES].sort()).toEqual(Object.keys(blockRegistry).sort())
   })
 })
 

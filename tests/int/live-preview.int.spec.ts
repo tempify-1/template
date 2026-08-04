@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { getPayload, type Payload } from 'payload'
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 
-import { PAGES_TAG, pageTag } from '@/lib/cache-tags'
+import { pageTag } from '@/lib/cache-tags'
 import { publishedPages } from '@/lib/pages'
 import { previewPath } from '@/lib/preview'
 import config from '@/payload.config'
@@ -33,7 +33,6 @@ describe('revalidation tags', () => {
   it('keys a tag per document rather than one tag for everything', () => {
     expect(pageTag('about')).toBe('page:about')
     expect(pageTag('home')).not.toBe(pageTag('about'))
-    expect(pageTag('about')).not.toBe(PAGES_TAG)
   })
 })
 

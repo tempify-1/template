@@ -6,12 +6,13 @@ import { Page } from '@/components/ds/section/page'
 import { DraftRefresh } from '@/components/ds/shell/draft-refresh'
 import { metadataForPage } from '@/lib/metadata'
 import { findPage, sectionsFor } from '@/lib/pages'
+import { isHomeSlug } from '@/lib/site'
 
 type Params = { params: Promise<{ slug: string }> }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params
-  const page = slug === 'home' ? null : await findPage(slug)
+  const page = isHomeSlug(slug) ? null : await findPage(slug)
   if (!page) return {}
 
   return metadataForPage(page)
@@ -19,7 +20,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
 export default async function SlugPage({ params }: Params) {
   const { slug } = await params
-  if (slug === 'home') notFound()
+  if (isHomeSlug(slug)) notFound()
 
   const page = await findPage(slug)
   if (!page) notFound()

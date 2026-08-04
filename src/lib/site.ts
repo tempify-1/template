@@ -20,8 +20,14 @@ export function siteUrl(): string {
   return configured.startsWith('http') ? configured : `https://${configured}`
 }
 
+export const HOME_SLUG = 'home'
+
+export function isHomeSlug(slug: string): boolean {
+  return slug === HOME_SLUG
+}
+
 export function pathForSlug(slug: string): string {
-  return slug === 'home' ? '/' : `/${slug}`
+  return isHomeSlug(slug) ? '/' : `/${slug}`
 }
 
 export function absoluteUrl(path: string): string {

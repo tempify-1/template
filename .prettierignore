@@ -1,3 +1,4 @@
 .next
 src/app/(payload)/admin/importMap.js
+src/components/ui/
 src/payload-types.ts

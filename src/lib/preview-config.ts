@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import type { SectionDefinition } from '@/lib/presets/types'
+import type { BlockType, SectionDefinition } from '@/lib/presets/types'
 
 export const MAX_ENCODED_LENGTH = 20_000
 
@@ -21,21 +21,12 @@ const image = z.object({
   height: z.number().int().positive(),
 })
 
-const block = z.discriminatedUnion('blockType', [
-  z.object({
-    blockType: z.literal('heading'),
-    level: z.number().int().min(1).max(6),
-    text,
-    size: z.number().optional(),
-  }),
-  z.object({ blockType: z.literal('paragraph'), text, lead: z.boolean().optional() }),
-  z.object({
-    blockType: z.literal('buttonRow'),
-    buttons: z.array(link.extend({ variant: z.string().optional() })),
-  }),
-  z.object({ blockType: z.literal('badgeRow'), badges: z.array(text) }),
-  z.object({
-    blockType: z.literal('cardGrid'),
+const blockShapes = {
+  heading: { level: z.number().int().min(1).max(6), text, size: z.number().optional() },
+  paragraph: { text, lead: z.boolean().optional() },
+  buttonRow: { buttons: z.array(link.extend({ variant: z.string().optional() })) },
+  badgeRow: { badges: z.array(text) },
+  cardGrid: {
     columns: z.unknown().optional(),
     cards: z.array(
       z.object({
@@ -45,28 +36,19 @@ const block = z.discriminatedUnion('blockType', [
         index: text.optional(),
       }),
     ),
-  }),
-  z.object({
-    blockType: z.literal('logoRow'),
-    logos: z.array(z.object({ name: text, image: image.optional() })),
-  }),
-  z.object({
-    blockType: z.literal('itemList'),
+  },
+  logoRow: { logos: z.array(z.object({ name: text, image: image.optional() })) },
+  itemList: {
     items: z.array(z.object({ title: text, description: text.optional(), badge: text.optional() })),
-  }),
-  z.object({
-    blockType: z.literal('accordion'),
-    items: z.array(z.object({ question: text, answer: text })),
-  }),
-  z.object({ blockType: z.literal('image'), ...image.shape, priority: z.boolean().optional() }),
-  z.object({
-    blockType: z.literal('testimonialCarousel'),
+  },
+  accordion: { items: z.array(z.object({ question: text, answer: text })) },
+  image: { ...image.shape, priority: z.boolean().optional() },
+  testimonialCarousel: {
     testimonials: z.array(
       z.object({ quote: text, name: text, title: text.optional(), image: image.optional() }),
     ),
-  }),
-  z.object({
-    blockType: z.literal('personGrid'),
+  },
+  personGrid: {
     columns: z.unknown().optional(),
     people: z.array(
       z.object({
@@ -76,10 +58,9 @@ const block = z.discriminatedUnion('blockType', [
         links: z.array(link).optional(),
       }),
     ),
-  }),
-  z.object({ blockType: z.literal('form'), formName: z.enum(['contact', 'newsletter']) }),
-  z.object({
-    blockType: z.literal('pricingTable'),
+  },
+  form: { formName: z.enum(['contact', 'newsletter']) },
+  pricingTable: {
     currency: text,
     locale: text,
     defaultPeriod: z.enum(['monthly', 'annual']),
@@ -95,8 +76,19 @@ const block = z.discriminatedUnion('blockType', [
         featured: z.boolean(),
       }),
     ),
-  }),
-])
+  },
+} satisfies Record<BlockType, z.ZodRawShape>
+
+export const BLOCK_TYPES = Object.keys(blockShapes) as BlockType[]
+
+const blockOptions = BLOCK_TYPES.map((blockType) =>
+  z.object({ blockType: z.literal(blockType), ...blockShapes[blockType] }),
+)
+
+const block = z.discriminatedUnion(
+  'blockType',
+  blockOptions as unknown as [(typeof blockOptions)[number], (typeof blockOptions)[number]],
+)
 
 const section = z.object({
   tag: z.enum(['header', 'section', 'footer']).optional(),
@@ -129,6 +121,10 @@ export function decodeSections(encoded: string): SectionDefinition[] | null {
     return null
   }
 
-  const result = previewSections.safeParse(Array.isArray(parsed) ? parsed : [parsed])
-  return result.success ? (result.data as SectionDefinition[]) : null
+  try {
+    const result = previewSections.safeParse(Array.isArray(parsed) ? parsed : [parsed])
+    return result.success ? (result.data as SectionDefinition[]) : null
+  } catch {
+    return null
+  }
 }
