@@ -132,6 +132,28 @@ via shadcn's sonner, which called `useTheme()` against no provider at all until 
 one. That also makes the dark pairings of the Section Themes (doc 01) reachable by a visitor
 rather than only by tests.
 
+### 404s and the shell
+
+`not-found.tsx` inside a route group only catches `notFound()` raised by routes *in* that group.
+A URL matching no route at all belongs to no group, so with multiple root layouts Next falls back
+to its built-in page — no header, no footer, no way back. `(frontend)/[...notFound]/page.tsx`
+calls `notFound()` so an unmatched URL matches a route inside the group and renders
+`(frontend)/not-found.tsx` within the shell. A catch-all is the lowest-priority match, so it
+shadows nothing.
+
+Placeholder destinations (`/signup`, `/docs`, `/contact`, `/privacy`, `/terms`) are pinned in a
+list in the nav test: a configured href must either resolve to a route under `src/app` or appear
+in that list, and the list may not contain a route that now exists or one nothing links to. A new
+dead link is then a deliberate edit rather than an accident.
+
+### Both root layouts carry the providers
+
+`next-themes` stores the choice and re-applies it per document. Crossing a route group boundary is
+a full document load, so a provider in only one root layout means the toggle appears to forget
+itself — the header links straight into `(dashboard)`, so this was reachable in two clicks. Both
+root layouts mount `ThemeProvider` with `suppressHydrationWarning`. This is the cost of the
+multiple-root-layout shape; a single root layout would hold the providers once.
+
 ## Shared layout state
 
 Almost nothing global is needed once shadcn owns sidebar state and next-themes owns theme:

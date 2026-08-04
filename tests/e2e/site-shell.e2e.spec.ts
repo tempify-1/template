@@ -7,6 +7,10 @@ function header(page: Page) {
   return page.locator('header').first()
 }
 
+function siteFooter(page: Page) {
+  return page.locator('footer').filter({ hasText: 'All rights reserved' })
+}
+
 test.describe('SiteShell on desktop', () => {
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize(DESKTOP)
@@ -15,7 +19,7 @@ test.describe('SiteShell on desktop', () => {
 
   test('wraps the page in a header and footer without nesting a second main', async ({ page }) => {
     await expect(header(page)).toBeVisible()
-    await expect(page.locator('footer').last()).toBeVisible()
+    await expect(siteFooter(page)).toBeVisible()
     await expect(page.locator('main')).toHaveCount(1)
   })
 
@@ -84,7 +88,7 @@ test.describe('SiteShell on desktop', () => {
   })
 
   test('renders every footer column and marks the off-site link safe', async ({ page }) => {
-    const footer = page.locator('footer').last()
+    const footer = siteFooter(page)
 
     for (const column of ['Product', 'Resources', 'Company']) {
       await expect(footer.getByRole('navigation', { name: column })).toBeVisible()
@@ -134,5 +138,65 @@ test.describe('SiteShell on a phone', () => {
     )
 
     expect(overflow).toBeLessThanOrEqual(0)
+  })
+})
+
+test.describe('SiteShell chrome beyond the home page', () => {
+  test('keeps the header and footer on a page that does not exist', async ({ page }) => {
+    const response = await page.goto('/no-such-page')
+
+    expect(response?.status()).toBe(404)
+    await expect(header(page)).toBeVisible()
+    await expect(siteFooter(page)).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'This page does not exist' })).toBeVisible()
+    await expect(page.locator('main')).toHaveCount(1)
+  })
+
+  test('offers a way back from a page that does not exist', async ({ page }) => {
+    await page.goto('/no-such-page')
+    await page.getByRole('link', { name: 'Back to the home page' }).click()
+
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+      'Build your site at the speed of thought',
+    )
+  })
+
+  test('carries the Action choice across a route group boundary', async ({ page }) => {
+    await page.goto('/')
+    await header(page).getByRole('button', { name: 'Toggle theme' }).click()
+    await expect(page.locator('html')).toHaveClass(/dark/)
+
+    await page.goto('/dashboard')
+    await expect(page.locator('html')).toHaveClass(/dark/)
+  })
+
+  test('points the header call to action at its configured destination', async ({ page }) => {
+    await page.goto('/')
+
+    await expect(header(page).getByRole('link', { name: 'Start free trial' })).toHaveAttribute(
+      'href',
+      '/signup',
+    )
+  })
+})
+
+test.describe('Active page signalling', () => {
+  test('marks the current page in the header and footer, and nothing else', async ({ page }) => {
+    await page.goto('/')
+
+    const current = page.locator('[aria-current="page"]')
+    await expect(current.first()).toBeAttached()
+
+    const hrefs = await current.evaluateAll((nodes) =>
+      nodes.map((node) => node.getAttribute('href')),
+    )
+    expect(new Set(hrefs)).toEqual(new Set(['/']))
+  })
+
+  test('marks nothing on a shell page no navigation item points at', async ({ page }) => {
+    await page.goto('/no-such-page')
+
+    await expect(header(page)).toBeVisible()
+    await expect(page.locator('[aria-current="page"]')).toHaveCount(0)
   })
 })

@@ -1,3 +1,6 @@
+import { readdirSync } from 'node:fs'
+import { join } from 'node:path'
+
 import { describe, it, expect, vi } from 'vitest'
 
 import { siteNav } from '@/config/site-nav'
@@ -141,5 +144,68 @@ describe('navLinksOf', () => {
 
   it('yields nothing for an Action, since it has no destination', () => {
     expect(navLinksOf({ type: 'action', label: 'Toggle theme', action: 'toggleTheme' })).toEqual([])
+  })
+})
+
+describe('every configured destination', () => {
+  const PLACEHOLDER_ROUTES = ['/signup', '/docs', '/contact', '/privacy', '/terms']
+
+  function routesUnderApp(): string[] {
+    const appDir = join(process.cwd(), 'src/app')
+
+    const walk = (dir: string, segments: string[]): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+        const full = join(dir, entry.name)
+        if (entry.isDirectory()) {
+          if (entry.name.startsWith('[[')) return walk(full, segments)
+          if (entry.name.startsWith('[')) return []
+          const isGroup = entry.name.startsWith('(') && entry.name.endsWith(')')
+          return walk(full, isGroup ? segments : [...segments, entry.name])
+        }
+        return /^page\.tsx?$/.test(entry.name)
+          ? [`/${segments.join('/')}`.replace(/\/$/, '') || '/']
+          : []
+      })
+
+    return walk(appDir, [])
+  }
+
+  const internalHrefs = [
+    ...siteNav.header.items.flatMap(navLinksOf),
+    ...(siteNav.header.cta ? [siteNav.header.cta] : []),
+    ...siteNav.footer.columns.flatMap((column) => column.items),
+    ...(siteNav.footer.legal ?? []),
+    siteNav.brand,
+  ]
+    .map((link) => link.href)
+    .filter((href) => href.startsWith('/'))
+
+  it('reads a non-empty route list, so the check is not vacuous', () => {
+    const routes = routesUnderApp()
+
+    expect(routes).toContain('/')
+    expect(routes).toContain('/dashboard')
+  })
+
+  it('either resolves to a route or is a declared placeholder', () => {
+    const routes = routesUnderApp()
+    const unaccounted = internalHrefs.filter(
+      (href) => !routes.includes(href) && !PLACEHOLDER_ROUTES.includes(href),
+    )
+
+    expect(unaccounted).toEqual([])
+  })
+
+  it('declares no placeholder that has since become a real route', () => {
+    const routes = routesUnderApp()
+    const stale = PLACEHOLDER_ROUTES.filter((href) => routes.includes(href))
+
+    expect(stale).toEqual([])
+  })
+
+  it('lists no placeholder that nothing links to', () => {
+    const unused = PLACEHOLDER_ROUTES.filter((href) => !internalHrefs.includes(href))
+
+    expect(unused).toEqual([])
   })
 })
