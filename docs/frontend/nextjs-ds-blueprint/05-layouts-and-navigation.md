@@ -104,6 +104,56 @@ action items.
 - Icons are `LucideIconName` strings resolved through one lookup map — configs stay
   serializable.
 
+## What is built (SiteShell)
+
+`(frontend)/layout.tsx` wraps marketing routes in `SiteShell`: sticky header, `HeaderNav`,
+mobile sheet, and a footer driven by the same `LayoutConfig`. The shell and footer are Server
+Components; only `HeaderNav` (Base UI navigation menu), `MobileNav` (sheet state) and `NavAction`
+are client components.
+
+The shell renders no `<main>` — the section `Page` component already owns it, and nesting a
+second one would give the page two main landmarks.
+
+Link-buttons use `buttonVariants()` on a `<Link>`, not `<Button render={<Link/>}>`. Base UI's
+button warns at runtime when its rendered element is not a native `<button>`, and the section
+`buttonRow` already established the `buttonVariants` pattern.
+
+Icons resolve through `NavIcon`, which builds an element with `createElement` rather than
+assigning the resolved component to a capitalised variable and rendering it as JSX. The React
+Compiler lint rule `react-hooks/static-components` rejects the latter inside a client component,
+because it cannot prove the lookup returns a stable identity.
+
+### The named Action
+
+`toggleTheme` is the one registered Action. It receives an `ActionContext` carrying the theme
+getter and setter rather than touching the DOM, so the registry stays testable without a browser
+and the config stays a string. `next-themes` provides the provider — it was already a dependency
+via shadcn's sonner, which called `useTheme()` against no provider at all until this shell added
+one. That also makes the dark pairings of the Section Themes (doc 01) reachable by a visitor
+rather than only by tests.
+
+### 404s and the shell
+
+`not-found.tsx` inside a route group only catches `notFound()` raised by routes *in* that group.
+A URL matching no route at all belongs to no group, so with multiple root layouts Next falls back
+to its built-in page — no header, no footer, no way back. `(frontend)/[...notFound]/page.tsx`
+calls `notFound()` so an unmatched URL matches a route inside the group and renders
+`(frontend)/not-found.tsx` within the shell. A catch-all is the lowest-priority match, so it
+shadows nothing.
+
+Placeholder destinations (`/signup`, `/docs`, `/contact`, `/privacy`, `/terms`) are pinned in a
+list in the nav test: a configured href must either resolve to a route under `src/app` or appear
+in that list, and the list may not contain a route that now exists or one nothing links to. A new
+dead link is then a deliberate edit rather than an accident.
+
+### Both root layouts carry the providers
+
+`next-themes` stores the choice and re-applies it per document. Crossing a route group boundary is
+a full document load, so a provider in only one root layout means the toggle appears to forget
+itself — the header links straight into `(dashboard)`, so this was reachable in two clicks. Both
+root layouts mount `ThemeProvider` with `suppressHydrationWarning`. This is the cost of the
+multiple-root-layout shape; a single root layout would hold the providers once.
+
 ## Shared layout state
 
 Almost nothing global is needed once shadcn owns sidebar state and next-themes owns theme:

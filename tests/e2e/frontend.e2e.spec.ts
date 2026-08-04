@@ -9,15 +9,21 @@ test.describe('Landing page', () => {
     const heading = page.getByRole('heading', { level: 1 })
     await expect(heading).toHaveText('Build your site at the speed of thought')
 
-    await expect(page.getByText('Compose pages from typed presets', { exact: false })).toBeVisible()
+    await expect(
+      page.getByRole('main').getByText('Compose pages from typed presets', { exact: false }),
+    ).toBeVisible()
   })
 
-  test('renders both calls to action as unique links across the whole page', async ({ page }) => {
-    await expect(page.getByRole('link', { name: 'Start free trial' })).toHaveAttribute(
+  test('renders both hero calls to action as unique links within the page content', async ({
+    page,
+  }) => {
+    const main = page.getByRole('main')
+
+    await expect(main.getByRole('link', { name: 'Start free trial' })).toHaveAttribute(
       'href',
       '/signup',
     )
-    await expect(page.getByRole('link', { name: 'Book a demo' })).toHaveAttribute('href', '/demo')
+    await expect(main.getByRole('link', { name: 'Book a demo' })).toHaveAttribute('href', '/demo')
   })
 
   test('renders the trust badges', async ({ page }) => {
