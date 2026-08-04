@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, request as playwrightRequest } from '@playwright/test'
 import { getPayload, type Payload } from 'payload'
 
 import config from '@/payload.config'
@@ -46,9 +46,28 @@ test.describe('Home page rendered from Payload', () => {
     createdId = created.id
   })
 
-  test.afterAll(async () => {
+  test.afterAll(async ({}, testInfo) => {
     if (createdId === undefined) return
-    await payload.delete({ collection: 'pages', id: createdId })
+
+    const editor = { email: 'pages-cms@test.local', password: 'test1234' }
+    await payload.delete({ collection: 'users', where: { email: { equals: editor.email } } })
+    await payload.create({ collection: 'users', data: editor as never })
+
+    const request = await playwrightRequest.newContext({ baseURL: testInfo.project.use.baseURL })
+    const login = await request.post('/api/users/login', { data: editor })
+    const { token } = await login.json()
+
+    await request.delete(`/api/pages/${createdId}`, {
+      headers: { Authorization: `JWT ${token}` },
+    })
+
+    await expect
+      .poll(async () => (await request.get('/')).text(), { timeout: 20_000 })
+      .toContain('Build your site at the speed of thought')
+
+    await request.dispose()
+
+    await payload.delete({ collection: 'users', where: { email: { equals: editor.email } } })
   })
 
   test('renders the stored heading rather than the code Fixture', async ({ page }) => {

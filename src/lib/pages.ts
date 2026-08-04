@@ -3,16 +3,11 @@ import { draftMode, headers as getHeaders } from 'next/headers'
 import { cache } from 'react'
 import { getPayload } from 'payload'
 
+import { PAGES_TAG, pageTag } from '@/lib/cache-tags'
 import { mapPageResult } from '@/mappers/page'
 import type { SectionDefinition } from '@/lib/presets/types'
 import type { Page } from '@/payload-types'
 import config from '@/payload.config'
-
-export const PAGES_TAG = 'pages'
-
-export function pageTag(slug: string): string {
-  return `page:${slug}`
-}
 
 async function findPublished(slug: string): Promise<Page | null> {
   const payload = await getPayload({ config: await config })
@@ -31,6 +26,7 @@ async function findPublished(slug: string): Promise<Page | null> {
 function cachedPublished(slug: string): Promise<Page | null> {
   return unstable_cache(() => findPublished(slug), ['page', slug], {
     tags: [PAGES_TAG, pageTag(slug)],
+    revalidate: 300,
   })()
 }
 
@@ -73,7 +69,7 @@ export async function sectionsFor(page: Page): Promise<SectionDefinition[]> {
   return sections
 }
 
-async function findPublishedPages(): Promise<Pick<Page, 'slug' | 'updatedAt'>[]> {
+export async function publishedPages(): Promise<Pick<Page, 'slug' | 'updatedAt'>[]> {
   const payload = await getPayload({ config: await config })
 
   const { docs } = await payload.find({
@@ -86,8 +82,4 @@ async function findPublishedPages(): Promise<Pick<Page, 'slug' | 'updatedAt'>[]>
   })
 
   return docs.map((doc) => ({ slug: doc.slug, updatedAt: doc.updatedAt }))
-}
-
-export function publishedPages(): Promise<Pick<Page, 'slug' | 'updatedAt'>[]> {
-  return unstable_cache(findPublishedPages, ['published-pages'], { tags: [PAGES_TAG] })()
 }

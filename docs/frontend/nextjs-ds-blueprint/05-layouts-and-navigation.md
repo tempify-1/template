@@ -154,6 +154,43 @@ itself — the header links straight into `(dashboard)`, so this was reachable i
 root layouts mount `ThemeProvider` with `suppressHydrationWarning`. This is the cost of the
 multiple-root-layout shape; a single root layout would hold the providers once.
 
+## Live Preview and draft rendering
+
+Live Preview runs in Payload's server-side mode, so the render tree stays Server Components
+(ADR-0004). `/next/preview` enables draft mode and redirects; `/next/exit-preview` disables it.
+The route requires a logged-in Payload user and refuses anything but a single relative path — an
+absolute or protocol-relative `path` would let preview be pointed off-site. It carries no secret
+in the query string: a secret there leaks through logs and referrers, and the auth check is the
+real gate.
+
+`DraftRefresh` is a Server Component that reads `draftMode()` and renders nothing when it is off,
+so the client refresh listener exists only inside preview. Server-side mode refreshes on save
+rather than per keystroke, which is why drafts and autosave are enabled on Pages.
+
+### Revalidation and the cache
+
+The published page query is wrapped in `unstable_cache` tagged `page:<slug>`, and the Pages
+`afterChange`/`afterDelete` hooks call `revalidateTag` for the affected slugs — keyed per
+document, never a blanket purge. The sitemap is a statically prerendered metadata route, which a
+tag cannot reach, so it is revalidated by path as well.
+
+Two things this makes true, both learned by watching tests fail:
+
+- **Only writes that go through the Next process invalidate anything.** A script or CLI writing
+  straight to Postgres leaves the site serving the cached document, because `revalidateTag` runs
+  in the process that calls it. Editor saves go through the admin panel, which is inside Next, so
+  real editing is fine — but tests that seed with the Local API must either use unique slugs or
+  clean up over HTTP.
+- **Revalidation is asynchronous.** A request issued immediately after a publish can still win the
+  race, so assertions about a publish taking effect poll rather than checking once.
+
+The cached entry also carries a bounded `revalidate`, so an out-of-band write cannot leave the
+site stale indefinitely.
+
+`PAGES_TAG` and `pageTag` live in `src/lib/cache-tags.ts` with no Next imports. The Payload config
+imports the Pages collection, and the config must load outside a Next runtime — vitest, the
+Payload CLI — so anything it reaches must not statically import `next/cache`.
+
 ## Shared layout state
 
 Almost nothing global is needed once shadcn owns sidebar state and next-themes owns theme:

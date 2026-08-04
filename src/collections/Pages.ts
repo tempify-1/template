@@ -1,7 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
 import { authenticated, authenticatedOrPublished } from '../access'
-import { PAGES_TAG, pageTag } from '../lib/pages'
+import { PAGES_TAG, pageTag } from '../lib/cache-tags'
 import { presetBlocks } from '../lib/presets/registry'
 import { previewPath } from '../lib/preview'
 
