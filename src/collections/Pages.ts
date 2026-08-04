@@ -1,7 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
 import { authenticated, authenticatedOrPublished } from '../access'
-import { PAGES_TAG, pageTag } from '../lib/cache-tags'
+import { pageTag } from '../lib/cache-tags'
 import { presetBlocks } from '../lib/presets/registry'
 import { previewPath } from '../lib/preview'
 
@@ -15,8 +15,7 @@ async function revalidate(slugs: unknown[]): Promise<void> {
 
   try {
     const { revalidatePath, revalidateTag } = await import('next/cache')
-    for (const slug of unique) revalidateTag(pageTag(slug), 'max')
-    revalidateTag(PAGES_TAG, 'max')
+    for (const slug of unique) revalidateTag(pageTag(slug), { expire: 0 })
     revalidatePath('/sitemap.xml')
   } catch {
     return

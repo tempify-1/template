@@ -42,12 +42,28 @@ test.describe('Live Preview and drafts', () => {
   })
 
   test('refuses to send preview anywhere but a relative path', async ({ request }) => {
-    for (const path of ['https://evil.example', '//evil.example', 'not-a-path']) {
+    for (const path of [
+      'https://evil.example',
+      '//evil.example',
+      '/\\evil.example',
+      '/\\\\evil.example',
+      '\\\\evil.example',
+      'not-a-path',
+    ]) {
       const response = await request.get(`/next/preview?path=${encodeURIComponent(path)}`, {
         maxRedirects: 0,
       })
       expect(response.status(), path).toBe(400)
     }
+  })
+
+  test('refuses to start preview from a cross-site navigation', async ({ request }) => {
+    const response = await request.get('/next/preview?path=%2F', {
+      headers: { 'sec-fetch-site': 'cross-site' },
+      maxRedirects: 0,
+    })
+
+    expect(response.status()).toBe(403)
   })
 
   test('keeps an unpublished page off the public site', async ({ page }) => {
@@ -83,16 +99,12 @@ test.describe('Live Preview and drafts', () => {
     expect((await setStatus('published')).ok()).toBe(true)
 
     try {
-      await expect
-        .poll(async () => (await request.get(`/${SLUG}`)).status(), { timeout: 15_000 })
-        .toBe(200)
+      expect((await request.get(`/${SLUG}`)).status()).toBe(200)
 
       await page.goto(`/${SLUG}`)
       await expect(page.getByRole('heading', { name: 'Draft heading' })).toBeVisible()
 
-      await expect
-        .poll(async () => (await request.get('/sitemap.xml')).text(), { timeout: 15_000 })
-        .toContain(`/${SLUG}`)
+      expect(await (await request.get('/sitemap.xml')).text()).toContain(`/${SLUG}`)
     } finally {
       await setStatus('draft')
     }

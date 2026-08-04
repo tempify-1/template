@@ -3,7 +3,7 @@ import { draftMode, headers as getHeaders } from 'next/headers'
 import { cache } from 'react'
 import { getPayload } from 'payload'
 
-import { PAGES_TAG, pageTag } from '@/lib/cache-tags'
+import { pageTag } from '@/lib/cache-tags'
 import { mapPageResult } from '@/mappers/page'
 import type { SectionDefinition } from '@/lib/presets/types'
 import type { Page } from '@/payload-types'
@@ -25,7 +25,7 @@ async function findPublished(slug: string): Promise<Page | null> {
 
 function cachedPublished(slug: string): Promise<Page | null> {
   return unstable_cache(() => findPublished(slug), ['page', slug], {
-    tags: [PAGES_TAG, pageTag(slug)],
+    tags: [pageTag(slug)],
     revalidate: 300,
   })()
 }
@@ -48,11 +48,11 @@ async function findDraft(slug: string): Promise<Page | null> {
   return docs[0] ?? null
 }
 
-export async function findPage(slug: string): Promise<Page | null> {
+export const findPage = cache(async (slug: string): Promise<Page | null> => {
   const { isEnabled: isDraft } = await draftMode()
 
   return isDraft ? findDraft(slug) : cachedPublished(slug)
-}
+})
 
 export async function sectionsFor(page: Page): Promise<SectionDefinition[]> {
   const payload = await getPayload({ config: await config })

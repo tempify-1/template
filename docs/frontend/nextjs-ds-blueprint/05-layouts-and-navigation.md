@@ -158,10 +158,14 @@ multiple-root-layout shape; a single root layout would hold the providers once.
 
 Live Preview runs in Payload's server-side mode, so the render tree stays Server Components
 (ADR-0004). `/next/preview` enables draft mode and redirects; `/next/exit-preview` disables it.
-The route requires a logged-in Payload user and refuses anything but a single relative path — an
-absolute or protocol-relative `path` would let preview be pointed off-site. It carries no secret
-in the query string: a secret there leaks through logs and referrers, and the auth check is the
-real gate.
+The route requires a logged-in Payload user and refuses anything but a single relative path. That
+check is not `startsWith('/')`: a browser normalises a backslash to a slash when resolving a
+`Location` header, so `/\evil.example` reads as relative but lands on `evil.example`. The guard
+normalises backslashes, rejects a leading `//`, then resolves the candidate against a throwaway
+origin and rejects anything whose origin moved. It also refuses a request whose `Sec-Fetch-Site`
+is `cross-site`, so a link from another site cannot flip an editor into draft mode. It carries no
+secret in the query string: a secret there leaks through logs and referrers, and the auth check
+is the real gate.
 
 `DraftRefresh` is a Server Component that reads `draftMode()` and renders nothing when it is off,
 so the client refresh listener exists only inside preview. Server-side mode refreshes on save
@@ -171,8 +175,18 @@ rather than per keystroke, which is why drafts and autosave are enabled on Pages
 
 The published page query is wrapped in `unstable_cache` tagged `page:<slug>`, and the Pages
 `afterChange`/`afterDelete` hooks call `revalidateTag` for the affected slugs — keyed per
-document, never a blanket purge. The sitemap is a statically prerendered metadata route, which a
-tag cannot reach, so it is revalidated by path as well.
+document, never a blanket purge. There is deliberately **no** site-wide tag on those entries: one
+would be attached to every page, so a single save would drop the whole site's cache, which is the
+opposite of what the ticket asks for. The sitemap is a statically prerendered metadata route,
+which a tag cannot reach, so it is revalidated by path as well.
+
+`revalidateTag` takes a cache-life argument, and the choice matters. The `'max'` profile marks the
+entry *stale* with a year-long expiry rather than expiring it, so `unstable_cache` serves the old
+value once more and refreshes in the background — the first visitor after a publish sees
+pre-publish content. `{ expire: 0 }` expires it, so the very next request re-queries. Verified by
+priming a 404 on an unpublished slug, publishing over HTTP, and asserting the *first* subsequent
+request is 200; the test asserts that single request rather than polling, because polling hides
+exactly this defect.
 
 Two things this makes true, both learned by watching tests fail:
 
@@ -181,11 +195,17 @@ Two things this makes true, both learned by watching tests fail:
   in the process that calls it. Editor saves go through the admin panel, which is inside Next, so
   real editing is fine — but tests that seed with the Local API must either use unique slugs or
   clean up over HTTP.
-- **Revalidation is asynchronous.** A request issued immediately after a publish can still win the
-  race, so assertions about a publish taking effect poll rather than checking once.
+- **Cache-life arguments are not decoration.** The first version passed `'max'`, which only marks
+  an entry stale; the test polled, so it passed while the product was wrong.
 
 The cached entry also carries a bounded `revalidate`, so an out-of-band write cannot leave the
 site stale indefinitely.
+
+`DraftRefresh` takes its `serverURL` from the incoming request's host rather than `siteUrl()`.
+Payload's live-preview listener compares that value against `event.origin` by exact string
+equality, so a deployment reached on any origin other than the configured one would silently stop
+refreshing. It also renders an exit-preview control: without one, an editor who enters draft mode
+has no way out, since the cookie survives navigation.
 
 `PAGES_TAG` and `pageTag` live in `src/lib/cache-tags.ts` with no Next imports. The Payload config
 imports the Pages collection, and the config must load outside a Next runtime — vitest, the

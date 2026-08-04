@@ -8,8 +8,18 @@ const HEADING = 'Authored in Payload, not in code'
 let payload: Payload
 let createdId: number | string | undefined
 
+const EDITOR = { email: 'pages-cms@test.local', password: 'test1234' }
+
+async function editorContext(baseURL: string | undefined) {
+  const context = await playwrightRequest.newContext({ baseURL })
+  const login = await context.post('/api/users/login', { data: EDITOR })
+  const { token } = await login.json()
+
+  return { context, token }
+}
+
 test.describe('Home page rendered from Payload', () => {
-  test.beforeAll(async () => {
+  test.beforeAll(async ({ baseURL }) => {
     payload = await getPayload({ config: await config })
 
     const existing = await payload.find({
@@ -24,50 +34,54 @@ test.describe('Home page rendered from Payload', () => {
       )
     }
 
-    const created = await payload.create({
-      collection: 'pages',
-      data: {
-        title: 'Home',
-        slug: 'home',
-        _status: 'published',
-        sections: [
-          {
-            blockType: 'heroCentered',
-            heading: HEADING,
-            subheading: 'Stored as a Preset invocation and dispatched through the mapper.',
-            primaryCta: { label: 'Stored primary', href: '/stored-primary' },
-            secondaryCta: { label: null, href: null },
-            trustBadges: [{ text: 'Stored badge' }],
-          },
-        ],
-      },
-    })
+    await payload.delete({ collection: 'users', where: { email: { equals: EDITOR.email } } })
+    await payload.create({ collection: 'users', data: EDITOR as never })
 
-    createdId = created.id
+    const { context, token } = await editorContext(baseURL)
+    try {
+      const response = await context.post('/api/pages', {
+        headers: { Authorization: `JWT ${token}` },
+        data: {
+          title: 'Home',
+          slug: 'home',
+          _status: 'published',
+          sections: [
+            {
+              blockType: 'heroCentered',
+              heading: HEADING,
+              subheading: 'Stored as a Preset invocation and dispatched through the mapper.',
+              primaryCta: { label: 'Stored primary', href: '/stored-primary' },
+              secondaryCta: { label: null, href: null },
+              trustBadges: [{ text: 'Stored badge' }],
+            },
+          ],
+        },
+      })
+
+      expect(response.ok()).toBe(true)
+      createdId = (await response.json()).doc.id
+    } finally {
+      await context.dispose()
+    }
   })
 
   test.afterAll(async ({}, testInfo) => {
     if (createdId === undefined) return
 
-    const editor = { email: 'pages-cms@test.local', password: 'test1234' }
-    await payload.delete({ collection: 'users', where: { email: { equals: editor.email } } })
-    await payload.create({ collection: 'users', data: editor as never })
+    const { context, token } = await editorContext(testInfo.project.use.baseURL)
 
-    const request = await playwrightRequest.newContext({ baseURL: testInfo.project.use.baseURL })
-    const login = await request.post('/api/users/login', { data: editor })
-    const { token } = await login.json()
+    try {
+      await context.delete(`/api/pages/${createdId}`, {
+        headers: { Authorization: `JWT ${token}` },
+      })
 
-    await request.delete(`/api/pages/${createdId}`, {
-      headers: { Authorization: `JWT ${token}` },
-    })
-
-    await expect
-      .poll(async () => (await request.get('/')).text(), { timeout: 20_000 })
-      .toContain('Build your site at the speed of thought')
-
-    await request.dispose()
-
-    await payload.delete({ collection: 'users', where: { email: { equals: editor.email } } })
+      await expect
+        .poll(async () => (await context.get('/')).text(), { timeout: 20_000 })
+        .toContain('Build your site at the speed of thought')
+    } finally {
+      await context.dispose()
+      await payload.delete({ collection: 'users', where: { email: { equals: EDITOR.email } } })
+    }
   })
 
   test('renders the stored heading rather than the code Fixture', async ({ page }) => {

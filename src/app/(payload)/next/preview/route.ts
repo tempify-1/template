@@ -5,10 +5,26 @@ import type { NextRequest } from 'next/server'
 
 import config from '@/payload.config'
 
-export async function GET(request: NextRequest): Promise<Response> {
-  const path = request.nextUrl.searchParams.get('path')
+function safeRelativePath(raw: string | null): string | null {
+  if (!raw) return null
 
-  if (!path || !path.startsWith('/') || path.startsWith('//')) {
+  const candidate = raw.replace(/\\/g, '/')
+  if (!candidate.startsWith('/') || candidate.startsWith('//')) return null
+
+  const resolved = new URL(candidate, 'http://preview.invalid')
+  if (resolved.origin !== 'http://preview.invalid') return null
+
+  return `${resolved.pathname}${resolved.search}`
+}
+
+export async function GET(request: NextRequest): Promise<Response> {
+  if (request.headers.get('sec-fetch-site') === 'cross-site') {
+    return new Response('Preview cannot be started from another site.', { status: 403 })
+  }
+
+  const path = safeRelativePath(request.nextUrl.searchParams.get('path'))
+
+  if (!path) {
     return new Response('A relative path is required to preview.', { status: 400 })
   }
 
