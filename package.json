@@ -26,6 +26,7 @@
     "@hookform/resolvers": "^5.7.1",
     "@payloadcms/db-postgres": "3.87.0",
     "@payloadcms/next": "3.87.0",
+    "@payloadcms/plugin-seo": "3.87.0",
     "@payloadcms/richtext-lexical": "3.87.0",
     "@payloadcms/ui": "3.87.0",
     "@tanstack/react-table": "^8.21.3",

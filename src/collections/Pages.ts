@@ -8,6 +8,8 @@ function pathForSlug(slug: unknown): string | null {
   return slug === 'home' ? '/' : `/${slug}`
 }
 
+const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+
 async function revalidate(paths: (string | null)[]): Promise<void> {
   const unique = [...new Set(paths.filter((path): path is string => path !== null))]
   if (unique.length === 0) return
@@ -15,6 +17,7 @@ async function revalidate(paths: (string | null)[]): Promise<void> {
   try {
     const { revalidatePath } = await import('next/cache')
     for (const path of unique) revalidatePath(path)
+    revalidatePath('/sitemap.xml')
   } catch {
     return
   }
@@ -49,6 +52,11 @@ export const Pages: CollectionConfig = {
       required: true,
       unique: true,
       index: true,
+      admin: { description: 'Lower-case words separated by hyphens, e.g. about-us.' },
+      validate: (value: unknown) =>
+        typeof value === 'string' && SLUG_PATTERN.test(value)
+          ? true
+          : 'Use lower-case letters, numbers and hyphens only, with no leading or trailing hyphen.',
     },
     {
       name: 'sections',
