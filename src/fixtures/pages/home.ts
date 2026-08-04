@@ -7,6 +7,7 @@ import { featureGrid } from '@/lib/presets/feature-grid'
 import { heroCentered } from '@/lib/presets/hero-centered'
 import { logoWall } from '@/lib/presets/logo-wall'
 import { newsletter } from '@/lib/presets/newsletter'
+import { pricing } from '@/lib/presets/pricing'
 import { serviceList } from '@/lib/presets/service-list'
 import { teamGrid } from '@/lib/presets/team-grid'
 import { themed } from '@/lib/presets/theme'
@@ -166,6 +167,54 @@ export const homeSections: SectionDefinition[] = [
         links: [{ label: 'Profile', href: '/team/sofia' }],
       },
       { name: 'Ade Okonkwo', role: 'Support', links: [{ label: 'Profile', href: '/team/ade' }] },
+    ],
+  }),
+
+  pricing({
+    heading: 'Pricing that scales with the work, not the seat count',
+    subheading: 'Every tier ships the whole template. The difference is support and scale.',
+    currency: '$',
+    defaultPeriod: 'monthly',
+    annualNote: 'Two months free on annual billing.',
+    tiers: [
+      {
+        name: 'Starter',
+        description: 'One site, built by one team.',
+        monthlyPrice: 29,
+        annualPrice: 290,
+        features: ['Every Preset and Block', 'Config-driven forms', 'Community support'],
+        ctaLabel: 'Start free trial',
+        ctaHref: '/signup',
+      },
+      {
+        name: 'Team',
+        description: 'Several sites and the people to run them.',
+        monthlyPrice: 89,
+        annualPrice: 890,
+        features: [
+          'Everything in Starter',
+          'Unlimited editors',
+          'Live Preview and drafts',
+          'Priority support',
+        ],
+        ctaLabel: 'Start free trial',
+        ctaHref: '/signup',
+        featured: true,
+      },
+      {
+        name: 'Scale',
+        description: 'For agencies shipping client work.',
+        monthlyPrice: 249,
+        annualPrice: 2490,
+        features: [
+          'Everything in Team',
+          'Architecture review',
+          'Design system audit',
+          'Migration support',
+        ],
+        ctaLabel: 'Talk to us',
+        ctaHref: '/contact',
+      },
     ],
   }),
 
