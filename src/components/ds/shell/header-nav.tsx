@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 import {
   NavigationMenu,
@@ -10,16 +11,22 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from '@/components/ui/navigation-menu'
+import { currentProps, externalProps } from '@/lib/nav/link'
 import type { NavItem, NavLink } from '@/lib/nav/types'
 
 import { NavAction } from './nav-action'
 import { NavIcon } from './nav-icon'
 
-function MenuLink({ link }: { link: NavLink }) {
+function MenuLink({ link, pathname }: { link: NavLink; pathname: string }) {
   return (
     <NavigationMenuLink
       render={
-        <Link href={link.href} className="flex gap-3 rounded-md p-3 hover:bg-accent">
+        <Link
+          href={link.href}
+          className="flex gap-3 rounded-md p-3 hover:bg-accent"
+          {...externalProps(link)}
+          {...currentProps(link.href, pathname)}
+        >
           <NavIcon name={link.icon} className="mt-0.5 size-4 shrink-0" />
           <span className="flex flex-col gap-1">
             <span className="text-sm font-medium leading-none">{link.label}</span>
@@ -34,8 +41,10 @@ function MenuLink({ link }: { link: NavLink }) {
 }
 
 export function HeaderNav({ items }: { items: NavItem[] }) {
+  const pathname = usePathname()
+
   return (
-    <NavigationMenu className="hidden md:flex">
+    <NavigationMenu className="hidden md:flex" aria-label="Site">
       <NavigationMenuList>
         {items.map((item) => {
           if (item.type === 'menu') {
@@ -46,7 +55,7 @@ export function HeaderNav({ items }: { items: NavItem[] }) {
                   <ul className="grid w-[26rem] gap-1 p-2">
                     {item.items.map((link) => (
                       <li key={link.href}>
-                        <MenuLink link={link} />
+                        <MenuLink link={link} pathname={pathname} />
                       </li>
                     ))}
                   </ul>
@@ -69,8 +78,11 @@ export function HeaderNav({ items }: { items: NavItem[] }) {
                 render={
                   <Link
                     href={item.href}
-                    className="inline-flex h-9 items-center rounded-md px-3 text-sm font-medium hover:bg-accent"
+                    className="inline-flex h-9 items-center gap-2 rounded-md px-3 text-sm font-medium hover:bg-accent"
+                    {...externalProps(item)}
+                    {...currentProps(item.href, pathname)}
                   >
+                    <NavIcon name={item.icon} className="size-4" />
                     {item.label}
                   </Link>
                 }

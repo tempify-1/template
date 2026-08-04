@@ -42,7 +42,7 @@ export const ICON_NAMES = Object.keys(ICONS) as [IconName, ...IconName[]]
 export type IconName = keyof typeof ICONS
 
 export function isIconName(value: string): value is IconName {
-  return value in ICONS
+  return Object.hasOwn(ICONS, value)
 }
 
 export function iconFor(name: string | undefined): LucideIcon | undefined {

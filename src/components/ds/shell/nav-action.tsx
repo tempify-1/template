@@ -3,6 +3,7 @@
 import { useTheme } from 'next-themes'
 
 import { Button } from '@/components/ui/button'
+import type { IconName } from '@/lib/icons'
 import { runAction, type ActionName } from '@/lib/nav/actions'
 
 import { NavIcon } from './nav-icon'
@@ -15,7 +16,7 @@ export function NavAction({
 }: {
   label: string
   action: ActionName
-  icon?: string
+  icon?: IconName
   className?: string
 }) {
   const { resolvedTheme, setTheme } = useTheme()

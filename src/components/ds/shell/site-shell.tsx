@@ -3,8 +3,10 @@ import type { ReactNode } from 'react'
 
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { externalProps } from '@/lib/nav/link'
 import type { LayoutConfig } from '@/lib/nav/types'
 
+import { FooterLink } from './footer-link'
 import { HeaderNav } from './header-nav'
 import { MobileNav } from './mobile-nav'
 
@@ -24,6 +26,7 @@ function SiteHeader({ config }: { config: LayoutConfig }) {
           <Link
             href={config.header.cta.href}
             className={cn(buttonVariants({ size: 'sm' }), 'hidden md:inline-flex')}
+            {...externalProps(config.header.cta)}
           >
             {config.header.cta.label}
           </Link>
@@ -53,14 +56,11 @@ function SiteFooter({ config }: { config: LayoutConfig }) {
             <nav key={column.title} aria-label={column.title} className="flex flex-col gap-3">
               <span className="text-sm font-medium">{column.title}</span>
               {column.items.map((link) => (
-                <Link
+                <FooterLink
                   key={link.href}
-                  href={link.href}
-                  className="text-sm text-muted-foreground hover:text-foreground"
-                  {...(link.external ? { target: '_blank', rel: 'noreferrer noopener' } : {})}
-                >
-                  {link.label}
-                </Link>
+                  link={link}
+                  className="text-sm text-muted-foreground hover:text-foreground aria-[current=page]:text-foreground"
+                />
               ))}
             </nav>
           ))}
@@ -71,9 +71,11 @@ function SiteFooter({ config }: { config: LayoutConfig }) {
           {footer.legal?.length ? (
             <nav aria-label="Legal" className="flex gap-4">
               {footer.legal.map((link) => (
-                <Link key={link.href} href={link.href} className="hover:text-foreground">
-                  {link.label}
-                </Link>
+                <FooterLink
+                  key={link.href}
+                  link={link}
+                  className="hover:text-foreground aria-[current=page]:text-foreground"
+                />
               ))}
             </nav>
           ) : null}
