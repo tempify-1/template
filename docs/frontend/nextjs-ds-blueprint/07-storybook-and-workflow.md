@@ -162,3 +162,26 @@ preset consumes.
 
 v2, pulled by the first project that demands it: deep-linkable record drawers (ADR-0003),
 wizard + arrays + autosave, Kanban, EventCalendar, Map, and the long tail from doc 06.
+
+## Fixtures as the regression surface
+
+Every registered Preset has one Fixture in `src/fixtures/presets`, and a test asserts the Fixture
+names equal the registry keys in both directions — a new Preset cannot ship without a worked
+example, and a Fixture cannot outlive its Preset.
+
+`/preview/<preset>` renders one Fixture, and `/preview/config?c=<base64url>` renders an arbitrary
+posted configuration, so a layout can be seen without a deploy or a CMS seed. Both routes are
+`noindex`. The decoder caps the payload, refuses anything that is not JSON, and rejects any block
+whose `blockType` is not in the renderer registry, so the route cannot be used to inject a block
+type the system does not own.
+
+Playwright screenshots each Fixture route into
+`tests/e2e/fixtures-visual.e2e.spec.ts-snapshots/`. The baselines are committed and platform
+suffixed (`-chromium-darwin`), so a machine with different font rendering will need its own set
+generated with `--update-snapshots`. The harness was checked by changing one word in a Fixture
+heading and confirming the matching screenshot test failed — a snapshot suite that cannot fail is
+worse than none.
+
+`src/fixtures/pages/home.ts` composes the landing page from those same Fixtures, applying Themes
+and the hero's full-viewport height. There is one copy of each Preset's example content, used by
+the preview routes, the visual regression suite and the live home page alike.
