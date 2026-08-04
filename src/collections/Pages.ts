@@ -1,22 +1,21 @@
 import type { CollectionConfig } from 'payload'
 
 import { authenticated, authenticatedOrPublished } from '../access'
+import { pageTag } from '../lib/cache-tags'
 import { presetBlocks } from '../lib/presets/registry'
-
-function pathForSlug(slug: unknown): string | null {
-  if (typeof slug !== 'string' || slug.length === 0) return null
-  return slug === 'home' ? '/' : `/${slug}`
-}
+import { previewPath } from '../lib/preview'
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
-async function revalidate(paths: (string | null)[]): Promise<void> {
-  const unique = [...new Set(paths.filter((path): path is string => path !== null))]
+async function revalidate(slugs: unknown[]): Promise<void> {
+  const unique = [
+    ...new Set(slugs.filter((slug): slug is string => typeof slug === 'string' && slug.length > 0)),
+  ]
   if (unique.length === 0) return
 
   try {
-    const { revalidatePath } = await import('next/cache')
-    for (const path of unique) revalidatePath(path)
+    const { revalidatePath, revalidateTag } = await import('next/cache')
+    for (const slug of unique) revalidateTag(pageTag(slug), { expire: 0 })
     revalidatePath('/sitemap.xml')
   } catch {
     return
@@ -28,6 +27,10 @@ export const Pages: CollectionConfig = {
   admin: {
     useAsTitle: 'title',
     defaultColumns: ['title', 'slug', 'updatedAt'],
+    livePreview: {
+      url: ({ data }) => previewPath(data?.slug),
+    },
+    preview: (data) => previewPath(data?.slug),
   },
   access: {
     create: authenticated,
@@ -70,7 +73,7 @@ export const Pages: CollectionConfig = {
         if (context?.disableRevalidate) return doc
         if (doc._status !== 'published' && previousDoc?._status !== 'published') return doc
 
-        await revalidate([pathForSlug(doc.slug), pathForSlug(previousDoc?.slug)])
+        await revalidate([doc.slug, previousDoc?.slug])
         return doc
       },
     ],
@@ -78,7 +81,7 @@ export const Pages: CollectionConfig = {
       async ({ doc, context }) => {
         if (context?.disableRevalidate) return doc
 
-        await revalidate([pathForSlug(doc.slug)])
+        await revalidate([doc.slug])
         return doc
       },
     ],

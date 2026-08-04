@@ -1,28 +1,58 @@
+import { unstable_cache } from 'next/cache'
 import { draftMode, headers as getHeaders } from 'next/headers'
 import { cache } from 'react'
 import { getPayload } from 'payload'
 
+import { pageTag } from '@/lib/cache-tags'
 import { mapPageResult } from '@/mappers/page'
 import type { SectionDefinition } from '@/lib/presets/types'
 import type { Page } from '@/payload-types'
 import config from '@/payload.config'
 
-export async function findPage(slug: string): Promise<Page | null> {
-  const { isEnabled: isDraft } = await draftMode()
+async function findPublished(slug: string): Promise<Page | null> {
+  const payload = await getPayload({ config: await config })
+
+  const { docs } = await payload.find({
+    collection: 'pages',
+    where: { and: [{ slug: { equals: slug } }, { _status: { equals: 'published' } }] },
+    limit: 1,
+    draft: false,
+    overrideAccess: false,
+  })
+
+  return docs[0] ?? null
+}
+
+function cachedPublished(slug: string): Promise<Page | null> {
+  return unstable_cache(() => findPublished(slug), ['page', slug], {
+    tags: [pageTag(slug)],
+    revalidate: 300,
+  })()
+}
+
+async function findDraft(slug: string): Promise<Page | null> {
   const payload = await getPayload({ config: await config })
   const { user } = await payload.auth({ headers: await getHeaders() })
+
+  if (!user) return findPublished(slug)
 
   const { docs } = await payload.find({
     collection: 'pages',
     where: { slug: { equals: slug } },
     limit: 1,
-    draft: isDraft,
+    draft: true,
     user,
     overrideAccess: false,
   })
 
   return docs[0] ?? null
 }
+
+export const findPage = cache(async (slug: string): Promise<Page | null> => {
+  const { isEnabled: isDraft } = await draftMode()
+
+  return isDraft ? findDraft(slug) : cachedPublished(slug)
+})
 
 export async function sectionsFor(page: Page): Promise<SectionDefinition[]> {
   const payload = await getPayload({ config: await config })
