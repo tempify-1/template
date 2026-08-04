@@ -162,3 +162,44 @@ preset consumes.
 
 v2, pulled by the first project that demands it: deep-linkable record drawers (ADR-0003),
 wizard + arrays + autosave, Kanban, EventCalendar, Map, and the long tail from doc 06.
+
+## Fixtures as the regression surface
+
+Every registered Preset has one Fixture in `src/fixtures/presets`, and a test asserts the Fixture
+names equal the registry keys in both directions — a new Preset cannot ship without a worked
+example, and a Fixture cannot outlive its Preset.
+
+`/preview/<preset>` renders one committed Fixture. `/preview/config?c=<base64url>` renders an
+arbitrary posted configuration and **requires a logged-in Payload user**: without that gate it is
+a renderer for attacker-authored content on the production origin, inside the real site chrome —
+a hosted phishing page under your own domain. `noindex` stops it being found, not being sent.
+
+The decoder validates against a zod schema, not an allowlist of block types. An allowlist only
+answers "is this block ours", which leaves every other field unchecked: a `buttonRow` with no
+`buttons` reaches a renderer that calls `.map()` on undefined and returns a 500 on demand, and an
+unvalidated `tag` renders the section as `<style>` or `<iframe>`, letting a posted config blank
+the real site. The schema pins the section tag to the three landmarks, gives every block its
+required fields, and constrains every link target to a path, anchor, mail or web address, so
+`javascript:` and `data:` URLs are rejected.
+
+Playwright screenshots each Fixture route into
+`tests/e2e/fixtures-visual.e2e.spec.ts-snapshots/`. Baselines are platform suffixed
+(`-chromium-darwin`), so the suite is **opt-in behind `VISUAL=1`**: committed macOS baselines
+would otherwise fail wholesale on Linux CI or any other contributor's machine, which trains people
+to ignore the suite. Run `VISUAL=1 pnpm exec playwright test --update-snapshots` once per platform.
+
+The sticky site header is masked, since it overlaps the top of each section and would otherwise be
+baked into every baseline. The diff budget is 0.1% rather than 1% — a full-width section gives a
+1% budget roughly ten thousand pixels of slack, enough to hide the copy edits the suite exists to
+catch. Verified by changing one word in a Fixture heading and confirming the matching screenshot
+failed.
+
+`src/fixtures/pages/home.ts` composes the landing page from those same Fixtures, applying Themes
+and the hero's full-viewport height. There is one copy of each Preset's example content, used by
+the preview routes, the visual regression suite and the live home page alike.
+
+The Fixtures were derived mechanically from the previous hand-written home page, not retyped. A
+first attempt at retyping silently dropped twenty-two strings of live copy — a paid tier lost an
+advertised feature, a testimonial was reattributed to a different named person, and descriptions
+were truncated — while reading as a pure refactor in the diff. Only the handful the e2e happened
+to assert were caught.
