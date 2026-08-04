@@ -5,6 +5,7 @@ import type { Block, BlockType } from '@/lib/presets/types'
 import { AccordionList } from './accordion-block'
 import { FormBlock } from './form-block'
 import { ImageMedia } from './image-block'
+import { PricingTable } from './pricing-block'
 import { TestimonialCarousel } from './testimonial-carousel-block'
 import {
   BadgeRow,
@@ -34,6 +35,7 @@ export const blockRegistry: BlockRenderers = {
   testimonialCarousel: TestimonialCarousel,
   personGrid: PersonGrid,
   form: FormBlock,
+  pricingTable: PricingTable,
 }
 
 export function BlockRenderer({ block }: { block: Block }) {

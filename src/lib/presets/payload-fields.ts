@@ -45,13 +45,22 @@ function unwrap(schema: z.ZodType): { schema: z.ZodType; optional: boolean } {
   throw new Error('Preset argument schema nests wrapper types more than 20 deep')
 }
 
-function boundOf(schema: z.ZodType, check: 'min_length' | 'max_length'): number | undefined {
+type BoundCheck = 'min_length' | 'max_length' | 'greater_than' | 'less_than'
+
+const BOUND_KEYS: Record<BoundCheck, string> = {
+  min_length: 'minimum',
+  max_length: 'maximum',
+  greater_than: 'value',
+  less_than: 'value',
+}
+
+function boundOf(schema: z.ZodType, check: BoundCheck): number | undefined {
   const checks = (def(schema).checks ?? []) as { _zod?: { def?: Record<string, unknown> } }[]
 
   for (const entry of checks) {
     const inner = entry._zod?.def
     if (inner?.check !== check) continue
-    const bound = check === 'min_length' ? inner.minimum : inner.maximum
+    const bound = inner[BOUND_KEYS[check]]
     if (typeof bound === 'number') return bound
   }
 
@@ -112,7 +121,18 @@ function fieldFor(name: string, raw: z.ZodType, blankable = false): Field {
   }
 
   if (kind === 'number') {
-    return { name, type: 'number', label, required, ...admin }
+    const min = boundOf(schema, 'greater_than')
+    const max = boundOf(schema, 'less_than')
+
+    return {
+      name,
+      type: 'number',
+      label,
+      required,
+      ...(min !== undefined ? { min } : {}),
+      ...(max !== undefined ? { max } : {}),
+      ...admin,
+    }
   }
 
   if (kind === 'enum') {
@@ -181,6 +201,7 @@ function fieldFor(name: string, raw: z.ZodType, blankable = false): Field {
   }
 
   const maxLength = boundOf(schema, 'max_length')
+  const minLength = boundOf(schema, 'min_length')
 
   if (hint.type === 'textarea') {
     return {
@@ -188,12 +209,21 @@ function fieldFor(name: string, raw: z.ZodType, blankable = false): Field {
       type: 'textarea',
       label,
       required,
+      ...(minLength ? { minLength } : {}),
       ...(maxLength ? { maxLength } : {}),
       ...admin,
     }
   }
 
-  return { name, type: 'text', label, required, ...(maxLength ? { maxLength } : {}), ...admin }
+  return {
+    name,
+    type: 'text',
+    label,
+    required,
+    ...(minLength ? { minLength } : {}),
+    ...(maxLength ? { maxLength } : {}),
+    ...admin,
+  }
 }
 
 export interface BlockFromSchemaOptions {
