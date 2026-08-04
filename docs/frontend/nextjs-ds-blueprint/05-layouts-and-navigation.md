@@ -104,6 +104,34 @@ action items.
 - Icons are `LucideIconName` strings resolved through one lookup map — configs stay
   serializable.
 
+## What is built (SiteShell)
+
+`(frontend)/layout.tsx` wraps marketing routes in `SiteShell`: sticky header, `HeaderNav`,
+mobile sheet, and a footer driven by the same `LayoutConfig`. The shell and footer are Server
+Components; only `HeaderNav` (Base UI navigation menu), `MobileNav` (sheet state) and `NavAction`
+are client components.
+
+The shell renders no `<main>` — the section `Page` component already owns it, and nesting a
+second one would give the page two main landmarks.
+
+Link-buttons use `buttonVariants()` on a `<Link>`, not `<Button render={<Link/>}>`. Base UI's
+button warns at runtime when its rendered element is not a native `<button>`, and the section
+`buttonRow` already established the `buttonVariants` pattern.
+
+Icons resolve through `NavIcon`, which builds an element with `createElement` rather than
+assigning the resolved component to a capitalised variable and rendering it as JSX. The React
+Compiler lint rule `react-hooks/static-components` rejects the latter inside a client component,
+because it cannot prove the lookup returns a stable identity.
+
+### The named Action
+
+`toggleTheme` is the one registered Action. It receives an `ActionContext` carrying the theme
+getter and setter rather than touching the DOM, so the registry stays testable without a browser
+and the config stays a string. `next-themes` provides the provider — it was already a dependency
+via shadcn's sonner, which called `useTheme()` against no provider at all until this shell added
+one. That also makes the dark pairings of the Section Themes (doc 01) reachable by a visitor
+rather than only by tests.
+
 ## Shared layout state
 
 Almost nothing global is needed once shadcn owns sidebar state and next-themes owns theme:
