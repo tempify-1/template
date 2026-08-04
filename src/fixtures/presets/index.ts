@@ -8,10 +8,10 @@ import { heroCentered } from '@/lib/presets/hero-centered'
 import { logoWall } from '@/lib/presets/logo-wall'
 import { newsletter } from '@/lib/presets/newsletter'
 import { pricing } from '@/lib/presets/pricing'
-import type { PresetName } from '@/lib/presets/registry'
 import { serviceList } from '@/lib/presets/service-list'
 import { teamGrid } from '@/lib/presets/team-grid'
 import { testimonialCarousel } from '@/lib/presets/testimonial-carousel'
+import type { PresetName } from '@/lib/presets/registry'
 import type { SectionDefinition } from '@/lib/presets/types'
 
 export const presetFixtures: Record<PresetName, SectionDefinition> = {
@@ -26,20 +26,31 @@ export const presetFixtures: Record<PresetName, SectionDefinition> = {
 
   logoWall: logoWall({
     heading: 'Trusted by teams shipping every day',
-    logos: ['Northwind', 'Acme', 'Globex', 'Initech', 'Umbra', 'Vertex'].map((name) => ({ name })),
+    logos: ['Northwind', 'Acme', 'Globex', 'Initech', 'Umbra', 'Vertex'].map((name) => ({
+      name,
+    })),
   }),
 
   benefitsGrid: benefitsGrid({
     heading: 'What you get',
     subheading: 'The parts that usually take a quarter, ready on day one.',
     benefits: [
-      { title: 'Typed page config', description: 'A change is a reviewable diff, not a rewrite.' },
-      { title: 'One vocabulary', description: 'Editors compose from the presets developers call.' },
+      {
+        title: 'Typed page config',
+        description: 'Pages are data, so a change is a reviewable diff rather than a rewrite.',
+      },
+      {
+        title: 'One vocabulary',
+        description: 'Editors compose from the same presets developers call. Nothing drifts.',
+      },
       {
         title: 'Server-first rendering',
-        description: 'Marketing pages ship almost no JavaScript.',
+        description: 'Marketing pages ship almost no JavaScript by construction.',
       },
-      { title: 'Dashboard included', description: 'Sidebar, charts and tables arrive configured.' },
+      {
+        title: 'Dashboard included',
+        description: 'Sidebar, charts and tables arrive configured rather than built.',
+      },
     ],
   }),
 
@@ -47,34 +58,61 @@ export const presetFixtures: Record<PresetName, SectionDefinition> = {
     heading: 'Everything the template already handles',
     subheading: 'Built on shadcn primitives, wired to Payload, covered by tests.',
     features: [
-      { icon: 'layers', title: 'Section system', description: 'Renderers as Server Components.' },
-      { icon: 'workflow', title: 'Preset registry', description: 'A schema, a factory, one line.' },
+      {
+        icon: 'layers',
+        title: 'Section system',
+        description: 'Page, Section, Column and Block renderers as Server Components.',
+      },
+      {
+        icon: 'workflow',
+        title: 'Preset registry',
+        description: 'Adding a pattern is a schema, a factory and a registry line.',
+      },
       {
         icon: 'shield',
         title: 'Access control',
-        description: 'Function per operation, never open.',
+        description: 'Function-per-operation, with published-only reads for anonymous visitors.',
       },
-      { icon: 'gauge', title: 'Revalidation', description: 'Publishing purges the right routes.' },
-      { icon: 'check', title: 'Config-driven forms', description: 'A field list becomes a form.' },
-      { icon: 'sparkles', title: 'Live preview', description: 'Drafts render before publishing.' },
+      {
+        icon: 'gauge',
+        title: 'Cache revalidation',
+        description: 'Publishing, renaming and deleting all purge the right routes.',
+      },
+      {
+        icon: 'check',
+        title: 'Config-driven forms',
+        description: 'A field list becomes a validated form with conditional logic.',
+      },
+      {
+        icon: 'sparkles',
+        title: 'Live preview',
+        description: 'Drafts render for editors before anything is published.',
+      },
     ],
   }),
 
   serviceList: serviceList({
     heading: 'Grow with the team behind it',
-    subheading: 'Optional services for when you want the work done with you.',
+    subheading: 'Optional services for when you want the work done with you rather than by you.',
     services: [
       {
         title: 'Architecture review',
-        description: 'A read of your schema boundaries.',
+        description: 'A read of your schema and render boundaries before you commit.',
         badge: 'Pro',
       },
-      { title: 'Design system audit', description: 'Token and accessibility pass.', badge: 'Pro' },
+      {
+        title: 'Design system audit',
+        description: 'Token, component and accessibility pass against your brand.',
+        badge: 'Pro',
+      },
       {
         title: 'Migration support',
-        description: 'Move an existing site across without a rewrite.',
+        description: 'Move an existing site onto the preset model without a rewrite.',
       },
-      { title: 'Ongoing maintenance', description: 'Dependency and upstream updates handled.' },
+      {
+        title: 'Ongoing maintenance',
+        description: 'Dependency and upstream shadcn updates handled for you.',
+      },
     ],
   }),
 
@@ -83,19 +121,22 @@ export const presetFixtures: Record<PresetName, SectionDefinition> = {
     subheading: 'What people say after their first project on the template.',
     testimonials: [
       {
-        quote: 'We had a marketing site in front of stakeholders on day two.',
+        quote:
+          'We had a marketing site in front of stakeholders on day two, and the editors never once asked us to change a layout for them.',
         name: 'Priya Raman',
         title: 'Head of Engineering, Northwind',
       },
       {
-        quote: 'The generated admin panel is the part that sold it. Nothing drifts.',
+        quote:
+          'The generated admin panel is the part that sold it. Nobody maintains a second schema, so nothing drifts.',
         name: 'Tom Beckett',
         title: 'Technical Director, Globex',
       },
       {
-        quote: 'Our editors stopped asking us to change layouts for them.',
-        name: 'Ade Okonkwo',
-        title: 'Product Lead, Vertex',
+        quote:
+          'Our designers stopped filing tickets to fix off-brand pages, because the presets simply do not allow them.',
+        name: 'Sofia Almeida',
+        title: 'Design Lead, Initech',
       },
     ],
   }),
@@ -117,29 +158,6 @@ export const presetFixtures: Record<PresetName, SectionDefinition> = {
       },
       { name: 'Ade Okonkwo', role: 'Support', links: [{ label: 'Profile', href: '/team/ade' }] },
     ],
-  }),
-
-  ctaBanner: ctaBanner({
-    heading: 'Ready to start?',
-    subheading: 'Clone the template and have a page on screen in an afternoon.',
-    primaryCta: { label: 'Create your account', href: '/signup' },
-    secondaryCta: { label: 'Read the docs', href: '/docs' },
-  }),
-
-  community: community({
-    heading: 'Join the community',
-    body: 'Share what you build and get help from people running the same stack.',
-    cta: { label: 'Open Discord', href: 'https://discord.gg' },
-  }),
-
-  contactForm: contactForm({
-    heading: 'Talk to us',
-    subheading: 'Tell us what you are building and we will point you at a starting place.',
-  }),
-
-  newsletter: newsletter({
-    heading: 'Get the release notes',
-    subheading: 'One short email whenever a preset or dependency changes.',
   }),
 
   pricing: pricing({
@@ -166,7 +184,7 @@ export const presetFixtures: Record<PresetName, SectionDefinition> = {
         features: [
           'Everything in Starter',
           'Unlimited editors',
-          'Live Preview',
+          'Live Preview and drafts',
           'Priority support',
         ],
         ctaLabel: 'Start free trial',
@@ -178,7 +196,12 @@ export const presetFixtures: Record<PresetName, SectionDefinition> = {
         description: 'For agencies shipping client work.',
         monthlyPrice: 249,
         annualPrice: 2490,
-        features: ['Everything in Team', 'Architecture review', 'Design system audit'],
+        features: [
+          'Everything in Team',
+          'Architecture review',
+          'Design system audit',
+          'Migration support',
+        ],
         ctaLabel: 'Talk to us',
         ctaHref: '/contact',
       },
@@ -210,6 +233,29 @@ export const presetFixtures: Record<PresetName, SectionDefinition> = {
           'Yes, assembled from shadcn blocks rather than hand-built, with the sidebar, charts and data table already configured.',
       },
     ],
+  }),
+
+  ctaBanner: ctaBanner({
+    heading: 'Ready to start?',
+    subheading: 'Clone the template and have a page on screen in an afternoon.',
+    primaryCta: { label: 'Create your account', href: '/signup' },
+    secondaryCta: { label: 'Read the docs', href: '/docs' },
+  }),
+
+  community: community({
+    heading: 'Join the community',
+    body: 'Share what you build and get help from people running the same stack.',
+    cta: { label: 'Open Discord', href: 'https://discord.gg' },
+  }),
+
+  newsletter: newsletter({
+    heading: 'Get the release notes',
+    subheading: 'One short email whenever a preset, block or upstream dependency changes.',
+  }),
+
+  contactForm: contactForm({
+    heading: 'Talk to us',
+    subheading: 'Tell us what you are building and we will point you at the right starting place.',
   }),
 }
 

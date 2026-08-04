@@ -11,7 +11,7 @@ function encode(value: unknown): string {
 
 describe('every Preset has a Fixture', () => {
   it('covers each registered Preset, so a new one cannot ship without a worked example', () => {
-    expect(FIXTURE_NAMES.sort()).toEqual(Object.keys(presetRegistry).sort())
+    expect([...FIXTURE_NAMES].sort()).toEqual(Object.keys(presetRegistry).sort())
   })
 
   it('names no Fixture that is not a registered Preset', () => {
@@ -32,7 +32,8 @@ describe('every Preset has a Fixture', () => {
   })
 
   it('recognises a Fixture name and rejects anything else', () => {
-    for (const name of FIXTURE_NAMES) expect(isFixtureName(name)).toBe(true)
+    expect(FIXTURE_NAMES.length).toBeGreaterThan(0)
+    for (const name of FIXTURE_NAMES) expect(isFixtureName(name), name).toBe(true)
     for (const other of ['', 'constructor', '__proto__', 'nope']) {
       expect(isFixtureName(other), other).toBe(false)
     }
@@ -54,6 +55,28 @@ describe('the posted configuration decoder', () => {
   it('accepts a single Section or a list of them', () => {
     expect(decodeSections(encode(section))).toEqual([section])
     expect(decodeSections(encode([section, section]))).toHaveLength(2)
+  })
+
+  it('refuses a section tag that is not one of the three landmarks', () => {
+    for (const tag of ['style', 'iframe', 'noscript', 123]) {
+      expect(decodeSections(encode({ tag, columns: [] })), String(tag)).toBeNull()
+    }
+  })
+
+  it('refuses an allowlisted block whose required fields are missing', () => {
+    for (const blockType of ['buttonRow', 'cardGrid', 'accordion', 'personGrid', 'pricingTable']) {
+      const payload = { columns: [{ blocks: [{ blockType }] }] }
+      expect(decodeSections(encode(payload)), blockType).toBeNull()
+    }
+  })
+
+  it('refuses a link target that is not a page, anchor, mail or web address', () => {
+    for (const href of ['javascript:alert(1)', 'data:text/html,<script>', '//evil.example']) {
+      const payload = {
+        columns: [{ blocks: [{ blockType: 'buttonRow', buttons: [{ label: 'Go', href }] }] }],
+      }
+      expect(decodeSections(encode(payload)), href).toBeNull()
+    }
   })
 
   it('refuses a block type the renderer does not know', () => {

@@ -4,8 +4,6 @@ import React from 'react'
 import { Page } from '@/components/ds/section/page'
 import { isFixtureName, presetFixtures } from '@/fixtures/presets'
 
-export const dynamic = 'force-dynamic'
-
 type Params = { params: Promise<{ preset: string }> }
 
 export async function generateMetadata({ params }: Params) {
