@@ -17,13 +17,13 @@ test.describe('Landing page', () => {
   test('renders both hero calls to action as unique links within the page content', async ({
     page,
   }) => {
-    const main = page.getByRole('main')
+    const hero = page.locator('main section').first()
 
-    await expect(main.getByRole('link', { name: 'Start free trial' })).toHaveAttribute(
+    await expect(hero.getByRole('link', { name: 'Start free trial' })).toHaveAttribute(
       'href',
       '/signup',
     )
-    await expect(main.getByRole('link', { name: 'Book a demo' })).toHaveAttribute('href', '/demo')
+    await expect(hero.getByRole('link', { name: 'Book a demo' })).toHaveAttribute('href', '/demo')
   })
 
   test('renders the trust badges', async ({ page }) => {

@@ -1,19 +1,29 @@
 import type { Metadata } from 'next'
 
 import { SITE_NAME, absoluteUrl, pathForSlug } from '@/lib/site'
+import { toImage, type ImageArgs } from '@/lib/presets/media'
 import type { Media, Page } from '@/payload-types'
 
-function imageUrl(image: number | Media | null | undefined): string | undefined {
-  if (!image || typeof image === 'number') return undefined
-  return image.url ? absoluteUrl(image.url) : undefined
+function socialImage(image: number | Media | null | undefined): ImageArgs | undefined {
+  return toImage(image as Parameters<typeof toImage>[0])
 }
 
 export function metadataForPage(page: Page): Metadata {
   const title = page.meta?.title?.trim() || `${page.title} | ${SITE_NAME}`
   const description = page.meta?.description?.trim() || undefined
   const url = absoluteUrl(pathForSlug(page.slug))
-  const image = imageUrl(page.meta?.image)
-  const images = image ? [{ url: image, alt: page.meta?.title?.trim() || page.title }] : undefined
+  const resolved = socialImage(page.meta?.image)
+  const image = resolved ? absoluteUrl(resolved.src) : undefined
+  const images = resolved
+    ? [
+        {
+          url: absoluteUrl(resolved.src),
+          alt: resolved.alt,
+          width: resolved.width,
+          height: resolved.height,
+        },
+      ]
+    : undefined
 
   return {
     title: { absolute: title },

@@ -5,6 +5,8 @@ import { PAGES_TAG, pageTag } from '../lib/pages'
 import { presetBlocks } from '../lib/presets/registry'
 import { previewPath } from '../lib/preview'
 
+const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+
 async function revalidate(slugs: unknown[]): Promise<void> {
   const unique = [
     ...new Set(slugs.filter((slug): slug is string => typeof slug === 'string' && slug.length > 0)),
@@ -12,9 +14,10 @@ async function revalidate(slugs: unknown[]): Promise<void> {
   if (unique.length === 0) return
 
   try {
-    const { revalidateTag } = await import('next/cache')
+    const { revalidatePath, revalidateTag } = await import('next/cache')
     for (const slug of unique) revalidateTag(pageTag(slug), 'max')
     revalidateTag(PAGES_TAG, 'max')
+    revalidatePath('/sitemap.xml')
   } catch {
     return
   }
@@ -53,6 +56,11 @@ export const Pages: CollectionConfig = {
       required: true,
       unique: true,
       index: true,
+      admin: { description: 'Lower-case words separated by hyphens, e.g. about-us.' },
+      validate: (value: unknown) =>
+        typeof value === 'string' && SLUG_PATTERN.test(value)
+          ? true
+          : 'Use lower-case letters, numbers and hyphens only, with no leading or trailing hyphen.',
     },
     {
       name: 'sections',

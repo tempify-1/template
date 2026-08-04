@@ -1,0 +1,9 @@
+@media (scripting: none) {
+  [data-period] [data-price] {
+    display: revert;
+  }
+
+  [data-period] [data-billing-toggle] {
+    display: none;
+  }
+}

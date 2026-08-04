@@ -146,6 +146,17 @@ that genuinely needs it, without changing the config shape.
 state management is a local change, and it is not surprising — "a component owns its own state"
 is the default React answer, so the decision worth recording would have been the opposite one.
 
+### How the pricing toggle applies that rule
+
+The acceptance criterion — only the toggle is a client component — rules out making the tier
+cards client just to re-render a figure. Instead `PricingPeriodScope` is a client component that
+holds the period and stamps `data-period` on a wrapper carrying `group/pricing`; the tier cards
+are Server Components passed to it as `children`. Every card renders **both** figures, and
+`group-data-[period=annual]/pricing:hidden` reveals one. The toggle is the only JavaScript in the
+Section, the correct figures are in the server HTML, and the Section renders fully with
+JavaScript disabled — all three are covered by tests, the last by a Playwright context with
+`javaScriptEnabled: false`.
+
 ## Scroll-entrance animation (the Framer feel, CSS-first)
 
 No JS animation library for entrances. The whole system:

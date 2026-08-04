@@ -11,7 +11,7 @@ import '../globals.css'
 
 export async function generateMetadata(): Promise<Metadata> {
   const page = await findPage('home')
-  if (!page) return { title: SITE_NAME }
+  if (!page) return { title: { absolute: SITE_NAME } }
 
   return metadataForPage(page)
 }

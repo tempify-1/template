@@ -8,6 +8,7 @@ import { heroCentered } from '@/lib/presets/hero-centered'
 import { toImage, type MediaProblem } from '@/lib/presets/media'
 import { logoWall } from '@/lib/presets/logo-wall'
 import { newsletter } from '@/lib/presets/newsletter'
+import { pricing } from '@/lib/presets/pricing'
 import { serviceList } from '@/lib/presets/service-list'
 import { teamGrid } from '@/lib/presets/team-grid'
 import { testimonialCarousel } from '@/lib/presets/testimonial-carousel'
@@ -170,6 +171,44 @@ const presetMappers = {
       heading: block.heading,
       subheading: block.subheading ?? undefined,
     }),
+  pricing: (block: Extract<SectionBlock, { blockType: 'pricing' }>, onProblem: MediaProblem) => {
+    const withFeatures = (block.tiers ?? []).map((tier) => ({
+      ...tier,
+      kept: (tier.features ?? []).map((entry) => entry.text).filter(filled),
+    }))
+
+    return pricing({
+      heading: block.heading,
+      subheading: block.subheading ?? undefined,
+      currency: filled(block.currency) ? block.currency! : undefined,
+      locale: filled(block.locale) ? block.locale! : undefined,
+      defaultPeriod: block.defaultPeriod ?? undefined,
+      annualNote: block.annualNote ?? undefined,
+      tiers: keepRows(
+        withFeatures,
+        (tier) =>
+          filled(tier.name) &&
+          filled(tier.ctaLabel) &&
+          filled(tier.ctaHref) &&
+          tier.kept.length > 0 &&
+          Number.isFinite(tier.monthlyPrice) &&
+          Number.isFinite(tier.annualPrice) &&
+          tier.monthlyPrice >= 0 &&
+          tier.annualPrice >= 0,
+        onProblem,
+        'tier',
+      ).map((tier) => ({
+        name: tier.name,
+        description: tier.description ?? undefined,
+        monthlyPrice: tier.monthlyPrice,
+        annualPrice: tier.annualPrice,
+        features: tier.kept,
+        ctaLabel: tier.ctaLabel,
+        ctaHref: tier.ctaHref,
+        featured: tier.featured ?? undefined,
+      })),
+    })
+  },
 } satisfies Record<
   SectionBlock['blockType'],
   (block: never, onProblem: MediaProblem) => SectionDefinition
