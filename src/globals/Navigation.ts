@@ -59,7 +59,7 @@ const navigationSchema = z.object({
     cta: ctaSchema.optional(),
   }),
   sidebar: z.object({
-    groups: z.array(sidebarGroupSchema).default([]),
+    groups: z.array(sidebarGroupSchema).min(1),
   }),
   footer: z.object({
     tagline: z.string().optional(),

@@ -445,6 +445,7 @@ describe('navigation an editor can save never empties the site header', () => {
 
   const base = {
     brand: { label: 'Tempify', href: '/' },
+    sidebar: { groups: [{ items: [{ label: 'Overview', href: '/dashboard' }] }] },
     footer: {
       columns: [{ title: 'Info', items: [{ label: 'About', href: '/about' }] }],
       copyright: '© 2026',
@@ -553,8 +554,31 @@ describe('the sidebar comes from configuration', () => {
     expect(warnings.join(' ')).toContain('duplicate destination')
   })
 
+  it('refuses a stored global with no sidebar groups, so a dashboard is never unnavigable', async () => {
+    const payload = await getPayload({ config: await config })
+
+    await expect(
+      payload.updateGlobal({
+        slug: 'navigation',
+        data: {
+          brand: { label: 'Stored', href: '/' },
+          header: { items: [{ kind: 'link', label: 'Admin', href: '/admin' }] },
+          sidebar: { groups: [] },
+          footer: {
+            columns: [{ title: 'Info', items: [{ label: 'About', href: '/about' }] }],
+            copyright: '© 2026',
+          },
+        } as never,
+        overrideAccess: true,
+      }),
+    ).rejects.toThrow()
+  })
+
   it('stays quiet about a call to action an editor never filled in', () => {
-    const { warnings } = mapNavigation({ ...base, sidebar: { groups: [] } } as never)
+    const { warnings } = mapNavigation({
+      ...base,
+      sidebar: { groups: [{ items: [{ label: 'Overview', href: '/dashboard' }] }] },
+    } as never)
 
     expect(warnings.join(' ')).not.toMatch(/call to action/i)
   })

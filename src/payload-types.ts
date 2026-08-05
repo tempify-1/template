@@ -1245,41 +1245,39 @@ export interface Navigation {
       external?: boolean | null;
     };
   };
-  sidebar?: {
-    groups?:
-      | {
-          title?: string | null;
-          items: {
-            label: string;
-            href: string;
-            description?: string | null;
-            icon?:
-              | (
-                  | 'activity'
-                  | 'chart'
-                  | 'check'
-                  | 'clock'
-                  | 'gauge'
-                  | 'globe'
-                  | 'layers'
-                  | 'lock'
-                  | 'plug'
-                  | 'rocket'
-                  | 'search'
-                  | 'shield'
-                  | 'sparkles'
-                  | 'users'
-                  | 'workflow'
-                  | 'zap'
-                )
-              | null;
-            external?: boolean | null;
-            badge?: string | null;
-            id?: string | null;
-          }[];
-          id?: string | null;
-        }[]
-      | null;
+  sidebar: {
+    groups: {
+      title?: string | null;
+      items: {
+        label: string;
+        href: string;
+        description?: string | null;
+        icon?:
+          | (
+              | 'activity'
+              | 'chart'
+              | 'check'
+              | 'clock'
+              | 'gauge'
+              | 'globe'
+              | 'layers'
+              | 'lock'
+              | 'plug'
+              | 'rocket'
+              | 'search'
+              | 'shield'
+              | 'sparkles'
+              | 'users'
+              | 'workflow'
+              | 'zap'
+            )
+          | null;
+        external?: boolean | null;
+        badge?: string | null;
+        id?: string | null;
+      }[];
+      id?: string | null;
+    }[];
   };
   footer: {
     tagline?: string | null;
