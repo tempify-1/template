@@ -9,16 +9,21 @@ test.describe('Dashboard', () => {
 
     expect(response?.status()).toBe(200)
     await expect(page).toHaveURL(new RegExp('/dashboard$'))
-    await expect(page.getByRole('link', { name: 'Acme Inc.' })).toBeVisible()
+    await expect(page.locator('[data-slot="sidebar"]').first()).toBeVisible()
   })
 
-  test('renders the sidebar from the block', async ({ page }) => {
+  test('renders the sidebar from navigation configuration', async ({ page }) => {
     await page.goto(DASHBOARD)
 
-    await expect(page.locator('[data-slot="sidebar"]')).toBeVisible()
+    const sidebar = page.locator('[data-slot="sidebar"]').first()
+    await expect(sidebar).toBeVisible()
 
-    for (const item of ['Lifecycle', 'Analytics', 'Projects', 'Team']) {
-      await expect(page.getByRole('button', { name: item })).toBeVisible()
+    for (const [label, href] of [
+      ['Overview', '/dashboard'],
+      ['Charts', '/dashboard/charts'],
+      ['Pages', '/admin/collections/pages'],
+    ] as [string, string][]) {
+      await expect(sidebar.getByRole('link', { name: label })).toHaveAttribute('href', href)
     }
   })
 
@@ -72,8 +77,9 @@ test.describe('Charts route', () => {
   test('shares the dashboard shell via the route group', async ({ page }) => {
     await page.goto(CHARTS)
 
-    await expect(page.getByRole('link', { name: 'Acme Inc.' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Analytics' })).toBeVisible()
+    const sidebar = page.locator('[data-slot="sidebar"]').first()
+    await expect(sidebar).toBeVisible()
+    await expect(sidebar.getByRole('link', { name: 'Overview' })).toBeVisible()
   })
 })
 

@@ -7,20 +7,12 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuButton,
+  SidebarMenuBadge,
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
-import type { LayoutConfig, NavItem } from '@/lib/nav/types'
-import { navLinksOf } from '@/lib/nav/types'
+import type { LayoutConfig } from '@/lib/nav/types'
 
-function groupsFrom(items: NavItem[]) {
-  return items
-    .map((item) => ({
-      title: item.type === 'menu' ? item.label : undefined,
-      links: navLinksOf(item),
-    }))
-    .filter((group) => group.links.length > 0)
-}
+import { SidebarLink } from './sidebar-link'
 
 export function PageSidebar({ config }: { config: LayoutConfig }) {
   return (
@@ -29,13 +21,14 @@ export function PageSidebar({ config }: { config: LayoutConfig }) {
         <Link href={config.brand.href}>{config.brand.label}</Link>
       </SidebarHeader>
       <SidebarContent>
-        {groupsFrom(config.header.items).map((group, index) => (
-          <SidebarGroup key={group.title ?? index}>
+        {config.sidebar.groups.map((group, index) => (
+          <SidebarGroup key={`${group.title ?? 'group'}-${index}`}>
             {group.title ? <SidebarGroupLabel>{group.title}</SidebarGroupLabel> : null}
             <SidebarMenu>
-              {group.links.map((link) => (
-                <SidebarMenuItem key={link.href}>
-                  <SidebarMenuButton render={<Link href={link.href}>{link.label}</Link>} />
+              {group.items.map((item, itemIndex) => (
+                <SidebarMenuItem key={`${item.href}-${itemIndex}`}>
+                  <SidebarLink item={item} />
+                  {item.badge ? <SidebarMenuBadge>{item.badge}</SidebarMenuBadge> : null}
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>

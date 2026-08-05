@@ -33,6 +33,24 @@ export const siteNav: LayoutConfig = {
     ],
     cta: { label: 'Start free trial', href: '/signup' },
   },
+  sidebar: {
+    groups: [
+      {
+        items: [
+          { label: 'Overview', href: '/dashboard', icon: 'gauge' },
+          { label: 'Charts', href: '/dashboard/charts', icon: 'chart' },
+        ],
+      },
+      {
+        title: 'Content',
+        items: [
+          { label: 'Pages', href: '/admin/collections/pages', icon: 'layers' },
+          { label: 'Forms', href: '/admin/collections/forms', icon: 'check' },
+          { label: 'Media', href: '/admin/collections/media', icon: 'sparkles' },
+        ],
+      },
+    ],
+  },
   footer: {
     tagline: 'A Payload and Next.js template where pages are typed configuration, not markup.',
     columns: [

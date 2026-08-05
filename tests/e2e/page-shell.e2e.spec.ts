@@ -145,3 +145,64 @@ test.describe('A Page chooses its Shell', () => {
     )
   })
 })
+
+test.describe('Dashboard sidebar from configuration', () => {
+  test('renders the configured groups, not demo content', async ({ page }) => {
+    await page.goto('/dashboard')
+
+    const sidebar = page.locator('[data-slot="sidebar"]').first()
+    await expect(sidebar).toBeVisible()
+    await expect(sidebar.getByRole('link', { name: 'Overview' })).toHaveAttribute(
+      'href',
+      '/dashboard',
+    )
+    await expect(sidebar.getByRole('link', { name: 'Charts' })).toHaveAttribute(
+      'href',
+      '/dashboard/charts',
+    )
+    await expect(page.getByText('Acme Inc.')).toHaveCount(0)
+    await expect(sidebar.locator('a[href="#"]')).toHaveCount(0)
+  })
+
+  test('marks the current page once, and its parent only as active', async ({ page }) => {
+    await page.goto('/dashboard/charts')
+
+    const current = page.locator('[aria-current="page"]')
+    await expect(current).toHaveCount(1)
+    await expect(current).toHaveAttribute('href', '/dashboard/charts')
+
+    await expect(page.locator('[data-slot="sidebar"] [data-active]')).toHaveCount(2)
+  })
+
+  test('gives a CMS page in dashboard chrome the same sidebar as the hand-coded routes', async ({
+    page,
+  }) => {
+    await page.goto('/dashboard')
+    const handCoded = await page
+      .locator('[data-slot="sidebar"] a')
+      .evaluateAll((nodes) => nodes.map((n) => n.getAttribute('href')))
+
+    await page.goto('/shell-dashboard')
+    const fromCms = await page
+      .locator('[data-slot="sidebar"] a')
+      .evaluateAll((nodes) => nodes.map((n) => n.getAttribute('href')))
+
+    expect(fromCms).toEqual(handCoded)
+  })
+
+  test('keeps sidebar state across navigation within the dashboard', async ({ page }) => {
+    await page.goto('/dashboard')
+
+    const sidebar = page.locator('[data-slot="sidebar"]').first()
+    const before = await sidebar.getAttribute('data-state')
+    await page.getByRole('button', { name: /toggle sidebar/i }).click()
+    const toggled = await sidebar.getAttribute('data-state')
+    expect(toggled).not.toBe(before)
+
+    await page.goto('/dashboard/charts')
+    await expect(page.locator('[data-slot="sidebar"]').first()).toHaveAttribute(
+      'data-state',
+      toggled ?? '',
+    )
+  })
+})

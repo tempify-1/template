@@ -6,7 +6,8 @@ import { describe, it, expect, vi, afterAll } from 'vitest'
 
 import { siteNav } from '@/config/site-nav'
 import { Navigation, type StoredNavigation } from '@/globals/Navigation'
-import { loadNavigation } from '@/lib/navigation'
+import { currentProps } from '@/lib/nav/link'
+import { isUsableNavigation, loadNavigation } from '@/lib/navigation'
 import config from '@/payload.config'
 import { ICON_NAMES } from '@/lib/icons'
 import {
@@ -254,6 +255,7 @@ describe('navigation mapper', () => {
       ],
       cta: { label: 'Start free trial', href: '/signup' },
     },
+    sidebar: { groups: [{ items: [{ label: 'Overview', href: '/dashboard' }] }] },
     footer: {
       tagline: 'A Payload and Next.js template where pages are typed configuration, not markup.',
       columns: [
@@ -443,6 +445,7 @@ describe('navigation an editor can save never empties the site header', () => {
 
   const base = {
     brand: { label: 'Tempify', href: '/' },
+    sidebar: { groups: [{ items: [{ label: 'Overview', href: '/dashboard' }] }] },
     footer: {
       columns: [{ title: 'Info', items: [{ label: 'About', href: '/about' }] }],
       copyright: '© 2026',
@@ -492,5 +495,142 @@ describe('navigation an editor can save never empties the site header', () => {
     } as never)
 
     expect(mapped.header.items).toHaveLength(0)
+  })
+})
+
+describe('the sidebar comes from configuration', () => {
+  const base = {
+    brand: { label: 'Tempify', href: '/' },
+    header: { items: [{ kind: 'link', label: 'Admin', href: '/admin' }] },
+    footer: {
+      columns: [{ title: 'Info', items: [{ label: 'About', href: '/about' }] }],
+      copyright: '© 2026',
+    },
+  }
+
+  it('maps stored sidebar groups, keeping order and icons', () => {
+    const { config: mapped } = mapNavigation({
+      ...base,
+      sidebar: {
+        groups: [
+          { items: [{ label: 'Overview', href: '/dashboard', icon: 'gauge' }] },
+          { title: 'Content', items: [{ label: 'Pages', href: '/admin/collections/pages' }] },
+        ],
+      },
+    } as never)
+
+    expect(mapped.sidebar.groups).toHaveLength(2)
+    expect(mapped.sidebar.groups[0]!.title).toBeUndefined()
+    expect(mapped.sidebar.groups[0]!.items[0]).toMatchObject({ href: '/dashboard', icon: 'gauge' })
+    expect(mapped.sidebar.groups[1]!.title).toBe('Content')
+  })
+
+  it('drops a group whose every item is unusable, and says so', () => {
+    const { config: mapped, warnings } = mapNavigation({
+      ...base,
+      sidebar: { groups: [{ title: 'Broken', items: [{ label: 'No href', href: '' }] }] },
+    } as never)
+
+    expect(mapped.sidebar.groups).toHaveLength(0)
+    expect(warnings.join(' ')).toContain('Broken')
+  })
+
+  it('keeps two labels pointing at the same destination, which is legitimate', () => {
+    const { config: mapped } = mapNavigation({
+      ...base,
+      sidebar: {
+        groups: [
+          {
+            items: [
+              { label: 'Documentation', href: '/docs' },
+              { label: 'API reference', href: '/docs' },
+            ],
+          },
+        ],
+      },
+    } as never)
+
+    expect(mapped.sidebar.groups[0]!.items.map((i) => i.label)).toEqual([
+      'Documentation',
+      'API reference',
+    ])
+  })
+
+  it('carries a badge an editor set, rather than discarding it', () => {
+    const { config: mapped } = mapNavigation({
+      ...base,
+      sidebar: {
+        groups: [{ items: [{ label: 'Inbox', href: '/dashboard', badge: '3' }] }],
+      },
+    } as never)
+
+    expect(mapped.sidebar.groups[0]!.items[0]).toMatchObject({ label: 'Inbox', badge: '3' })
+  })
+
+  it('refuses a stored global with no sidebar groups, so a dashboard is never unnavigable', async () => {
+    const payload = await getPayload({ config: await config })
+
+    await expect(
+      payload.updateGlobal({
+        slug: 'navigation',
+        data: {
+          brand: { label: 'Stored', href: '/' },
+          header: { items: [{ kind: 'link', label: 'Admin', href: '/admin' }] },
+          sidebar: { groups: [] },
+          footer: {
+            columns: [{ title: 'Info', items: [{ label: 'About', href: '/about' }] }],
+            copyright: '© 2026',
+          },
+        } as never,
+        overrideAccess: true,
+      }),
+    ).rejects.toThrow()
+  })
+
+  it('stays quiet about a call to action an editor never filled in', () => {
+    const { warnings } = mapNavigation({
+      ...base,
+      sidebar: { groups: [{ items: [{ label: 'Overview', href: '/dashboard' }] }] },
+    } as never)
+
+    expect(warnings.join(' ')).not.toMatch(/call to action/i)
+  })
+})
+
+describe('marking the current page', () => {
+  it('marks only the page itself, never its parent section', () => {
+    expect(currentProps('/dashboard/charts', '/dashboard/charts')).toMatchObject({
+      'aria-current': 'page',
+    })
+    expect(currentProps('/dashboard', '/dashboard/charts')['aria-current']).toBeUndefined()
+  })
+
+  it('still marks the parent section active for styling', () => {
+    expect(currentProps('/dashboard', '/dashboard/charts')['data-active']).toBe(true)
+  })
+
+  it('never marks an off-site or anchor destination', () => {
+    expect(currentProps('https://example.com', '/')).toEqual({})
+    expect(currentProps('#top', '/')).toEqual({})
+  })
+})
+
+describe('a global that predates the sidebar field', () => {
+  it('falls back to the fixture rather than rendering a dashboard with no navigation', () => {
+    const { config: mapped } = mapNavigation({
+      brand: { label: 'Stored', href: '/' },
+      header: { items: [{ kind: 'link', label: 'Admin', href: '/admin' }] },
+      footer: {
+        columns: [{ title: 'Info', items: [{ label: 'About', href: '/about' }] }],
+        copyright: '© 2026',
+      },
+    } as never)
+
+    // no sidebar key at all, exactly as a row written before this field existed
+    expect(mapped.sidebar.groups).toHaveLength(0)
+    expect(
+      isUsableNavigation(mapped),
+      'a mapped config with no sidebar groups must be treated as unusable, or an existing stored global leaves the dashboard unnavigable',
+    ).toBe(false)
   })
 })

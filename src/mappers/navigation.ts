@@ -1,7 +1,7 @@
 import type { StoredNavigation } from '@/globals/Navigation'
 import { isIconName, type IconName } from '@/lib/icons'
 import { isActionName } from '@/lib/nav/actions'
-import type { LayoutConfig, NavItem, NavLink } from '@/lib/nav/types'
+import type { LayoutConfig, NavItem, NavLink, SidebarGroup, SidebarItem } from '@/lib/nav/types'
 
 function sanitizeIcon(
   name: string | null | undefined,
@@ -111,9 +111,33 @@ function toFooterColumn(
 
 function toCallToAction(raw: unknown, warn: (message: string) => void): NavLink | undefined {
   const row = raw as Partial<StoredNavigation['header']['cta']> | null | undefined
-  if (!row) return undefined
+  if (!row || (!filled(row.label) && !filled(row.href))) return undefined
   const link = toNavLink({ ...row, description: undefined, icon: undefined }, warn)
   return link
+}
+
+function toSidebarItem(raw: unknown, warn: (message: string) => void): SidebarItem | undefined {
+  const link = toNavLink(raw, warn)
+  if (!link) return undefined
+
+  const badge = (raw as { badge?: string | null }).badge
+  return filled(badge) ? { ...link, badge } : link
+}
+
+function toSidebarGroup(raw: unknown, warn: (message: string) => void): SidebarGroup | undefined {
+  const row = raw as Partial<SidebarGroup> | null | undefined
+  if (!row) return undefined
+
+  const items = (row.items ?? [])
+    .map((item) => toSidebarItem(item, warn))
+    .filter((item): item is SidebarItem => item !== undefined)
+
+  if (items.length === 0) {
+    warn(`Dropped sidebar group "${row.title ?? '(untitled)'}": no valid items`)
+    return undefined
+  }
+
+  return { title: filled(row.title) ? row.title : undefined, items }
 }
 
 export interface MapNavigationResult {
@@ -155,9 +179,14 @@ export function mapNavigation(
     warn('Footer copyright missing; using empty string')
   }
 
+  const sidebarGroups = (stored?.sidebar?.groups ?? [])
+    .map((group) => toSidebarGroup(group, warn))
+    .filter((group): group is SidebarGroup => group !== undefined)
+
   const config: LayoutConfig = {
     brand,
     header: { items: headerItems, cta },
+    sidebar: { groups: sidebarGroups },
     footer: {
       tagline: filled(stored?.footer?.tagline) ? stored.footer.tagline : undefined,
       columns: footerColumns,

@@ -40,6 +40,15 @@ const footerColumnSchema = z.object({
   items: z.array(linkSchema).min(1),
 })
 
+const sidebarItemSchema = linkSchema.extend({
+  badge: z.string().optional(),
+})
+
+const sidebarGroupSchema = z.object({
+  title: z.string().optional(),
+  items: z.array(sidebarItemSchema).min(1),
+})
+
 const navigationSchema = z.object({
   brand: z.object({
     label: z.string().min(1),
@@ -48,6 +57,9 @@ const navigationSchema = z.object({
   header: z.object({
     items: z.array(headerItemSchema).min(1),
     cta: ctaSchema.optional(),
+  }),
+  sidebar: z.object({
+    groups: z.array(sidebarGroupSchema).min(1),
   }),
   footer: z.object({
     tagline: z.string().optional(),
