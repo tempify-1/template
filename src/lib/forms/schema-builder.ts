@@ -65,7 +65,9 @@ function isBlank(field: FieldConfig, value: unknown): boolean {
 }
 
 function minMessageFor(field: FieldConfig): string {
-  return field.minMessage ?? `At least ${field.min} ${(field.label ?? 'rows').toLowerCase()} required`
+  return (
+    field.minMessage ?? `At least ${field.min} ${(field.label ?? 'rows').toLowerCase()} required`
+  )
 }
 
 function maxMessageFor(field: FieldConfig): string {

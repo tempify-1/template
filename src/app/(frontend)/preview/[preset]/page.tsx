@@ -3,7 +3,7 @@ import React from 'react'
 
 import { Page } from '@/components/ds/section/page'
 import { SiteShell } from '@/components/ds/shell/site-shell'
-import { siteNav } from '@/config/site-nav'
+import { loadNavigation } from '@/lib/navigation'
 import { isFixtureName, presetFixtures } from '@/fixtures/presets'
 
 type Params = { params: Promise<{ preset: string }> }
@@ -19,7 +19,7 @@ export default async function PresetPreviewPage({ params }: Params) {
   if (!isFixtureName(preset)) notFound()
 
   return (
-    <SiteShell config={siteNav}>
+    <SiteShell config={await loadNavigation()}>
       <Page sections={[presetFixtures[preset]]} />
     </SiteShell>
   )

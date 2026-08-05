@@ -12,8 +12,7 @@ export interface SubmitResult {
   message: string
 }
 
-const RECORDING_FAILED_MESSAGE =
-  'We could not record that just now. Please try again in a moment.'
+const RECORDING_FAILED_MESSAGE = 'We could not record that just now. Please try again in a moment.'
 
 export async function submitForm(formName: string, values: FormValues): Promise<SubmitResult> {
   const definition = resolveForm(formName)

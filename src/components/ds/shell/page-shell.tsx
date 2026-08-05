@@ -23,10 +23,7 @@ export async function PageShell({
 
   if (resolved === 'dashboard') {
     return (
-      <DashboardShell
-        header={<PageHeader title={title} />}
-        sidebar={<PageSidebar config={nav} />}
-      >
+      <DashboardShell header={<PageHeader title={title} />} sidebar={<PageSidebar config={nav} />}>
         {children}
       </DashboardShell>
     )

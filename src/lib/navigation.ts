@@ -6,6 +6,10 @@ import { mapNavigation } from '@/mappers/navigation'
 import type { LayoutConfig } from '@/lib/nav/types'
 import config from '@/payload.config'
 
+function isUsable(navConfig: LayoutConfig): boolean {
+  return navConfig.header.items.length > 0 && navConfig.footer.columns.length > 0
+}
+
 export async function loadNavigation(): Promise<LayoutConfig> {
   try {
     const payload = await getPayload({ config: await config })
@@ -21,6 +25,13 @@ export async function loadNavigation(): Promise<LayoutConfig> {
 
     for (const warning of warnings) {
       payload.logger.warn(`Navigation: ${warning}`)
+    }
+
+    if (!isUsable(navConfig)) {
+      payload.logger.error(
+        'Navigation: every stored header item was dropped, falling back to the code fixture rather than rendering a site with no navigation',
+      )
+      return siteNav
     }
 
     return navConfig

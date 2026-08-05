@@ -223,9 +223,7 @@ describe('field arrays and numbers', () => {
         {
           name: 'rooms',
           type: 'fieldArray',
-          fields: [
-            { name: 'age', type: 'number', showWhen: { field: 'isChild', equals: 'yes' } },
-          ],
+          fields: [{ name: 'age', type: 'number', showWhen: { field: 'isChild', equals: 'yes' } }],
         },
       ]),
     ).toThrow(/isChild/)

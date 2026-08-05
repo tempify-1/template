@@ -5,7 +5,7 @@ import React from 'react'
 
 import { Page } from '@/components/ds/section/page'
 import { SiteShell } from '@/components/ds/shell/site-shell'
-import { siteNav } from '@/config/site-nav'
+import { loadNavigation } from '@/lib/navigation'
 import { decodeSections } from '@/lib/preview-config'
 import config from '@/payload.config'
 
@@ -30,7 +30,7 @@ export default async function ConfigPreviewPage({ searchParams }: Props) {
   if (!sections) notFound()
 
   return (
-    <SiteShell config={siteNav}>
+    <SiteShell config={await loadNavigation()}>
       <Page sections={sections} />
     </SiteShell>
   )

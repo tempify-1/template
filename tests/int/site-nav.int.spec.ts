@@ -1,11 +1,13 @@
 import { readdirSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { describe, it, expect, vi } from 'vitest'
+import { getPayload } from 'payload'
+import { describe, it, expect, vi, afterAll } from 'vitest'
 
 import { siteNav } from '@/config/site-nav'
 import { Navigation, type StoredNavigation } from '@/globals/Navigation'
 import { loadNavigation } from '@/lib/navigation'
+import config from '@/payload.config'
 import { ICON_NAMES } from '@/lib/icons'
 import {
   NAV_ACTIONS,
@@ -243,7 +245,12 @@ describe('navigation mapper', () => {
           ],
         },
         { kind: 'link' as const, label: 'Admin', href: '/admin' },
-        { kind: 'action' as const, label: 'Toggle theme', action: 'toggleTheme', actionIcon: 'sparkles' },
+        {
+          kind: 'action' as const,
+          label: 'Toggle theme',
+          action: 'toggleTheme',
+          actionIcon: 'sparkles',
+        },
       ],
       cta: { label: 'Start free trial', href: '/signup' },
     },
@@ -352,7 +359,9 @@ describe('navigation mapper', () => {
       },
     } as unknown as StoredNavigation)
 
-    expect(config.header.items).toEqual([{ type: 'link', label: 'Admin', href: '/admin', external: false }])
+    expect(config.header.items).toEqual([
+      { type: 'link', label: 'Admin', href: '/admin', external: false },
+    ])
     expect(warnings.some((w) => w.includes('notAnIcon'))).toBe(true)
   })
 
@@ -421,5 +430,67 @@ describe('loadNavigation', () => {
     const nav = await loadNavigation()
 
     expect(nav).toEqual(siteNav)
+  })
+})
+
+async function clearStoredNavigation() {
+  const payload = await getPayload({ config: await config })
+  await payload.db.drizzle.execute('DELETE FROM navigation')
+}
+
+describe('navigation an editor can save never empties the site header', () => {
+  afterAll(clearStoredNavigation)
+
+  const base = {
+    brand: { label: 'Tempify', href: '/' },
+    footer: {
+      columns: [{ title: 'Info', items: [{ label: 'About', href: '/about' }] }],
+      copyright: '© 2026',
+    },
+  }
+
+  const incoherent = [
+    ['a menu with no sub-items', { kind: 'menu', label: 'Product' }],
+    ['a link with no destination', { kind: 'link', label: 'Pricing' }],
+    ['an action with no action', { kind: 'action', label: 'Toggle' }],
+  ] as const
+
+  it('refuses to store a header item that its kind cannot satisfy', async () => {
+    const payload = await getPayload({ config: await config })
+
+    for (const [name, item] of incoherent) {
+      await expect(
+        payload.updateGlobal({
+          slug: 'navigation',
+          data: { ...base, header: { items: [item] } } as never,
+          overrideAccess: true,
+        }),
+        name,
+      ).rejects.toThrow()
+    }
+  })
+
+  it('stores a header item its kind can satisfy', async () => {
+    const payload = await getPayload({ config: await config })
+
+    await expect(
+      payload.updateGlobal({
+        slug: 'navigation',
+        data: {
+          ...base,
+          header: { items: [{ kind: 'link', label: 'Admin', href: '/admin' }] },
+        } as never,
+        overrideAccess: true,
+      }),
+    ).resolves.toBeTruthy()
+  })
+
+  it('falls back to the fixture rather than rendering a header with nothing in it', async () => {
+    const { config: mapped } = mapNavigation({
+      ...base,
+      header: { items: [{ kind: 'menu', label: 'Product' }] },
+    } as never)
+
+    expect(mapped.header.items).toHaveLength(0)
   })
 })

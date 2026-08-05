@@ -8,9 +8,20 @@ import type { FieldConfig } from '@/lib/forms/types'
 afterEach(cleanup)
 
 const fields: FieldConfig[] = [
-  { name: 'name', type: 'text', label: 'Your name', description: 'As you would like it read', required: true },
+  {
+    name: 'name',
+    type: 'text',
+    label: 'Your name',
+    description: 'As you would like it read',
+    required: true,
+  },
   { name: 'email', type: 'email', label: 'Email', required: true },
-  { name: 'detail', type: 'textarea', label: 'Detail', showWhen: { field: 'name', notEmpty: true } },
+  {
+    name: 'detail',
+    type: 'textarea',
+    label: 'Detail',
+    showWhen: { field: 'name', notEmpty: true },
+  },
   { name: 'consent', type: 'checkbox', label: 'Keep me posted' },
   { name: 'submit', type: 'submit', label: 'Send it' },
 ]
@@ -280,7 +291,11 @@ describe('ConfigForm field arrays', () => {
     await waitFor(() => {
       expect(within(second).getByText('First name is required')).toBeDefined()
     })
-    expect(within(screen.getByRole('group', { name: 'Traveller 1' })).queryByText('First name is required')).toBeNull()
+    expect(
+      within(screen.getByRole('group', { name: 'Traveller 1' })).queryByText(
+        'First name is required',
+      ),
+    ).toBeNull()
   })
 
   it('submits bare arrays of plain objects with no identity records', async () => {
@@ -341,9 +356,9 @@ describe('ConfigForm field arrays', () => {
       />,
     )
 
-    expect(
-      screen.getByRole('button', { name: 'Add Traveller' }).hasAttribute('disabled'),
-    ).toBe(true)
+    expect(screen.getByRole('button', { name: 'Add Traveller' }).hasAttribute('disabled')).toBe(
+      true,
+    )
   })
 })
 
@@ -407,9 +422,9 @@ describe('ConfigForm field array picker', () => {
       />,
     )
 
-    expect(
-      screen.getByRole('button', { name: 'Add from Presets' }).hasAttribute('disabled'),
-    ).toBe(true)
+    expect(screen.getByRole('button', { name: 'Add from Presets' }).hasAttribute('disabled')).toBe(
+      true,
+    )
   })
 
   it('adds rows in the order they were selected', async () => {

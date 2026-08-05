@@ -21,7 +21,8 @@ function filled(value: string | null | undefined): value is string {
 }
 
 function toNavLink(raw: unknown, warn: (message: string) => void): NavLink | undefined {
-  const row = raw as Partial<StoredNavigation['footer']['columns'][number]['items'][number]> | null | undefined
+  const row = raw as
+    Partial<StoredNavigation['footer']['columns'][number]['items'][number]> | null | undefined
   if (!row) return undefined
 
   if (!filled(row.label) || !filled(row.href)) {
@@ -120,7 +121,9 @@ export interface MapNavigationResult {
   warnings: string[]
 }
 
-export function mapNavigation(stored: Partial<StoredNavigation> | null | undefined): MapNavigationResult {
+export function mapNavigation(
+  stored: Partial<StoredNavigation> | null | undefined,
+): MapNavigationResult {
   const warnings: string[] = []
   const warn = (message: string) => warnings.push(message)
 

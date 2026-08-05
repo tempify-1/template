@@ -1,4 +1,4 @@
-import type { GlobalConfig } from 'payload'
+import type { Field, GlobalConfig } from 'payload'
 import { z } from 'zod'
 
 import { authenticated } from '@/access'
@@ -59,6 +59,45 @@ const navigationSchema = z.object({
 
 export type StoredNavigation = z.infer<typeof navigationSchema>
 
+const KIND_REQUIREMENT: Record<string, { key: string; message: string }> = {
+  link: { key: 'href', message: 'A link item needs a destination.' },
+  menu: { key: 'items', message: 'A menu item needs at least one sub-item.' },
+  action: { key: 'action', message: 'An action item needs an action to run.' },
+}
+
+function headerItemIsCoherent(value: unknown): true | string {
+  if (!Array.isArray(value)) return true
+
+  for (const [index, row] of value.entries()) {
+    if (typeof row !== 'object' || row === null) continue
+    const item = row as Record<string, unknown>
+    const requirement = KIND_REQUIREMENT[String(item.kind)]
+    if (!requirement) continue
+
+    const held = item[requirement.key]
+    const missing = Array.isArray(held) ? held.length === 0 : !held
+    if (missing) return `Item ${index + 1}: ${requirement.message}`
+  }
+
+  return true
+}
+
+function withHeaderItemValidation(fields: Field[]): Field[] {
+  type Named = { name?: string; type?: string; fields?: Named[]; validate?: unknown }
+
+  return fields.map((field) => {
+    const group = field as Named
+    if (group.name !== 'header' || group.type !== 'group' || !group.fields) return field
+
+    return {
+      ...group,
+      fields: group.fields.map((inner) =>
+        inner.name === 'items' ? { ...inner, validate: headerItemIsCoherent } : inner,
+      ),
+    } as Field
+  })
+}
+
 async function revalidateNavigation(): Promise<void> {
   try {
     const { revalidateTag } = await import('next/cache')
@@ -73,7 +112,7 @@ export const Navigation: GlobalConfig = {
     read: () => true,
     update: authenticated,
   },
-  fields: fieldsFromSchema(navigationSchema),
+  fields: withHeaderItemValidation(fieldsFromSchema(navigationSchema)),
   hooks: {
     afterChange: [
       async ({ doc, context }) => {

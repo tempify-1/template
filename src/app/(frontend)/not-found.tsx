@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 import { SiteShell } from '@/components/ds/shell/site-shell'
-import { siteNav } from '@/config/site-nav'
+import { loadNavigation } from '@/lib/navigation'
 
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -10,9 +10,9 @@ export const metadata = {
   title: 'Page not found',
 }
 
-export default function NotFound() {
+export default async function NotFound() {
   return (
-    <SiteShell config={siteNav}>
+    <SiteShell config={await loadNavigation()}>
       <main className="mx-auto flex w-full max-w-2xl flex-col items-center gap-6 px-4 py-32 text-center">
         <p className="text-sm font-medium text-muted-foreground">404</p>
         <h1 className="text-4xl font-semibold tracking-tight">This page does not exist</h1>

@@ -98,7 +98,12 @@ function FieldArrayControl({
   uid: string
 }) {
   const fullName = joinPath(basePath, config.name)
-  const { fields: rows, append, remove, move } = useFieldArray({
+  const {
+    fields: rows,
+    append,
+    remove,
+    move,
+  } = useFieldArray({
     control: form.control,
     name: fullName,
   }) as unknown as {
@@ -108,8 +113,7 @@ function FieldArrayControl({
     move: (from: number, to: number) => void
   }
   const currentRows = useWatch({ control: form.control, name: fullName }) as unknown as
-    | FormValues[]
-    | undefined
+    FormValues[] | undefined
   const message = errorMessageAt(form.formState.errors, fullName)
   const label = config.label ?? config.name
   const atMax = config.max !== undefined && rows.length >= config.max
@@ -126,8 +130,9 @@ function FieldArrayControl({
   const pickerLabel = picker?.label ?? label
   const slotsLeft = config.max === undefined ? Infinity : (config.max ?? 0) - rows.length
   const hasPicker = Boolean(picker)
-  const pickerDisabled = !picker || picker.options.length === 0 || slotsLeft <= 0
-  const maxSelectable = picker ? Math.min(picker.options.length, slotsLeft) : 0
+  const offerable = picker?.options.filter((option) => !option.disabled) ?? []
+  const pickerDisabled = !picker || offerable.length === 0 || slotsLeft <= 0
+  const maxSelectable = picker ? Math.min(offerable.length, slotsLeft) : 0
   const [open, setOpen] = useState(false)
   const [selected, setSelected] = useState<string[]>([])
 
@@ -225,7 +230,13 @@ function FieldArrayControl({
           <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger
               render={
-                <Button type="button" variant="outline" size="sm" disabled={pickerDisabled}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={pickerDisabled}
+                  aria-disabled={pickerDisabled || undefined}
+                >
                   {`Add from ${pickerLabel}`}
                 </Button>
               }
