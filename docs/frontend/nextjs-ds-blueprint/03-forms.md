@@ -136,6 +136,39 @@ select-family field, and unwrapping them was its #1 recurring bug. New rule:
 Option metadata (label, icon, image) is looked up from `field.options` at render time when a
 summary needs it. Conditions compare plain strings — no `.key` unwrapping anywhere.
 
+## Visibility owns the payload, not react-hook-form's unmount
+
+A hidden field must not reach the submission, and a value the form seeded must. Those two rules
+sound independent and are not: react-hook-form's `shouldUnregister: true` delivered the first as a
+side-effect of unmounting, and broke the second in the process.
+
+With the flag on, values written by `useFieldArray`'s `append` never reach form state for anything
+registered through a `Controller` — only fields the visitor physically touches are committed. A row
+added from a picker therefore rendered its seeded values and submitted without them, so a required
+seeded field failed validation while visibly showing an answer. The nested array key survived only
+because `useFieldArray` registers its own name. This does not reproduce in jsdom; it needs
+hydration in a real browser, which is why the engine's integration tests never saw it.
+
+Turning the flag off fixes seeding and costs the other rule, so both are now explicit:
+
+- **`submittedValues(fields, values)`** projects form state onto the config before submission.
+  A field whose condition does not hold is absent from the payload — absent, not empty — and so is
+  any key the config does not declare. It walks with the same path helpers as the rest of the
+  engine, so a dot-path name stays nested rather than becoming a literal `"address.city"` key.
+- **`hiddenValues(fields, values)`** reports the paths that must be reset when a branch collapses,
+  and `ConfigForm` clears them. Without this, a hidden field keeps its value, which has two
+  consequences the projection cannot reach: a *chained* condition reads the stale value and keeps
+  its own field visible and required under a collapsed branch, and re-opening a branch resurrects
+  an answer the visitor withdrew.
+
+Both are pure functions tested at their own seam. Conditions inside an array row evaluate against
+that row, never the form root, so a sibling row is unaffected.
+
+`submitForm` applies the same projection before writing. That is defence rather than a live path:
+no form in the repo declares a condition today — `cmsFieldSchema` has no `showWhen`, so an editor
+cannot author one — and zod already strips undeclared keys. It matters the moment conditions become
+authorable, because the client projection is not a boundary a caller has to respect.
+
 ## Element ids
 
 `ConfigForm` prefixes every control id with a `useId()` value, so `htmlFor` resolves to the

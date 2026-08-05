@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowDownIcon, ArrowUpIcon, XIcon } from 'lucide-react'
-import { useId, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 import {
   Controller,
   useFieldArray,
@@ -38,7 +38,7 @@ import { isVisible } from '@/lib/forms/conditions'
 import { getAtPath } from '@/lib/forms/paths'
 import { emptyValues } from '@/lib/forms/resolvers'
 import { buildSchema } from '@/lib/forms/schema-builder'
-import { submittedValues } from '@/lib/forms/submitted-values'
+import { hiddenValues, submittedValues } from '@/lib/forms/submitted-values'
 import { inputFields, type FieldConfig, type FormValues } from '@/lib/forms/types'
 
 import { fieldRegistry } from './field-registry'
@@ -405,6 +405,12 @@ export function ConfigForm({ fields, defaultValues, onSubmit, submitLabel }: Con
   const uid = useId()
   const values = form.watch() as Record<string, unknown>
   const submit = fields.find((field) => field.type === 'submit')
+
+  useEffect(() => {
+    for (const { path, empty } of hiddenValues(fields, values as FormValues)) {
+      form.setValue(path, empty as never, { shouldValidate: false, shouldDirty: false })
+    }
+  }, [fields, form, values])
 
   const handle: SubmitHandler<Record<string, unknown>> = async (submitted) => {
     await onSubmit(submittedValues(fields, submitted as FormValues))
