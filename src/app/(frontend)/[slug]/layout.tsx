@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 
 import { PageShell } from '@/components/ds/shell/page-shell'
 import { findPage } from '@/lib/pages'
-import { isHomeSlug } from '@/lib/site'
+import { SITE_NAME, isHomeSlug } from '@/lib/site'
 
 export default async function SlugLayout({
   children,
@@ -14,5 +14,9 @@ export default async function SlugLayout({
   const { slug } = await params
   const page = isHomeSlug(slug) ? null : await findPage(slug)
 
-  return <PageShell shell={page?.shell}>{children}</PageShell>
+  return (
+    <PageShell shell={page?.shell} title={page?.title ?? SITE_NAME}>
+      {children}
+    </PageShell>
+  )
 }

@@ -62,6 +62,18 @@ accepted
   layouts do not re-render on navigation, which would have left stale chrome. Verified before
   building: a client-side navigation between two Pages matching the same dynamic segment does
   re-render the layout with the new parameter.
+- **A Shell is structure; its content is configuration.** The dashboard Shell takes its header and
+  sidebar as props rather than embedding them. The first implementation extracted the shadcn
+  dashboard demo verbatim, so a public Page choosing dashboard chrome shipped a header reading
+  "Documents", another party's brand and seven dead links. The hand-coded dashboard routes pass
+  their own demo content; CMS pages pass the page title and a sidebar built from navigation
+  config. Sharing the Shell was always right — sharing its content was not.
+- **The dashboard routes are no longer statically prerendered.** Reading the sidebar cookie is a
+  Dynamic API, so `/dashboard` and `/dashboard/charts` moved from static to server-rendered per
+  request. They render from a committed fixture, so the cost is small, and the alternative —
+  reading the cookie on the client — trades a correct first paint for a flash of the wrong
+  sidebar state. Recorded because it was an unintended and initially invisible consequence of the
+  persistence fix.
 - **The layout reads a document.** Layouts that fetch are unusual and worth knowing about: it is
   one field, and it is free because the loader is memoised per request. If that memoisation is
   ever removed, this doubles the query count on every page.

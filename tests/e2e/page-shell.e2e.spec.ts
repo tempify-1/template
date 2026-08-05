@@ -40,7 +40,26 @@ test.describe('A Page chooses its Shell', () => {
         } as never,
       })
       created.push(doc.id)
+
+      if (!seed.shell) {
+        await payload.update({
+          collection: 'pages',
+          id: doc.id,
+          data: { shell: null } as never,
+        })
+      }
     }
+  })
+
+  test('the absent-Shell fixture really stores no Shell, so the fallback is exercised', async () => {
+    const { docs } = await payload.find({
+      collection: 'pages',
+      where: { slug: { equals: 'shell-absent' } },
+      limit: 1,
+      overrideAccess: true,
+    })
+
+    expect(docs[0]?.shell ?? null).toBeNull()
   })
 
   test.afterAll(async () => {

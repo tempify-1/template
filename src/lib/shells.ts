@@ -7,3 +7,7 @@ export const DEFAULT_SHELL: ShellName = 'website'
 export function isShellName(value: unknown): value is ShellName {
   return typeof value === 'string' && SHELLS.includes(value as ShellName)
 }
+
+export function shellFor(value: unknown): ShellName {
+  return isShellName(value) ? value : DEFAULT_SHELL
+}

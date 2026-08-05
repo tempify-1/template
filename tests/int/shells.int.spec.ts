@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 
-import { DEFAULT_SHELL, SHELLS, isShellName } from '@/lib/shells'
+import { DEFAULT_SHELL, SHELLS, isShellName, shellFor } from '@/lib/shells'
 
 describe('the Shell set', () => {
   it('offers exactly the Shells a Page can choose', () => {
@@ -20,10 +20,19 @@ describe('the Shell set', () => {
   })
 })
 
-describe('the renderer fallback', () => {
-  it('treats a Shell removed from the set as the default rather than rendering nothing', () => {
-    for (const removed of ['sunset', undefined, null]) {
-      expect(isShellName(removed)).toBe(false)
+describe('resolving a stored Shell to one that can be rendered', () => {
+  it('returns each Shell in the set unchanged', () => {
+    for (const shell of SHELLS) expect(shellFor(shell), shell).toBe(shell)
+  })
+
+  it('falls back to the default for a row that predates the field', () => {
+    expect(shellFor(null)).toBe(DEFAULT_SHELL)
+    expect(shellFor(undefined)).toBe(DEFAULT_SHELL)
+  })
+
+  it('falls back to the default for a Shell removed from the set, rather than rendering nothing', () => {
+    for (const removed of ['sunset', '', 'Dashboard', 7, {}]) {
+      expect(shellFor(removed), String(removed)).toBe(DEFAULT_SHELL)
     }
   })
 })

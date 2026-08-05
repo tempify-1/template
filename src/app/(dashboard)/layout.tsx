@@ -1,6 +1,8 @@
 import React from 'react'
 
+import { AppSidebar } from '@/components/app-sidebar'
 import { DashboardShell } from '@/components/ds/shell/dashboard-shell'
+import { SiteHeader } from '@/components/site-header'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster } from '@/components/ui/sonner'
 
@@ -16,7 +18,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <html lang="en" suppressHydrationWarning>
       <body>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
-          <DashboardShell>{children}</DashboardShell>
+          <DashboardShell header={<SiteHeader />} sidebar={<AppSidebar variant="inset" />}>
+            {children}
+          </DashboardShell>
           <Toaster />
         </ThemeProvider>
       </body>
