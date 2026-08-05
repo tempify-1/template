@@ -1,7 +1,7 @@
 import type { StoredNavigation } from '@/globals/Navigation'
 import { isIconName, type IconName } from '@/lib/icons'
 import { isActionName } from '@/lib/nav/actions'
-import type { LayoutConfig, NavItem, NavLink } from '@/lib/nav/types'
+import type { LayoutConfig, NavItem, NavLink, SidebarGroup } from '@/lib/nav/types'
 
 function sanitizeIcon(
   name: string | null | undefined,
@@ -98,9 +98,13 @@ function toFooterColumn(
     return undefined
   }
 
-  const items = (row.items ?? [])
-    .map((item) => toNavLink(item, warn))
-    .filter((link): link is NavLink => link !== undefined)
+  const items = dedupeByHref(
+    (row.items ?? [])
+      .map((item) => toNavLink(item, warn))
+      .filter((link): link is NavLink => link !== undefined),
+    warn,
+    `footer column "${row.title}"`,
+  )
   if (items.length === 0) {
     warn(`Dropped footer column "${row.title}": no valid items`)
     return undefined
@@ -111,9 +115,46 @@ function toFooterColumn(
 
 function toCallToAction(raw: unknown, warn: (message: string) => void): NavLink | undefined {
   const row = raw as Partial<StoredNavigation['header']['cta']> | null | undefined
-  if (!row) return undefined
+  if (!row || (!filled(row.label) && !filled(row.href))) return undefined
   const link = toNavLink({ ...row, description: undefined, icon: undefined }, warn)
   return link
+}
+
+function toSidebarGroup(raw: unknown, warn: (message: string) => void): SidebarGroup | undefined {
+  const row = raw as Partial<SidebarGroup> | null | undefined
+  if (!row) return undefined
+
+  const items = dedupeByHref(
+    (row.items ?? [])
+      .map((item) => toNavLink(item, warn))
+      .filter((link): link is NavLink => link !== undefined),
+    warn,
+    row.title ?? 'sidebar group',
+  )
+
+  if (items.length === 0) {
+    warn(`Dropped sidebar group "${row.title ?? '(untitled)'}": no valid items`)
+    return undefined
+  }
+
+  return { title: filled(row.title) ? row.title : undefined, items }
+}
+
+function dedupeByHref<T extends { href: string }>(
+  links: T[],
+  warn: (message: string) => void,
+  context: string,
+): T[] {
+  const seen = new Set<string>()
+
+  return links.filter((link) => {
+    if (seen.has(link.href)) {
+      warn(`Dropped duplicate destination "${link.href}" in ${context}`)
+      return false
+    }
+    seen.add(link.href)
+    return true
+  })
 }
 
 export interface MapNavigationResult {
@@ -155,9 +196,14 @@ export function mapNavigation(
     warn('Footer copyright missing; using empty string')
   }
 
+  const sidebarGroups = (stored?.sidebar?.groups ?? [])
+    .map((group) => toSidebarGroup(group, warn))
+    .filter((group): group is SidebarGroup => group !== undefined)
+
   const config: LayoutConfig = {
     brand,
     header: { items: headerItems, cta },
+    sidebar: { groups: sidebarGroups },
     footer: {
       tagline: filled(stored?.footer?.tagline) ? stored.footer.tagline : undefined,
       columns: footerColumns,

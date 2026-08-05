@@ -1245,6 +1245,42 @@ export interface Navigation {
       external?: boolean | null;
     };
   };
+  sidebar?: {
+    groups?:
+      | {
+          title?: string | null;
+          items: {
+            label: string;
+            href: string;
+            description?: string | null;
+            icon?:
+              | (
+                  | 'activity'
+                  | 'chart'
+                  | 'check'
+                  | 'clock'
+                  | 'gauge'
+                  | 'globe'
+                  | 'layers'
+                  | 'lock'
+                  | 'plug'
+                  | 'rocket'
+                  | 'search'
+                  | 'shield'
+                  | 'sparkles'
+                  | 'users'
+                  | 'workflow'
+                  | 'zap'
+                )
+              | null;
+            external?: boolean | null;
+            badge?: string | null;
+            id?: string | null;
+          }[];
+          id?: string | null;
+        }[]
+      | null;
+  };
   footer: {
     tagline?: string | null;
     columns: {
@@ -1355,6 +1391,27 @@ export interface NavigationSelect<T extends boolean = true> {
               label?: T;
               href?: T;
               external?: T;
+            };
+      };
+  sidebar?:
+    | T
+    | {
+        groups?:
+          | T
+          | {
+              title?: T;
+              items?:
+                | T
+                | {
+                    label?: T;
+                    href?: T;
+                    description?: T;
+                    icon?: T;
+                    external?: T;
+                    badge?: T;
+                    id?: T;
+                  };
+              id?: T;
             };
       };
   footer?:

@@ -6,6 +6,7 @@ import { describe, it, expect, vi, afterAll } from 'vitest'
 
 import { siteNav } from '@/config/site-nav'
 import { Navigation, type StoredNavigation } from '@/globals/Navigation'
+import { currentProps } from '@/lib/nav/link'
 import { loadNavigation } from '@/lib/navigation'
 import config from '@/payload.config'
 import { ICON_NAMES } from '@/lib/icons'
@@ -254,6 +255,7 @@ describe('navigation mapper', () => {
       ],
       cta: { label: 'Start free trial', href: '/signup' },
     },
+    sidebar: { groups: [{ items: [{ label: 'Overview', href: '/dashboard' }] }] },
     footer: {
       tagline: 'A Payload and Next.js template where pages are typed configuration, not markup.',
       columns: [
@@ -492,5 +494,86 @@ describe('navigation an editor can save never empties the site header', () => {
     } as never)
 
     expect(mapped.header.items).toHaveLength(0)
+  })
+})
+
+describe('the sidebar comes from configuration', () => {
+  const base = {
+    brand: { label: 'Tempify', href: '/' },
+    header: { items: [{ kind: 'link', label: 'Admin', href: '/admin' }] },
+    footer: {
+      columns: [{ title: 'Info', items: [{ label: 'About', href: '/about' }] }],
+      copyright: '© 2026',
+    },
+  }
+
+  it('maps stored sidebar groups, keeping order and icons', () => {
+    const { config: mapped } = mapNavigation({
+      ...base,
+      sidebar: {
+        groups: [
+          { items: [{ label: 'Overview', href: '/dashboard', icon: 'gauge' }] },
+          { title: 'Content', items: [{ label: 'Pages', href: '/admin/collections/pages' }] },
+        ],
+      },
+    } as never)
+
+    expect(mapped.sidebar.groups).toHaveLength(2)
+    expect(mapped.sidebar.groups[0]!.title).toBeUndefined()
+    expect(mapped.sidebar.groups[0]!.items[0]).toMatchObject({ href: '/dashboard', icon: 'gauge' })
+    expect(mapped.sidebar.groups[1]!.title).toBe('Content')
+  })
+
+  it('drops a group whose every item is unusable, and says so', () => {
+    const { config: mapped, warnings } = mapNavigation({
+      ...base,
+      sidebar: { groups: [{ title: 'Broken', items: [{ label: 'No href', href: '' }] }] },
+    } as never)
+
+    expect(mapped.sidebar.groups).toHaveLength(0)
+    expect(warnings.join(' ')).toContain('Broken')
+  })
+
+  it('drops a duplicate destination rather than emitting a colliding React key', () => {
+    const { config: mapped, warnings } = mapNavigation({
+      ...base,
+      sidebar: {
+        groups: [
+          {
+            items: [
+              { label: 'Overview', href: '/dashboard' },
+              { label: 'Overview again', href: '/dashboard' },
+            ],
+          },
+        ],
+      },
+    } as never)
+
+    expect(mapped.sidebar.groups[0]!.items).toHaveLength(1)
+    expect(warnings.join(' ')).toContain('duplicate destination')
+  })
+
+  it('stays quiet about a call to action an editor never filled in', () => {
+    const { warnings } = mapNavigation({ ...base, sidebar: { groups: [] } } as never)
+
+    expect(warnings.join(' ')).not.toMatch(/call to action/i)
+  })
+})
+
+describe('marking the current page', () => {
+  it('marks only the page itself, never its parent section', () => {
+    expect(currentProps('/dashboard/charts', '/dashboard/charts')).toMatchObject({
+      'aria-current': 'page',
+    })
+    expect(currentProps('/dashboard', '/dashboard/charts')['aria-current']).toBeUndefined()
+  })
+
+  it('still marks the parent section active for styling', () => {
+    expect(currentProps('/dashboard', '/dashboard/charts')['data-active']).toBe(true)
+  })
+
+  it('never marks an off-site or anchor destination', () => {
+    expect(currentProps('https://example.com', '/')).toEqual({})
+    expect(currentProps('#top', '/')).toEqual({})
   })
 })

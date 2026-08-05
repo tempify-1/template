@@ -32,9 +32,23 @@ export interface FooterConfig {
   legal?: NavLink[]
 }
 
+export interface SidebarItem extends NavLink {
+  badge?: string
+}
+
+export interface SidebarGroup {
+  title?: string
+  items: SidebarItem[]
+}
+
+export interface SidebarConfig {
+  groups: SidebarGroup[]
+}
+
 export interface LayoutConfig {
   brand: { label: string; href: string }
   header: HeaderConfig
+  sidebar: SidebarConfig
   footer: FooterConfig
 }
 
