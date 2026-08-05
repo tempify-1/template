@@ -2,6 +2,7 @@ import type { FieldType } from '@/lib/forms/types'
 
 import {
   CheckboxControl,
+  NumberControl,
   SelectControl,
   TextControl,
   TextareaControl,
@@ -10,7 +11,7 @@ import {
 
 export type FieldControl = (props: FieldControlProps) => React.ReactNode
 
-export type ControlRegistry = Record<Exclude<FieldType, 'submit'>, FieldControl>
+export type ControlRegistry = Record<Exclude<FieldType, 'submit' | 'fieldArray'>, FieldControl>
 
 export const fieldRegistry: ControlRegistry = {
   text: TextControl,
@@ -19,4 +20,5 @@ export const fieldRegistry: ControlRegistry = {
   textarea: TextareaControl,
   select: SelectControl,
   checkbox: CheckboxControl,
+  number: NumberControl,
 }

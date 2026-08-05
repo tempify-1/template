@@ -15,6 +15,10 @@ export function assertConditionTargetsExist(fields: FieldConfig[]): void {
         )
       }
     }
+
+    if (field.type === 'fieldArray' && field.fields) {
+      assertConditionTargetsExist(field.fields)
+    }
   }
 }
 
