@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor, cleanup, within } from '@testing-library/react'
 
+import { tripEnquiry } from '../helpers/form-fixtures'
 import { ConfigForm } from '@/components/ds/form/config-form'
 import type { FieldConfig } from '@/lib/forms/types'
 
@@ -120,44 +121,6 @@ describe('two ConfigForms on one page', () => {
     }
   })
 })
-
-const tripEnquiry: FieldConfig[] = [
-  { name: 'organiser', type: 'text', label: 'Organiser', required: true },
-  {
-    name: 'rooms',
-    type: 'fieldArray',
-    label: 'Room',
-    min: 1,
-    fields: [
-      {
-        name: 'travellers',
-        type: 'fieldArray',
-        label: 'Traveller',
-        min: 1,
-        max: 4,
-        fields: [
-          { name: 'firstName', type: 'text', label: 'First name', required: true },
-          {
-            name: 'isChild',
-            type: 'select',
-            label: 'Child?',
-            options: [
-              { label: 'No', value: 'no' },
-              { label: 'Yes', value: 'yes' },
-            ],
-          },
-          {
-            name: 'age',
-            type: 'number',
-            label: 'Age',
-            required: true,
-            showWhen: { field: 'isChild', equals: 'yes' },
-          },
-        ],
-      },
-    ],
-  },
-]
 
 const oneTraveller = {
   organiser: '',
@@ -353,7 +316,7 @@ describe('ConfigForm field arrays', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Submit' }))
 
     await waitFor(() => {
-      expect(screen.getByText('At least 1 room required')).toBeDefined()
+      expect(screen.getByText('Add at least one room')).toBeDefined()
     })
   })
 

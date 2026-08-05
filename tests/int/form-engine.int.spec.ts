@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest'
 import { buildSchema } from '@/lib/forms/schema-builder'
 import { resolveDefaultValues, staticValues } from '@/lib/forms/resolvers'
 import { isRequired, isVisible } from '@/lib/forms/conditions'
+import { tripEnquiry } from '../helpers/form-fixtures'
 import type { FieldConfig } from '@/lib/forms/types'
 
 const contact: FieldConfig[] = [
@@ -144,44 +145,6 @@ describe('default value resolvers', () => {
   })
 })
 
-const tripEnquiry: FieldConfig[] = [
-  { name: 'organiser', type: 'text', label: 'Organiser', required: true },
-  {
-    name: 'rooms',
-    type: 'fieldArray',
-    label: 'room',
-    min: 1,
-    fields: [
-      {
-        name: 'travellers',
-        type: 'fieldArray',
-        label: 'traveller',
-        min: 1,
-        max: 4,
-        fields: [
-          { name: 'firstName', type: 'text', label: 'First name', required: true },
-          {
-            name: 'isChild',
-            type: 'select',
-            label: 'Child?',
-            options: [
-              { label: 'No', value: 'no' },
-              { label: 'Yes', value: 'yes' },
-            ],
-          },
-          {
-            name: 'age',
-            type: 'number',
-            label: 'Age',
-            required: true,
-            showWhen: { field: 'isChild', equals: 'yes' },
-          },
-        ],
-      },
-    ],
-  },
-]
-
 describe('field arrays and numbers', () => {
   it('seeds an empty array for a field array and undefined for a number', async () => {
     const values = await resolveDefaultValues([
@@ -273,7 +236,7 @@ describe('field arrays and numbers', () => {
 
     expect(empty.success).toBe(false)
     expect(empty.error!.issues[0]!.path).toEqual(['rooms'])
-    expect(empty.error!.issues[0]!.message).toBe('At least 1 room required')
+    expect(empty.error!.issues[0]!.message).toBe('Add at least one room')
 
     const nested = buildSchema(tripEnquiry).safeParse({
       organiser: 'Ada',
@@ -297,7 +260,9 @@ describe('field arrays and numbers', () => {
     })
 
     expect(result.success).toBe(false)
-    expect(result.error!.issues.map((i) => i.message)).toContain('At most 4 traveller allowed')
+    expect(result.error!.issues.map((i) => i.message)).toContain(
+      'No more than four travellers per room',
+    )
   })
 
   it('rejects a payload the renderer could not have produced', () => {

@@ -64,12 +64,28 @@ function isBlank(field: FieldConfig, value: unknown): boolean {
   return String(value ?? '').trim() === ''
 }
 
-function minRowsMessage(field: FieldConfig): string {
-  return `At least ${field.min} ${(field.label ?? 'rows').toLowerCase()} required`
+function minMessageFor(field: FieldConfig): string {
+  return field.minMessage ?? `At least ${field.min} ${(field.label ?? 'rows').toLowerCase()} required`
 }
 
-function maxRowsMessage(field: FieldConfig): string {
-  return `At most ${field.max} ${(field.label ?? 'rows').toLowerCase()} allowed`
+function maxMessageFor(field: FieldConfig): string {
+  return field.maxMessage ?? `At most ${field.max} ${(field.label ?? 'rows').toLowerCase()} allowed`
+}
+
+function minNumberMessage(field: FieldConfig): string {
+  return field.minMessage ?? `Must be at least ${field.min}`
+}
+
+function maxNumberMessage(field: FieldConfig): string {
+  return field.maxMessage ?? `Must be at most ${field.max}`
+}
+
+function minLengthMessage(field: FieldConfig): string {
+  return field.minMessage ?? `Must be at least ${field.min} characters`
+}
+
+function maxLengthMessage(field: FieldConfig): string {
+  return field.maxMessage ?? `Must be at most ${field.max} characters`
 }
 
 function refineFields(
@@ -88,10 +104,10 @@ function refineFields(
       const rows = Array.isArray(value) ? value : []
 
       if (field.min !== undefined && rows.length < field.min) {
-        ctx.addIssue({ code: 'custom', path, message: minRowsMessage(field) })
+        ctx.addIssue({ code: 'custom', path, message: minMessageFor(field) })
       }
       if (field.max !== undefined && rows.length > field.max) {
-        ctx.addIssue({ code: 'custom', path, message: maxRowsMessage(field) })
+        ctx.addIssue({ code: 'custom', path, message: maxMessageFor(field) })
       }
 
       rows.forEach((row, index) => {
@@ -115,10 +131,10 @@ function refineFields(
       if (typeof value !== 'number') continue
 
       if (field.min !== undefined && value < field.min) {
-        ctx.addIssue({ code: 'custom', path, message: `Must be at least ${field.min}` })
+        ctx.addIssue({ code: 'custom', path, message: minNumberMessage(field) })
       }
       if (field.max !== undefined && value > field.max) {
-        ctx.addIssue({ code: 'custom', path, message: `Must be at most ${field.max}` })
+        ctx.addIssue({ code: 'custom', path, message: maxNumberMessage(field) })
       }
       continue
     }
@@ -128,7 +144,7 @@ function refineFields(
         ctx.addIssue({
           code: 'custom',
           path,
-          message: `Must be at least ${field.min} characters`,
+          message: minLengthMessage(field),
         })
       }
 
@@ -136,7 +152,7 @@ function refineFields(
         ctx.addIssue({
           code: 'custom',
           path,
-          message: `Must be at most ${field.max} characters`,
+          message: maxLengthMessage(field),
         })
       }
 

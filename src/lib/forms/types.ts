@@ -32,6 +32,8 @@ export interface FieldConfig {
   options?: Option[]
   min?: number
   max?: number
+  minMessage?: string
+  maxMessage?: string
   fields?: FieldConfig[]
   showWhen?: Condition
   requiredWhen?: Condition
