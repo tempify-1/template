@@ -17,9 +17,14 @@ export type FieldType = (typeof FIELD_TYPES)[number]
 export interface Option {
   label: string
   value: string
+  disabled?: boolean
 }
 
 export type Condition = { field: string; equals: string } | { field: string; notEmpty: true }
+
+export interface PickerOption extends Option {
+  data?: FormValues
+}
 
 export interface FieldConfig {
   name: string
@@ -37,6 +42,10 @@ export interface FieldConfig {
   fields?: FieldConfig[]
   showWhen?: Condition
   requiredWhen?: Condition
+  picker?: {
+    label?: string
+    options: PickerOption[]
+  }
 }
 
 export type FormValue = string | number | boolean | undefined | FormValues | FormValueArray

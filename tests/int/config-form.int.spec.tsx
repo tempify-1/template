@@ -346,3 +346,117 @@ describe('ConfigForm field arrays', () => {
     ).toBe(true)
   })
 })
+
+describe('ConfigForm field array picker', () => {
+  const pickerFields: FieldConfig[] = [
+    {
+      name: 'guests',
+      type: 'fieldArray',
+      label: 'Guest',
+      max: 2,
+      fields: [{ name: 'name', type: 'text', label: 'Name' }],
+      picker: {
+        label: 'Presets',
+        options: [
+          { label: 'Ada', value: 'ada', data: { name: 'Ada Lovelace' } },
+          { label: 'Grace', value: 'grace', data: { name: 'Grace Hopper' } },
+        ],
+      },
+    },
+  ]
+
+  it('adds several rows at once from the picker', async () => {
+    render(<ConfigForm fields={pickerFields} defaultValues={{ guests: [] }} onSubmit={vi.fn()} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add from Presets' }))
+
+    const dialog = await waitFor(() => screen.getByRole('dialog'))
+    fireEvent.click(within(dialog).getByText('Ada'))
+    fireEvent.click(within(dialog).getByText('Grace'))
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Add 2 selected' }))
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+
+    const guest1 = screen.getByRole('group', { name: 'Guest 1' })
+    const guest2 = screen.getByRole('group', { name: 'Guest 2' })
+    expect(within(guest1).getByLabelText('Name')).toHaveProperty('value', 'Ada Lovelace')
+    expect(within(guest2).getByLabelText('Name')).toHaveProperty('value', 'Grace Hopper')
+  })
+
+  it('does not add rows when the picker is cancelled', async () => {
+    render(<ConfigForm fields={pickerFields} defaultValues={{ guests: [] }} onSubmit={vi.fn()} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add from Presets' }))
+
+    const dialog = await waitFor(() => screen.getByRole('dialog'))
+    fireEvent.click(within(dialog).getByText('Ada'))
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(screen.queryByRole('group', { name: 'Guest 1' })).toBeNull()
+  })
+
+  it('disables the picker button once the array is at the configured maximum', () => {
+    render(
+      <ConfigForm
+        fields={pickerFields}
+        defaultValues={{
+          guests: [{ name: 'One' }, { name: 'Two' }],
+        }}
+        onSubmit={vi.fn()}
+      />,
+    )
+
+    expect(
+      screen.getByRole('button', { name: 'Add from Presets' }).hasAttribute('disabled'),
+    ).toBe(true)
+  })
+
+  it('adds rows in the order they were selected', async () => {
+    render(<ConfigForm fields={pickerFields} defaultValues={{ guests: [] }} onSubmit={vi.fn()} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add from Presets' }))
+
+    const dialog = await waitFor(() => screen.getByRole('dialog'))
+    fireEvent.click(within(dialog).getByText('Grace'))
+    fireEvent.click(within(dialog).getByText('Ada'))
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Add 2 selected' }))
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+
+    const guest1 = screen.getByRole('group', { name: 'Guest 1' })
+    const guest2 = screen.getByRole('group', { name: 'Guest 2' })
+    expect(within(guest1).getByLabelText('Name')).toHaveProperty('value', 'Grace Hopper')
+    expect(within(guest2).getByLabelText('Name')).toHaveProperty('value', 'Ada Lovelace')
+  })
+
+  it('ignores disabled picker options', async () => {
+    const withDisabled: FieldConfig[] = [
+      {
+        name: 'guests',
+        type: 'fieldArray',
+        label: 'Guest',
+        fields: [{ name: 'name', type: 'text', label: 'Name' }],
+        picker: {
+          options: [
+            { label: 'Ada', value: 'ada', data: { name: 'Ada Lovelace' } },
+            { label: 'Unavailable', value: 'unavailable', disabled: true, data: { name: 'X' } },
+          ],
+        },
+      },
+    ]
+
+    render(<ConfigForm fields={withDisabled} defaultValues={{ guests: [] }} onSubmit={vi.fn()} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add from Guest' }))
+
+    const dialog = await waitFor(() => screen.getByRole('dialog'))
+    const unavailable = within(dialog).getByRole('checkbox', { name: 'Unavailable' })
+    expect(unavailable.getAttribute('aria-disabled')).toBe('true')
+    fireEvent.click(within(dialog).getByText('Ada'))
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Add 1 selected' }))
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(screen.getByRole('group', { name: 'Guest 1' })).toBeDefined()
+  })
+})

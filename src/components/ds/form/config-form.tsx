@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowDownIcon, ArrowUpIcon, XIcon } from 'lucide-react'
-import { useId, useMemo } from 'react'
+import { useId, useMemo, useState } from 'react'
 import {
   Controller,
   useFieldArray,
@@ -13,6 +13,17 @@ import {
 } from 'react-hook-form'
 
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 import {
   Field,
   FieldContent,
@@ -53,6 +64,26 @@ function joinPath(basePath: string, name: string): string {
   return basePath ? `${basePath}.${name}` : name
 }
 
+function mergeDeep(target: FormValues, source: FormValues): FormValues {
+  const result: FormValues = { ...target }
+  for (const [key, value] of Object.entries(source)) {
+    const existing = result[key]
+    if (
+      value !== null &&
+      typeof value === 'object' &&
+      !Array.isArray(value) &&
+      existing !== null &&
+      typeof existing === 'object' &&
+      !Array.isArray(existing)
+    ) {
+      result[key] = mergeDeep(existing as FormValues, value as FormValues)
+    } else {
+      result[key] = value
+    }
+  }
+  return result
+}
+
 function FieldArrayControl({
   config,
   form,
@@ -89,6 +120,40 @@ function FieldArrayControl({
       return currentRows[index] as FormValues
     }
     return {}
+  }
+
+  const picker = config.picker
+  const pickerLabel = picker?.label ?? label
+  const slotsLeft = config.max === undefined ? Infinity : (config.max ?? 0) - rows.length
+  const hasPicker = Boolean(picker)
+  const pickerDisabled = !picker || picker.options.length === 0 || slotsLeft <= 0
+  const maxSelectable = picker ? Math.min(picker.options.length, slotsLeft) : 0
+  const [open, setOpen] = useState(false)
+  const [selected, setSelected] = useState<string[]>([])
+
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next)
+    if (next) setSelected([])
+  }
+
+  const toggleOption = (value: string) => {
+    setSelected((current) =>
+      current.includes(value)
+        ? current.filter((v) => v !== value)
+        : [...current, value].slice(0, maxSelectable),
+    )
+  }
+
+  const addSelected = () => {
+    if (!picker) return
+    const template = emptyValues(config.fields ?? [])
+    for (const value of selected) {
+      const option = picker.options.find((o) => o.value === value)
+      if (option) {
+        append(mergeDeep(template, option.data ?? {}))
+      }
+    }
+    setOpen(false)
   }
 
   return (
@@ -145,7 +210,7 @@ function FieldArrayControl({
 
       {message ? <FieldError id={errorId}>{message}</FieldError> : null}
 
-      <div>
+      <div className="flex flex-wrap gap-2">
         <Button
           type="button"
           variant="outline"
@@ -155,6 +220,65 @@ function FieldArrayControl({
         >
           {`Add ${label}`}
         </Button>
+
+        {hasPicker ? (
+          <Dialog open={open} onOpenChange={handleOpenChange}>
+            <DialogTrigger
+              render={
+                <Button type="button" variant="outline" size="sm" disabled={pickerDisabled}>
+                  {`Add from ${pickerLabel}`}
+                </Button>
+              }
+            />
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{`Add from ${pickerLabel}`}</DialogTitle>
+                <DialogDescription>Select the items you want to add.</DialogDescription>
+              </DialogHeader>
+
+              <div className="flex flex-col gap-3 py-2">
+                {picker!.options.map((option) => {
+                  const isSelected = selected.includes(option.value)
+                  const selectable =
+                    !option.disabled && (isSelected || selected.length < maxSelectable)
+                  const optionId = `${uid}${fullName}-picker-${option.value}`
+                  return (
+                    <label
+                      key={option.value}
+                      htmlFor={optionId}
+                      className={`flex items-center gap-3 rounded-md border p-3 text-sm ${selectable || isSelected ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
+                    >
+                      <Checkbox
+                        id={optionId}
+                        checked={isSelected}
+                        disabled={!selectable && !isSelected}
+                        onCheckedChange={() => selectable && toggleOption(option.value)}
+                      />
+                      {option.label}
+                    </label>
+                  )
+                })}
+              </div>
+
+              <DialogFooter>
+                <DialogClose
+                  render={
+                    <Button type="button" variant="outline">
+                      Cancel
+                    </Button>
+                  }
+                />
+                <Button
+                  type="button"
+                  disabled={selected.length === 0 || selected.length > slotsLeft}
+                  onClick={addSelected}
+                >
+                  {`Add ${selected.length} selected`}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        ) : null}
       </div>
     </FieldSet>
   )
