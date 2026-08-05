@@ -71,7 +71,10 @@ describe('the render tree stays server-rendered', () => {
   })
 
   it('renders sections through the same Server Component tree in draft and published mode', () => {
-    for (const route of ['src/app/(frontend)/page.tsx', 'src/app/(frontend)/[slug]/page.tsx']) {
+    for (const route of [
+      'src/app/(frontend)/(home)/page.tsx',
+      'src/app/(frontend)/[slug]/page.tsx',
+    ]) {
       const source = read(route)
 
       expect(source, route).not.toContain("'use client'")

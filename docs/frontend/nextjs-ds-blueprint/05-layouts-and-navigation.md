@@ -6,6 +6,12 @@ blocks. The addition is small: a set of **layout shells** selected per route gro
 
 ## The shells
 
+**Superseded in part by ADR-0007.** A Page now chooses its own Shell through a field, so chrome no
+longer follows the route group a file happens to live in. The Shells below are still the right
+set, and the route groups still exist for hand-coded routes; what changed is that a CMS page
+picks one rather than inheriting it. Read the group mapping below as where hand-coded routes
+live, not as how chrome is decided.
+
 Four `layout.tsx` shells, mapped to App Router route groups — switching between website and
 dashboard chrome is just which group a route lives in:
 

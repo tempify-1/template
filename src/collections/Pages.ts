@@ -4,6 +4,7 @@ import { authenticated, authenticatedOrPublished } from '../access'
 import { pageTag } from '../lib/cache-tags'
 import { presetBlocks } from '../lib/presets/registry'
 import { previewPath } from '../lib/preview'
+import { DEFAULT_SHELL, SHELLS } from '../lib/shells'
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
@@ -60,6 +61,16 @@ export const Pages: CollectionConfig = {
         typeof value === 'string' && SLUG_PATTERN.test(value)
           ? true
           : 'Use lower-case letters, numbers and hyphens only, with no leading or trailing hyphen.',
+    },
+    {
+      name: 'shell',
+      type: 'select',
+      defaultValue: DEFAULT_SHELL,
+      options: SHELLS.map((shell) => ({
+        label: shell.charAt(0).toUpperCase() + shell.slice(1),
+        value: shell,
+      })),
+      admin: { description: 'Which chrome wraps this page.' },
     },
     {
       name: 'sections',
