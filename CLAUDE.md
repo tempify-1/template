@@ -20,6 +20,7 @@ Domain material lives in CONTEXT.md. Rationale and architecture live in docs/.
 11. Value contracts are law: a row in `docs/frontend/nextjs-ds-blueprint/03-forms.md` (Value contracts) before any new field component.
 12. No comments in code. Rationale goes in docs/.
 13. Verify, don't assume: typecheck + targeted test + observe the live page. A log is only evidence if it logs the value that goes over the wire.
+14. Payload work loads the skill first. Before writing or reviewing any collection, global, field, hook, access-control or plugin code, load the `payload` skill (`.claude/skills/payload`) and judge the implementation against it. Any spec or ticket touching Payload carries this as a stated precondition, not as a review afterthought — Payload defects have repeatedly been caught downstream instead of avoided upstream.
 
 # Retrieval guardrail
 
@@ -53,3 +54,8 @@ The five canonical roles, label strings unchanged. See `docs/agents/triage-label
 ### Domain docs
 
 Single-context: `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+
+### Payload
+
+Project-local skill at `.claude/skills/payload`. A precondition for Payload work, not a reference
+— see hard rule 14.
