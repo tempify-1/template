@@ -7,7 +7,7 @@ import { describe, it, expect, vi, afterAll } from 'vitest'
 import { siteNav } from '@/config/site-nav'
 import { Navigation, type StoredNavigation } from '@/globals/Navigation'
 import { currentProps } from '@/lib/nav/link'
-import { loadNavigation } from '@/lib/navigation'
+import { isUsableNavigation, loadNavigation } from '@/lib/navigation'
 import config from '@/payload.config'
 import { ICON_NAMES } from '@/lib/icons'
 import {
@@ -535,23 +535,36 @@ describe('the sidebar comes from configuration', () => {
     expect(warnings.join(' ')).toContain('Broken')
   })
 
-  it('drops a duplicate destination rather than emitting a colliding React key', () => {
-    const { config: mapped, warnings } = mapNavigation({
+  it('keeps two labels pointing at the same destination, which is legitimate', () => {
+    const { config: mapped } = mapNavigation({
       ...base,
       sidebar: {
         groups: [
           {
             items: [
-              { label: 'Overview', href: '/dashboard' },
-              { label: 'Overview again', href: '/dashboard' },
+              { label: 'Documentation', href: '/docs' },
+              { label: 'API reference', href: '/docs' },
             ],
           },
         ],
       },
     } as never)
 
-    expect(mapped.sidebar.groups[0]!.items).toHaveLength(1)
-    expect(warnings.join(' ')).toContain('duplicate destination')
+    expect(mapped.sidebar.groups[0]!.items.map((i) => i.label)).toEqual([
+      'Documentation',
+      'API reference',
+    ])
+  })
+
+  it('carries a badge an editor set, rather than discarding it', () => {
+    const { config: mapped } = mapNavigation({
+      ...base,
+      sidebar: {
+        groups: [{ items: [{ label: 'Inbox', href: '/dashboard', badge: '3' }] }],
+      },
+    } as never)
+
+    expect(mapped.sidebar.groups[0]!.items[0]).toMatchObject({ label: 'Inbox', badge: '3' })
   })
 
   it('refuses a stored global with no sidebar groups, so a dashboard is never unnavigable', async () => {
@@ -599,5 +612,25 @@ describe('marking the current page', () => {
   it('never marks an off-site or anchor destination', () => {
     expect(currentProps('https://example.com', '/')).toEqual({})
     expect(currentProps('#top', '/')).toEqual({})
+  })
+})
+
+describe('a global that predates the sidebar field', () => {
+  it('falls back to the fixture rather than rendering a dashboard with no navigation', () => {
+    const { config: mapped } = mapNavigation({
+      brand: { label: 'Stored', href: '/' },
+      header: { items: [{ kind: 'link', label: 'Admin', href: '/admin' }] },
+      footer: {
+        columns: [{ title: 'Info', items: [{ label: 'About', href: '/about' }] }],
+        copyright: '© 2026',
+      },
+    } as never)
+
+    // no sidebar key at all, exactly as a row written before this field existed
+    expect(mapped.sidebar.groups).toHaveLength(0)
+    expect(
+      isUsableNavigation(mapped),
+      'a mapped config with no sidebar groups must be treated as unusable, or an existing stored global leaves the dashboard unnavigable',
+    ).toBe(false)
   })
 })

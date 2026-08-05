@@ -22,11 +22,11 @@ export function PageSidebar({ config }: { config: LayoutConfig }) {
       </SidebarHeader>
       <SidebarContent>
         {config.sidebar.groups.map((group, index) => (
-          <SidebarGroup key={group.title ?? `group-${index}`}>
+          <SidebarGroup key={`${group.title ?? 'group'}-${index}`}>
             {group.title ? <SidebarGroupLabel>{group.title}</SidebarGroupLabel> : null}
             <SidebarMenu>
-              {group.items.map((item) => (
-                <SidebarMenuItem key={item.href}>
+              {group.items.map((item, itemIndex) => (
+                <SidebarMenuItem key={`${item.href}-${itemIndex}`}>
                   <SidebarLink item={item} />
                   {item.badge ? <SidebarMenuBadge>{item.badge}</SidebarMenuBadge> : null}
                 </SidebarMenuItem>

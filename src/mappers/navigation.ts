@@ -1,7 +1,7 @@
 import type { StoredNavigation } from '@/globals/Navigation'
 import { isIconName, type IconName } from '@/lib/icons'
 import { isActionName } from '@/lib/nav/actions'
-import type { LayoutConfig, NavItem, NavLink, SidebarGroup } from '@/lib/nav/types'
+import type { LayoutConfig, NavItem, NavLink, SidebarGroup, SidebarItem } from '@/lib/nav/types'
 
 function sanitizeIcon(
   name: string | null | undefined,
@@ -98,13 +98,9 @@ function toFooterColumn(
     return undefined
   }
 
-  const items = dedupeByHref(
-    (row.items ?? [])
-      .map((item) => toNavLink(item, warn))
-      .filter((link): link is NavLink => link !== undefined),
-    warn,
-    `footer column "${row.title}"`,
-  )
+  const items = (row.items ?? [])
+    .map((item) => toNavLink(item, warn))
+    .filter((link): link is NavLink => link !== undefined)
   if (items.length === 0) {
     warn(`Dropped footer column "${row.title}": no valid items`)
     return undefined
@@ -120,17 +116,21 @@ function toCallToAction(raw: unknown, warn: (message: string) => void): NavLink 
   return link
 }
 
+function toSidebarItem(raw: unknown, warn: (message: string) => void): SidebarItem | undefined {
+  const link = toNavLink(raw, warn)
+  if (!link) return undefined
+
+  const badge = (raw as { badge?: string | null }).badge
+  return filled(badge) ? { ...link, badge } : link
+}
+
 function toSidebarGroup(raw: unknown, warn: (message: string) => void): SidebarGroup | undefined {
   const row = raw as Partial<SidebarGroup> | null | undefined
   if (!row) return undefined
 
-  const items = dedupeByHref(
-    (row.items ?? [])
-      .map((item) => toNavLink(item, warn))
-      .filter((link): link is NavLink => link !== undefined),
-    warn,
-    row.title ?? 'sidebar group',
-  )
+  const items = (row.items ?? [])
+    .map((item) => toSidebarItem(item, warn))
+    .filter((item): item is SidebarItem => item !== undefined)
 
   if (items.length === 0) {
     warn(`Dropped sidebar group "${row.title ?? '(untitled)'}": no valid items`)
@@ -138,23 +138,6 @@ function toSidebarGroup(raw: unknown, warn: (message: string) => void): SidebarG
   }
 
   return { title: filled(row.title) ? row.title : undefined, items }
-}
-
-function dedupeByHref<T extends { href: string }>(
-  links: T[],
-  warn: (message: string) => void,
-  context: string,
-): T[] {
-  const seen = new Set<string>()
-
-  return links.filter((link) => {
-    if (seen.has(link.href)) {
-      warn(`Dropped duplicate destination "${link.href}" in ${context}`)
-      return false
-    }
-    seen.add(link.href)
-    return true
-  })
 }
 
 export interface MapNavigationResult {

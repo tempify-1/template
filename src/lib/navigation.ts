@@ -6,8 +6,12 @@ import { mapNavigation } from '@/mappers/navigation'
 import type { LayoutConfig } from '@/lib/nav/types'
 import config from '@/payload.config'
 
-function isUsable(navConfig: LayoutConfig): boolean {
-  return navConfig.header.items.length > 0 && navConfig.footer.columns.length > 0
+export function isUsableNavigation(navConfig: LayoutConfig): boolean {
+  return (
+    navConfig.header.items.length > 0 &&
+    navConfig.footer.columns.length > 0 &&
+    navConfig.sidebar.groups.length > 0
+  )
 }
 
 export async function loadNavigation(): Promise<LayoutConfig> {
@@ -27,7 +31,7 @@ export async function loadNavigation(): Promise<LayoutConfig> {
       payload.logger.warn(`Navigation: ${warning}`)
     }
 
-    if (!isUsable(navConfig)) {
+    if (!isUsableNavigation(navConfig)) {
       payload.logger.error(
         'Navigation: every stored header item was dropped, falling back to the code fixture rather than rendering a site with no navigation',
       )

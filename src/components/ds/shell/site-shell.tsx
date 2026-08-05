@@ -55,11 +55,11 @@ function SiteFooter({ config }: { config: LayoutConfig }) {
           {footer.columns.map((column) => (
             <nav key={column.title} aria-label={column.title} className="flex flex-col gap-3">
               <span className="text-sm font-medium">{column.title}</span>
-              {column.items.map((link) => (
+              {column.items.map((link, linkIndex) => (
                 <FooterLink
-                  key={link.href}
+                  key={`${link.href}-${linkIndex}`}
                   link={link}
-                  className="text-sm text-muted-foreground hover:text-foreground aria-[current=page]:text-foreground"
+                  className="text-sm text-muted-foreground hover:text-foreground aria-[current=page]:text-foreground data-active:text-foreground"
                 />
               ))}
             </nav>
@@ -70,11 +70,11 @@ function SiteFooter({ config }: { config: LayoutConfig }) {
           <span>{footer.copyright}</span>
           {footer.legal?.length ? (
             <nav aria-label="Legal" className="flex gap-4">
-              {footer.legal.map((link) => (
+              {footer.legal.map((link, linkIndex) => (
                 <FooterLink
-                  key={link.href}
+                  key={`${link.href}-${linkIndex}`}
                   link={link}
-                  className="hover:text-foreground aria-[current=page]:text-foreground"
+                  className="hover:text-foreground aria-[current=page]:text-foreground data-active:text-foreground"
                 />
               ))}
             </nav>
