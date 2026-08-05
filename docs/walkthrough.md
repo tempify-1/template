@@ -80,7 +80,7 @@ Reload **http://localhost:3000**. Your page has replaced the code Fixture (#5).
 
 - Add a **Pricing table** block, add a tier, but leave the call-to-action fields blank. Save.
   The bad row is dropped; the rest of the section still renders. It does **not** take the page
-  down. (Five separate review passes found variants of "content saves, then the whole section
+  down. (Eight separate review passes found variants of "content saves, then the whole section
   silently vanishes" — this is the fix.)
 - Try a **negative price**. The admin refuses it, because the zod bound is translated into a
   Payload field constraint rather than being enforced only at render time.
@@ -123,11 +123,20 @@ share with no picture.
 
 ---
 
-## 6. The dashboard (2 minutes)
+## 6. The dashboard, and the Shell a page chooses (5 minutes)
 
 **http://localhost:3000/dashboard** and **/dashboard/charts** — sidebar, cards, data table and
 Recharts wrappers, assembled from shadcn blocks rather than hand-built (#3). No login required;
 it is chrome, not a protected area.
+
+**Navigation is content, not code.** In the admin, open **Globals → Navigation**. The header, the
+footer and the dashboard sidebar all come from here, and the hand-coded dashboard routes render
+the same configured sidebar a CMS page does. With no global saved, everything falls back to a
+committed fixture, so a fresh clone is never chrome-less (#24, #25).
+
+**Then change one select.** On your Pages document, set **Shell** to `dashboard` and save. The same
+Preset-composed page now renders inside dashboard chrome — sidebar and all — with no file moved and
+no second route. Set it to `blank` and the chrome disappears entirely (#23, ADR-0007).
 
 ---
 
@@ -151,8 +160,8 @@ hosted on your own domain.
 ## 8. Run the tests (5 minutes)
 
 ```bash
-pnpm test:int     # 234 tests, needs Postgres — creates its own <db>_test database
-pnpm test:e2e     # 104 tests, starts its own dev server on port 3001
+pnpm test:int     # 306 tests, needs Postgres — creates its own <db>_test database
+pnpm test:e2e     # 120 tests, starts its own dev server on port 3001
 ```
 
 Both suites are isolated from your dev database. The e2e suite seeds and cleans up after itself.
@@ -182,7 +191,7 @@ src/components/ds/section/pricing-*.tsx the renderer and its one client componen
 src/fixtures/presets/index.ts           the committed example
 ```
 
-Then read `CLAUDE.md` for the thirteen rules the code follows, and `docs/adr/` for the six
+Then read `CLAUDE.md` for the fourteen rules the code follows, and `docs/adr/` for the seven
 decisions that were hard enough to be worth recording.
 
 ---
