@@ -1,6 +1,7 @@
 import type { Block } from 'payload'
 
 import { benefitsGrid, benefitsGridArgs } from './benefits-grid'
+import { cmsForm, cmsFormArgs } from './cms-form'
 import { community, communityArgs } from './community'
 import { contactForm, contactFormArgs } from './contact-form'
 import { ctaBanner, ctaBannerArgs } from './cta-banner'
@@ -77,6 +78,13 @@ export const presetRegistry = {
     singular: 'Contact form',
     plural: 'Contact forms',
   },
+  cmsForm: {
+    schema: cmsFormArgs,
+    factory: cmsForm,
+    singular: 'Form',
+    plural: 'Forms',
+    interfaceName: 'CmsFormBlock',
+  },
   newsletter: {
     schema: newsletterArgs,
     factory: newsletter,
@@ -106,12 +114,14 @@ export function presetBlockSchema<S extends { extend: (shape: typeof themeArgs) 
 }
 
 export function presetBlocks(): Block[] {
-  return Object.entries(presetRegistry).map(([slug, entry]) =>
-    blockFromSchema({
+  return Object.entries(presetRegistry).map(([slug, entry]) => {
+    const { interfaceName } = entry as { interfaceName?: string }
+    return blockFromSchema({
       slug,
       schema: presetBlockSchema(entry.schema) as never,
       singular: entry.singular,
       plural: entry.plural,
-    }),
-  )
+      ...(interfaceName ? { interfaceName } : {}),
+    })
+  })
 }

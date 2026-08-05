@@ -1,5 +1,3 @@
-import type { FormName } from '@/lib/forms/definitions'
-
 import type { BillingPeriod } from './pricing'
 import type { SectionTheme } from './theme'
 
@@ -123,7 +121,7 @@ export interface PersonSpec {
 
 export interface FormBlock {
   blockType: 'form'
-  formName: FormName
+  formName: string
 }
 
 export interface PricingTierSpec {

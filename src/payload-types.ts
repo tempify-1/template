@@ -70,6 +70,7 @@ export interface Config {
     users: User;
     media: Media;
     pages: Page;
+    forms: Form;
     'form-submissions': FormSubmission;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -81,6 +82,7 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
+    forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -196,6 +198,7 @@ export interface Page {
         | CtaBannerBlock
         | CommunityBlock
         | ContactFormBlock
+        | CmsFormBlock
         | NewsletterBlock
         | PricingBlock
         | FaqAccordionBlock
@@ -468,6 +471,61 @@ export interface ContactFormBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CmsFormBlock".
+ */
+export interface CmsFormBlock {
+  heading: string;
+  subheading?: string | null;
+  form: number | Form;
+  /**
+   * Recolours this Section and everything in it. Leave empty for the page Theme.
+   */
+  theme?: ('muted' | 'accent' | 'brand') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'cmsForm';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "forms".
+ */
+export interface Form {
+  id: number;
+  name: string;
+  /**
+   * Lower-case words separated by hyphens, e.g. event-signup.
+   */
+  slug: string;
+  submitLabel: string;
+  successMessage: string;
+  /**
+   * The field whose value is shown in the submissions list.
+   */
+  summaryField: string;
+  fields: {
+    name: string;
+    type: 'text' | 'email' | 'tel' | 'textarea' | 'select' | 'checkbox' | 'number';
+    label?: string | null;
+    placeholder?: string | null;
+    description?: string | null;
+    required?: boolean | null;
+    options?:
+      | {
+          label: string;
+          value: string;
+          id?: string | null;
+        }[]
+      | null;
+    min?: number | null;
+    max?: number | null;
+    id?: string | null;
+  }[];
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "NewsletterBlock".
  */
 export interface NewsletterBlock {
@@ -553,7 +611,7 @@ export interface FaqAccordionBlock {
 export interface FormSubmission {
   id: number;
   /**
-   * One of: contact, newsletter
+   * The form reference this submission answered.
    */
   form: string;
   summary?: string | null;
@@ -604,6 +662,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'pages';
         value: number | Page;
+      } | null)
+    | ({
+        relationTo: 'forms';
+        value: number | Form;
       } | null)
     | ({
         relationTo: 'form-submissions';
@@ -712,6 +774,7 @@ export interface PagesSelect<T extends boolean = true> {
         ctaBanner?: T | CtaBannerBlockSelect<T>;
         community?: T | CommunityBlockSelect<T>;
         contactForm?: T | ContactFormBlockSelect<T>;
+        cmsForm?: T | CmsFormBlockSelect<T>;
         newsletter?: T | NewsletterBlockSelect<T>;
         pricing?: T | PricingBlockSelect<T>;
         faqAccordion?: T | FaqAccordionBlockSelect<T>;
@@ -930,6 +993,18 @@ export interface ContactFormBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CmsFormBlock_select".
+ */
+export interface CmsFormBlockSelect<T extends boolean = true> {
+  heading?: T;
+  subheading?: T;
+  form?: T;
+  theme?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "NewsletterBlock_select".
  */
 export interface NewsletterBlockSelect<T extends boolean = true> {
@@ -989,6 +1064,40 @@ export interface FaqAccordionBlockSelect<T extends boolean = true> {
   theme?: T;
   id?: T;
   blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "forms_select".
+ */
+export interface FormsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  submitLabel?: T;
+  successMessage?: T;
+  summaryField?: T;
+  fields?:
+    | T
+    | {
+        name?: T;
+        type?: T;
+        label?: T;
+        placeholder?: T;
+        description?: T;
+        required?: T;
+        options?:
+          | T
+          | {
+              label?: T;
+              value?: T;
+              id?: T;
+            };
+        min?: T;
+        max?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

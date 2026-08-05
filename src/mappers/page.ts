@@ -1,4 +1,5 @@
 import { benefitsGrid } from '@/lib/presets/benefits-grid'
+import { cmsForm } from '@/lib/presets/cms-form'
 import { community } from '@/lib/presets/community'
 import { contactForm } from '@/lib/presets/contact-form'
 import { ctaBanner } from '@/lib/presets/cta-banner'
@@ -165,6 +166,24 @@ const presetMappers = {
       heading: block.heading,
       subheading: block.subheading ?? undefined,
     }),
+
+  cmsForm: (block: Extract<SectionBlock, { blockType: 'cmsForm' }>) => {
+    const form = block.form
+    const slug =
+      form && typeof form === 'object' && 'slug' in form && typeof form.slug === 'string'
+        ? form.slug
+        : undefined
+
+    if (!slug) {
+      throw new Error('Form reference is missing or not populated')
+    }
+
+    return cmsForm({
+      heading: block.heading,
+      subheading: block.subheading ?? undefined,
+      form: slug,
+    })
+  },
 
   newsletter: (block: Extract<SectionBlock, { blockType: 'newsletter' }>) =>
     newsletter({

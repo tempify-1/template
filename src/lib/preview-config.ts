@@ -59,7 +59,7 @@ const blockShapes = {
       }),
     ),
   },
-  form: { formName: z.enum(['contact', 'newsletter']) },
+  form: { formName: z.string() },
   pricingTable: {
     currency: text,
     locale: text,

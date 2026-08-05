@@ -9,6 +9,7 @@ import { FORM_NAMES, formDefinitions, isFormName } from '@/lib/forms/definitions
 import { inputFields } from '@/lib/forms/types'
 import { mapPageResult } from '@/mappers/page'
 import type { Block, FormBlock, SectionDefinition } from '@/lib/presets/types'
+import type { Form } from '@/payload-types'
 import config from '@/payload.config'
 
 function blockOf<T extends Block['blockType']>(section: SectionDefinition, type: T) {
@@ -62,6 +63,45 @@ describe('contactForm and newsletter Presets', () => {
       'contact',
       'newsletter',
     ])
+  })
+})
+
+describe('cmsForm Preset', () => {
+  it('generates an authorable Payload block for a CMS form', () => {
+    const slugs = presetBlocks().map((block) => block.slug)
+
+    expect(slugs).toContain('cmsForm')
+  })
+
+  it('maps a stored CMS form block back into a form Section', () => {
+    const { sections, skipped } = mapPageResult({
+      sections: [
+        {
+          blockType: 'cmsForm',
+          heading: 'Request a callback',
+          form: { id: 1, slug: 'callback', name: 'Callback' } as Form,
+        },
+      ],
+    } as never)
+
+    expect(skipped).toHaveLength(0)
+    expect(sections).toHaveLength(1)
+    expect(blockOf(sections[0]!, 'form').formName).toBe('callback')
+  })
+
+  it('drops a CMS form block whose reference is missing', () => {
+    const { sections, skipped } = mapPageResult({
+      sections: [
+        {
+          blockType: 'cmsForm',
+          heading: 'Request a callback',
+          form: 1,
+        },
+      ],
+    } as never)
+
+    expect(sections).toHaveLength(0)
+    expect(skipped).toHaveLength(1)
   })
 })
 
@@ -169,14 +209,57 @@ describe('submitForm', () => {
     ).rejects.toThrow()
   })
 
-  it('refuses a submission row naming a form that does not exist', async () => {
-    await expect(
-      payload.create({
-        collection: 'form-submissions',
-        data: { form: 'not-a-real-form', summary: 'x', data: {} },
-        overrideAccess: true,
-      }),
-    ).rejects.toThrow()
+  it('persists a submission to a CMS-authored form', async () => {
+    const slug = `cms-form-${Date.now()}`
+    await payload.create({
+      collection: 'forms',
+      data: {
+        name: 'CMS form test',
+        slug,
+        submitLabel: 'Send',
+        successMessage: 'Received.',
+        summaryField: 'email',
+        fields: [
+          { name: 'name', type: 'text', label: 'Name', required: true },
+          { name: 'email', type: 'email', label: 'Email', required: true },
+        ],
+        _status: 'published',
+      },
+    })
+
+    const email = `cms-${Date.now()}@example.com`
+    const result = await submitForm(slug, { name: 'Ada', email })
+
+    expect(result.ok).toBe(true)
+    expect(result.message).toBe('Received.')
+
+    const stored = await submissionsFor(slug)
+    const match = stored.docs.find((doc) => doc.summary === email)
+    expect(match).toBeDefined()
+    expect(match!.data).toMatchObject({ name: 'Ada', email })
+  })
+
+  it('rejects a submission to an unpublished CMS form', async () => {
+    const slug = `cms-form-draft-${Date.now()}`
+    await payload.create({
+      collection: 'forms',
+      data: {
+        name: 'CMS draft test',
+        slug,
+        submitLabel: 'Send',
+        successMessage: 'Received.',
+        summaryField: 'email',
+        fields: [{ name: 'email', type: 'email', label: 'Email', required: true }],
+        _status: 'draft',
+      },
+    })
+
+    const before = await submissionsFor(slug)
+    const result = await submitForm(slug, { email: 'draft@example.com' })
+
+    expect(result.ok).toBe(false)
+    const after = await submissionsFor(slug)
+    expect(after.totalDocs).toBe(before.totalDocs)
   })
 
   it('keeps submissions unreadable without a logged-in user', async () => {

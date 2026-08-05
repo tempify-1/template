@@ -2,7 +2,7 @@ import type { Block, CollectionSlug, Field } from 'payload'
 import type { z } from 'zod'
 
 export interface PayloadFieldHint {
-  type?: 'textarea' | 'upload'
+  type?: 'textarea' | 'upload' | 'relationship'
   relationTo?: CollectionSlug
   label?: string
   description?: string
@@ -110,6 +110,17 @@ function fieldFor(name: string, raw: z.ZodType, blankable = false): Field {
       name,
       type: 'upload',
       relationTo: hint.relationTo ?? 'media',
+      label,
+      required,
+      ...admin,
+    }
+  }
+
+  if (hint.type === 'relationship') {
+    return {
+      name,
+      type: 'relationship',
+      relationTo: hint.relationTo ?? 'forms',
       label,
       required,
       ...admin,

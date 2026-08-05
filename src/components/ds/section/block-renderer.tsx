@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 
-import type { Block, BlockType } from '@/lib/presets/types'
+import { resolveForm } from '@/lib/forms/resolve-form'
+import type { Block, BlockType, FormBlock as FormBlockSpec } from '@/lib/presets/types'
 
 import { AccordionList } from './accordion-block'
 import { FormBlock } from './form-block'
@@ -19,7 +20,14 @@ import {
 } from './blocks'
 
 type BlockRenderers = {
-  [K in BlockType]: (props: { block: Extract<Block, { blockType: K }> }) => ReactNode
+  [K in BlockType]: (props: {
+    block: Extract<Block, { blockType: K }>
+  }) => ReactNode | Promise<ReactNode>
+}
+
+async function ResolvedFormBlock({ block }: { block: FormBlockSpec }) {
+  const definition = await resolveForm(block.formName)
+  return <FormBlock block={block} definition={definition} />
 }
 
 export const blockRegistry: BlockRenderers = {
@@ -34,11 +42,13 @@ export const blockRegistry: BlockRenderers = {
   image: ImageMedia,
   testimonialCarousel: TestimonialCarousel,
   personGrid: PersonGrid,
-  form: FormBlock,
+  form: ResolvedFormBlock,
   pricingTable: PricingTable,
 }
 
 export function BlockRenderer({ block }: { block: Block }) {
-  const Component = blockRegistry[block.blockType] as (props: { block: Block }) => ReactNode
+  const Component = blockRegistry[block.blockType] as (props: {
+    block: Block
+  }) => ReactNode | Promise<ReactNode>
   return <Component block={block} />
 }

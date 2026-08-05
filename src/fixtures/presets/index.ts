@@ -1,4 +1,5 @@
 import { benefitsGrid } from '@/lib/presets/benefits-grid'
+import { cmsForm } from '@/lib/presets/cms-form'
 import { community } from '@/lib/presets/community'
 import { contactForm } from '@/lib/presets/contact-form'
 import { ctaBanner } from '@/lib/presets/cta-banner'
@@ -256,6 +257,12 @@ export const presetFixtures: Record<PresetName, SectionDefinition> = {
   contactForm: contactForm({
     heading: 'Talk to us',
     subheading: 'Tell us what you are building and we will point you at the right starting place.',
+  }),
+
+  cmsForm: cmsForm({
+    heading: 'Request a callback',
+    subheading: 'Leave your details and we will call you back.',
+    form: 'contact',
   }),
 }
 

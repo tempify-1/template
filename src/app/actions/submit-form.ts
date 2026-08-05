@@ -15,7 +15,15 @@ export interface SubmitResult {
 const RECORDING_FAILED_MESSAGE = 'We could not record that just now. Please try again in a moment.'
 
 export async function submitForm(formName: string, values: FormValues): Promise<SubmitResult> {
-  const definition = resolveForm(formName)
+  let payload: Payload
+  try {
+    payload = await getPayload({ config: await config })
+  } catch (error) {
+    console.error(`form-submissions: Payload unavailable for "${formName}"`, error)
+    return { ok: false, message: RECORDING_FAILED_MESSAGE }
+  }
+
+  const definition = await resolveForm(formName, payload)
 
   if (!definition) {
     return { ok: false, message: FORM_UNAVAILABLE_MESSAGE }
@@ -28,14 +36,6 @@ export async function submitForm(formName: string, values: FormValues): Promise<
       ok: false,
       message: 'Some answers were rejected. Please check the form and try again.',
     }
-  }
-
-  let payload: Payload
-  try {
-    payload = await getPayload({ config: await config })
-  } catch (error) {
-    console.error(`form-submissions: Payload unavailable for "${formName}"`, error)
-    return { ok: false, message: RECORDING_FAILED_MESSAGE }
   }
 
   try {

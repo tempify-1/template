@@ -1,7 +1,5 @@
 import { z } from 'zod'
 
-import type { FormName } from '@/lib/forms/definitions'
-
 import { sectionHeaderArgs, sectionHeaderBlocks } from './section-header'
 import type { Block, SectionDefinition } from './types'
 
@@ -9,7 +7,7 @@ export const formSectionArgs = z.object(sectionHeaderArgs)
 
 export type FormSectionArgs = z.input<typeof formSectionArgs>
 
-export function formSection(formName: FormName) {
+export function formSection(formName: string) {
   return (input: FormSectionArgs): SectionDefinition => {
     const args = formSectionArgs.parse(input)
 
