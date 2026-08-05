@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import { submitForm } from '@/app/actions/submit-form'
 import { ConfigForm } from '@/components/ds/form/config-form'
-import { formDefinitions } from '@/lib/forms/definitions'
+import { FORM_UNAVAILABLE_MESSAGE, resolveForm } from '@/lib/forms/resolve-form'
 import type { FormValues } from '@/lib/forms/types'
 import type { FormBlock as FormBlockSpec } from '@/lib/presets/types'
 
@@ -16,7 +16,7 @@ const UNREACHABLE = 'We could not reach the server. Please check your connection
 export function FormBlock({ block }: { block: FormBlockSpec }) {
   const [status, setStatus] = useState<Status>({ state: 'idle' })
   const successRef = useRef<HTMLParagraphElement>(null)
-  const definition = formDefinitions[block.formName]
+  const definition = resolveForm(block.formName)
 
   useEffect(() => {
     if (status.state === 'ok') successRef.current?.focus()
@@ -29,6 +29,19 @@ export function FormBlock({ block }: { block: FormBlockSpec }) {
     } catch {
       setStatus({ state: 'error', message: UNREACHABLE })
     }
+  }
+
+  if (!definition) {
+    return (
+      <div className="w-full max-w-xl text-left">
+        <p
+          role="alert"
+          className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
+        >
+          {FORM_UNAVAILABLE_MESSAGE}
+        </p>
+      </div>
+    )
   }
 
   return (

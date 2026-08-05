@@ -2,7 +2,7 @@
 
 import { getPayload, type Payload } from 'payload'
 
-import { formDefinitions, isFormName } from '@/lib/forms/definitions'
+import { FORM_UNAVAILABLE_MESSAGE, resolveForm } from '@/lib/forms/resolve-form'
 import { buildSchema } from '@/lib/forms/schema-builder'
 import type { FormValues } from '@/lib/forms/types'
 import config from '@/payload.config'
@@ -15,11 +15,12 @@ export interface SubmitResult {
 const UNAVAILABLE = 'We could not record that just now. Please try again in a moment.'
 
 export async function submitForm(formName: string, values: FormValues): Promise<SubmitResult> {
-  if (!isFormName(formName)) {
-    return { ok: false, message: 'That form is no longer available.' }
+  const definition = resolveForm(formName)
+
+  if (!definition) {
+    return { ok: false, message: FORM_UNAVAILABLE_MESSAGE }
   }
 
-  const definition = formDefinitions[formName]
   const parsed = buildSchema(definition.fields).safeParse(values)
 
   if (!parsed.success) {
