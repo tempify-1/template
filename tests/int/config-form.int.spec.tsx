@@ -98,6 +98,132 @@ describe('ConfigForm', () => {
   })
 })
 
+describe('collapsing a branch withdraws what it held', () => {
+  const chained: FieldConfig[] = [
+    { name: 'wantsCall', type: 'checkbox', label: 'Call me' },
+    {
+      name: 'method',
+      type: 'select',
+      label: 'Method',
+      showWhen: { field: 'wantsCall', equals: 'true' },
+      options: [
+        { label: 'Phone', value: 'phone' },
+        { label: 'Video', value: 'video' },
+      ],
+    },
+    {
+      name: 'phone',
+      type: 'tel',
+      label: 'Phone number',
+      showWhen: { field: 'method', equals: 'phone' },
+    },
+  ]
+
+  const seeded = { wantsCall: true, method: 'phone', phone: '0200 123 456' }
+
+  it('hides a field whose condition depends on a field that is itself now hidden', async () => {
+    render(<ConfigForm fields={chained} defaultValues={seeded} onSubmit={vi.fn()} />)
+
+    expect(screen.getByLabelText('Phone number')).toBeDefined()
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Call me' }))
+
+    await waitFor(() => expect(screen.queryByLabelText('Phone number')).toBeNull())
+  })
+
+  it('does not submit an answer whose branch was collapsed', async () => {
+    const onSubmit = vi.fn()
+    render(<ConfigForm fields={chained} defaultValues={seeded} onSubmit={onSubmit} />)
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Call me' }))
+    await waitFor(() => expect(screen.queryByLabelText('Phone number')).toBeNull())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Submit' }))
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    expect(onSubmit.mock.calls[0]![0]).toEqual({ wantsCall: false })
+  })
+
+  it('does not bring a withdrawn answer back when the branch reopens', async () => {
+    render(<ConfigForm fields={chained} defaultValues={seeded} onSubmit={vi.fn()} />)
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Call me' }))
+    await waitFor(() => expect(screen.queryByLabelText('Phone number')).toBeNull())
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Call me' }))
+    await waitFor(() => expect(screen.getByLabelText('Method')).toBeDefined())
+
+    expect(screen.queryByLabelText('Phone number')).toBeNull()
+  })
+})
+
+describe('a select shows what the visitor chose, not what is stored', () => {
+  const boardFields: FieldConfig[] = [
+    {
+      name: 'board',
+      type: 'select',
+      label: 'Board basis',
+      placeholder: 'Choose a board basis',
+      options: [
+        { label: 'Room only', value: 'room-only' },
+        { label: 'Bed and breakfast', value: 'bb' },
+      ],
+    },
+  ]
+
+  const trigger = () => screen.getByRole('combobox', { name: 'Board basis' })
+
+  it('renders the option label for a stored value', () => {
+    render(<ConfigForm fields={boardFields} defaultValues={{ board: 'bb' }} onSubmit={vi.fn()} />)
+
+    expect(trigger().textContent).toContain('Bed and breakfast')
+    expect(trigger().textContent).not.toContain('bb')
+  })
+
+  it('renders the placeholder when nothing is chosen', () => {
+    render(<ConfigForm fields={boardFields} defaultValues={{ board: '' }} onSubmit={vi.fn()} />)
+
+    expect(trigger().textContent).toContain('Choose a board basis')
+  })
+
+  it('falls back to the placeholder when a stored value matches no option', () => {
+    render(<ConfigForm fields={boardFields} defaultValues={{ board: 'retired' }} onSubmit={vi.fn()} />)
+
+    expect(trigger().textContent).toContain('Choose a board basis')
+    expect(trigger().textContent).not.toContain('retired')
+  })
+
+  it('marks an option the config disables as disabled', async () => {
+    const withDisabled: FieldConfig[] = [
+      {
+        name: 'board',
+        type: 'select',
+        label: 'Board basis',
+        options: [
+          { label: 'Room only', value: 'room-only' },
+          { label: 'Full board', value: 'full', disabled: true },
+        ],
+      },
+    ]
+    render(<ConfigForm fields={withDisabled} defaultValues={{ board: '' }} onSubmit={vi.fn()} />)
+
+    fireEvent.click(trigger())
+
+    const option = await waitFor(() => screen.getByRole('option', { name: 'Full board' }))
+    expect(option.getAttribute('aria-disabled')).toBe('true')
+  })
+
+  it('still submits the bare value, not the label', async () => {
+    const onSubmit = vi.fn()
+    render(<ConfigForm fields={boardFields} defaultValues={{ board: 'bb' }} onSubmit={onSubmit} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Submit' }))
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    expect(onSubmit.mock.calls[0]![0]).toEqual({ board: 'bb' })
+  })
+})
+
 describe('two ConfigForms on one page', () => {
   it('gives each control a document-unique id so labels do not cross forms', () => {
     render(
@@ -396,6 +522,46 @@ describe('ConfigForm field array picker', () => {
     const guest2 = screen.getByRole('group', { name: 'Guest 2' })
     expect(within(guest1).getByLabelText('Name')).toHaveProperty('value', 'Ada Lovelace')
     expect(within(guest2).getByLabelText('Name')).toHaveProperty('value', 'Grace Hopper')
+  })
+
+  it('submits what the picker seeded, without the visitor touching a field', async () => {
+    const onSubmit = vi.fn()
+    render(<ConfigForm fields={pickerFields} defaultValues={{ guests: [] }} onSubmit={onSubmit} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add from Presets' }))
+
+    const dialog = await waitFor(() => screen.getByRole('dialog'))
+    fireEvent.click(within(dialog).getByText('Ada'))
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Add 1 selected' }))
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Submit' }))
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    expect(onSubmit.mock.calls[0]![0]).toEqual({ guests: [{ name: 'Ada Lovelace' }] })
+  })
+
+  it('passes validation on a seeded required field that was never touched', async () => {
+    const onSubmit = vi.fn()
+    const required: FieldConfig[] = [
+      {
+        ...pickerFields[0]!,
+        fields: [{ name: 'name', type: 'text', label: 'Name', required: true }],
+      },
+    ]
+    render(<ConfigForm fields={required} defaultValues={{ guests: [] }} onSubmit={onSubmit} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add from Presets' }))
+    const dialog = await waitFor(() => screen.getByRole('dialog'))
+    fireEvent.click(within(dialog).getByText('Ada'))
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Add 1 selected' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Submit' }))
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    expect(screen.queryByText(/is required/)).toBeNull()
   })
 
   it('does not add rows when the picker is cancelled', async () => {

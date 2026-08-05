@@ -4,6 +4,7 @@ import { getPayload, type Payload } from 'payload'
 
 import { FORM_UNAVAILABLE_MESSAGE, resolveForm } from '@/lib/forms/resolve-form'
 import { buildSchema } from '@/lib/forms/schema-builder'
+import { submittedValues } from '@/lib/forms/submitted-values'
 import type { FormValues } from '@/lib/forms/types'
 import config from '@/payload.config'
 
@@ -38,15 +39,17 @@ export async function submitForm(formName: string, values: FormValues): Promise<
     }
   }
 
+  const stored = submittedValues(definition.fields, parsed.data)
+
   try {
-    const summary = parsed.data[definition.summaryField]
+    const summary = stored[definition.summaryField]
 
     await payload.create({
       collection: 'form-submissions',
       data: {
         form: formName,
         summary: typeof summary === 'string' ? summary : undefined,
-        data: parsed.data,
+        data: stored,
       },
       overrideAccess: true,
     })
