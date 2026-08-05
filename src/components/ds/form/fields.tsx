@@ -72,8 +72,12 @@ export function SelectControl({
 }: FieldControlProps) {
   const { value, onChange } = field
   const theme = useSectionTheme()
+  const options = config.options ?? []
+  const stored = String(value ?? '')
+  const chosen = options.some((option) => option.value === stored) ? stored : ''
+
   return (
-    <Select value={String(value ?? '')} onValueChange={onChange}>
+    <Select items={options} value={chosen} onValueChange={onChange}>
       <SelectTrigger
         id={controlId}
         aria-invalid={invalid || undefined}
@@ -82,8 +86,8 @@ export function SelectControl({
         <SelectValue placeholder={config.placeholder ?? 'Choose one'} />
       </SelectTrigger>
       <SelectContent data-theme={theme}>
-        {(config.options ?? []).map((option) => (
-          <SelectItem key={option.value} value={option.value}>
+        {options.map((option) => (
+          <SelectItem key={option.value} value={option.value} disabled={option.disabled}>
             {option.label}
           </SelectItem>
         ))}
