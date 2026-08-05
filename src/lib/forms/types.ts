@@ -7,6 +7,8 @@ export const FIELD_TYPES = [
   'textarea',
   'select',
   'checkbox',
+  'number',
+  'fieldArray',
   'submit',
 ] as const
 
@@ -30,14 +32,21 @@ export interface FieldConfig {
   options?: Option[]
   min?: number
   max?: number
+  minMessage?: string
+  maxMessage?: string
+  fields?: FieldConfig[]
   showWhen?: Condition
   requiredWhen?: Condition
 }
 
-export type FormValue = string | boolean | undefined
+export type FormValue = string | number | boolean | undefined | FormValues | FormValueArray
 
 export interface FormValues {
-  [key: string]: FormValue | FormValues
+  [key: string]: FormValue
+}
+
+export interface FormValueArray extends Array<FormValue> {
+  __formValueArray?: never
 }
 
 export type ValueResolver = (current: FormValues) => FormValues | Promise<FormValues>
@@ -53,5 +62,8 @@ export function inputFields(fields: FieldConfig[]): FieldConfig[] {
 }
 
 export function defaultValueFor(field: FieldConfig): FormValue {
-  return field.type === 'checkbox' ? false : ''
+  if (field.type === 'checkbox') return false
+  if (field.type === 'fieldArray') return []
+  if (field.type === 'number') return undefined
+  return ''
 }

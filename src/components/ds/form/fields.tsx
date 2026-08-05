@@ -106,3 +106,30 @@ export function CheckboxControl({ field, controlId, invalid, describedBy }: Fiel
     />
   )
 }
+
+export function NumberControl({
+  config,
+  field,
+  controlId,
+  invalid,
+  describedBy,
+}: FieldControlProps) {
+  const { value, onChange, ...control } = field
+  return (
+    <Input
+      {...control}
+      id={controlId}
+      type="number"
+      placeholder={config.placeholder}
+      value={typeof value === 'number' ? String(value) : ''}
+      onChange={(event) => {
+        const next = event.target.valueAsNumber
+        onChange(Number.isNaN(next) ? undefined : next)
+      }}
+      min={config.min}
+      max={config.max}
+      aria-invalid={invalid || undefined}
+      aria-describedby={describedBy}
+    />
+  )
+}

@@ -121,10 +121,16 @@ select-family field, and unwrapping them was its #1 recurring bug. New rule:
 - select / radioCards / radioTabs → `string` (the option value)
 - multiSelect / checkboxCards → `string[]`
 - checkbox / switch → `boolean`
-- number → `number` (not string — zod coerces at the field boundary)
+- number → `number` (not string — the control coerces at the field boundary and the schema
+  validates the result)
 - date → `"yyyy-MM-dd"` string; dateRange → `{ start, end }` of the same (no fake-Z timestamps)
 - fieldArray / cardArray → `object[]`; each row gets a client-generated `id` (uuid) stored in the
   row for React keys, dialog identity, and reorder stability across server round-trips
+
+  **Amended (spec #22).** Field Arrays store bare objects; react-hook-form owns the row key via
+  `useFieldArray`, so values stay bare and there are no identity records. The render-side row key
+  is separate from the submitted value. Nested arrays are configured as recursive `fields[]` rather
+  than dot-path templates with a `#` segment.
 - fieldset / accordion / step → no value (containers)
 
 Option metadata (label, icon, image) is looked up from `field.options` at render time when a

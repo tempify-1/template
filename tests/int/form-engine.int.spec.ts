@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest'
 import { buildSchema } from '@/lib/forms/schema-builder'
 import { resolveDefaultValues, staticValues } from '@/lib/forms/resolvers'
 import { isRequired, isVisible } from '@/lib/forms/conditions'
+import { tripEnquiry } from '../helpers/form-fixtures'
 import type { FieldConfig } from '@/lib/forms/types'
 
 const contact: FieldConfig[] = [
@@ -141,5 +142,155 @@ describe('default value resolvers', () => {
     const values = await resolveDefaultValues([{ name: 'only', type: 'text' }])
 
     expect(Object.keys(values)).toEqual(['only'])
+  })
+})
+
+describe('field arrays and numbers', () => {
+  it('seeds an empty array for a field array and undefined for a number', async () => {
+    const values = await resolveDefaultValues([
+      { name: 'count', type: 'number' },
+      { name: 'rooms', type: 'fieldArray', fields: [{ name: 'firstName', type: 'text' }] },
+    ])
+
+    expect(values).toEqual({ count: undefined, rooms: [] })
+  })
+
+  it('accepts a valid two-level payload and keeps its bare shape', () => {
+    const result = buildSchema(tripEnquiry).safeParse({
+      organiser: 'Ada',
+      rooms: [
+        {
+          travellers: [
+            { firstName: 'Ada', isChild: 'no' },
+            { firstName: 'Grace', isChild: 'yes', age: 9 },
+          ],
+        },
+      ],
+    })
+
+    expect(result.success).toBe(true)
+    expect(result.data!.rooms).toEqual([
+      {
+        travellers: [
+          { firstName: 'Ada', isChild: 'no' },
+          { firstName: 'Grace', isChild: 'yes', age: 9 },
+        ],
+      },
+    ])
+  })
+
+  it('reports a required error at the full nested path', () => {
+    const result = buildSchema(tripEnquiry).safeParse({
+      organiser: 'Ada',
+      rooms: [
+        {
+          travellers: [
+            { firstName: 'Ada', isChild: 'no' },
+            { firstName: '', isChild: 'no' },
+          ],
+        },
+      ],
+    })
+
+    expect(result.success).toBe(false)
+    const issue = result.error!.issues.find((i) => i.message === 'First name is required')
+    expect(issue).toBeDefined()
+    expect(issue!.path).toEqual(['rooms', 0, 'travellers', 1, 'firstName'])
+  })
+
+  it('evaluates a row condition against that row, not a sibling', () => {
+    const result = buildSchema(tripEnquiry).safeParse({
+      organiser: 'Ada',
+      rooms: [
+        {
+          travellers: [
+            { firstName: 'Kid', isChild: 'yes' },
+            { firstName: 'Adult', isChild: 'no' },
+          ],
+        },
+      ],
+    })
+
+    expect(result.success).toBe(false)
+    expect(result.error!.issues).toHaveLength(1)
+    expect(result.error!.issues[0]!.path).toEqual(['rooms', 0, 'travellers', 0, 'age'])
+    expect(result.error!.issues[0]!.message).toBe('Age is required')
+  })
+
+  it('throws when a row condition targets a field outside its row', () => {
+    expect(() =>
+      buildSchema([
+        {
+          name: 'rooms',
+          type: 'fieldArray',
+          fields: [
+            { name: 'age', type: 'number', showWhen: { field: 'isChild', equals: 'yes' } },
+          ],
+        },
+      ]),
+    ).toThrow(/isChild/)
+  })
+
+  it('enforces the minimum row count with the configured message at each level', () => {
+    const empty = buildSchema(tripEnquiry).safeParse({ organiser: 'Ada', rooms: [] })
+
+    expect(empty.success).toBe(false)
+    expect(empty.error!.issues[0]!.path).toEqual(['rooms'])
+    expect(empty.error!.issues[0]!.message).toBe('Add at least one room')
+
+    const nested = buildSchema(tripEnquiry).safeParse({
+      organiser: 'Ada',
+      rooms: [{ travellers: [] }],
+    })
+
+    expect(nested.success).toBe(false)
+    expect(nested.error!.issues[0]!.path).toEqual(['rooms', 0, 'travellers'])
+    expect(nested.error!.issues[0]!.message).toBe('At least 1 traveller required')
+  })
+
+  it('enforces the maximum row count with the configured message', () => {
+    const travellers = Array.from({ length: 5 }, (_, i) => ({
+      firstName: `T${i}`,
+      isChild: 'no',
+    }))
+
+    const result = buildSchema(tripEnquiry).safeParse({
+      organiser: 'Ada',
+      rooms: [{ travellers }],
+    })
+
+    expect(result.success).toBe(false)
+    expect(result.error!.issues.map((i) => i.message)).toContain(
+      'No more than four travellers per room',
+    )
+  })
+
+  it('rejects a payload the renderer could not have produced', () => {
+    const stringAge = buildSchema(tripEnquiry).safeParse({
+      organiser: 'Ada',
+      rooms: [{ travellers: [{ firstName: 'Ada', isChild: 'yes', age: 'nine' }] }],
+    })
+    expect(stringAge.success).toBe(false)
+
+    const objectRooms = buildSchema(tripEnquiry).safeParse({ organiser: 'Ada', rooms: { 0: {} } })
+    expect(objectRooms.success).toBe(false)
+
+    const wrapperRow = buildSchema(tripEnquiry).safeParse({
+      organiser: 'Ada',
+      rooms: [{ travellers: [{ id: 'abc', values: { firstName: 'Ada' } }] }],
+    })
+    expect(wrapperRow.success).toBe(false)
+  })
+
+  it('applies numeric bounds to number fields', () => {
+    const fields: FieldConfig[] = [{ name: 'age', type: 'number', min: 0, max: 120 }]
+
+    const low = buildSchema(fields).safeParse({ age: -1 })
+    expect(low.error!.issues[0]!.message).toBe('Must be at least 0')
+
+    const high = buildSchema(fields).safeParse({ age: 121 })
+    expect(high.error!.issues[0]!.message).toBe('Must be at most 120')
+
+    expect(buildSchema(fields).safeParse({ age: 42 }).success).toBe(true)
   })
 })

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, cleanup, within } from '@testing-library/react'
 
+import { tripEnquiry } from '../helpers/form-fixtures'
 import { ConfigForm } from '@/components/ds/form/config-form'
 import type { FieldConfig } from '@/lib/forms/types'
 
@@ -118,5 +119,230 @@ describe('two ConfigForms on one page', () => {
     for (const id of describedBy) {
       expect(document.getElementById(id!)?.textContent).toBe('As you would like it read')
     }
+  })
+})
+
+const oneTraveller = {
+  organiser: '',
+  rooms: [{ travellers: [{ firstName: 'Ada', isChild: 'no' }] }],
+}
+
+describe('ConfigForm field arrays', () => {
+  it('renders the rows given in default values, nesting to two levels', () => {
+    render(<ConfigForm fields={tripEnquiry} defaultValues={oneTraveller} onSubmit={vi.fn()} />)
+
+    const room = screen.getByRole('group', { name: 'Room 1' })
+    const traveller = within(room).getByRole('group', { name: 'Traveller 1' })
+    expect(within(traveller).getByLabelText('First name')).toHaveProperty('value', 'Ada')
+  })
+
+  it('adds a row to a group when its add control is pressed', async () => {
+    render(<ConfigForm fields={tripEnquiry} defaultValues={oneTraveller} onSubmit={vi.fn()} />)
+
+    const room = screen.getByRole('group', { name: 'Room 1' })
+    fireEvent.click(within(room).getByRole('button', { name: 'Add Traveller' }))
+
+    await waitFor(() => {
+      expect(within(room).getByRole('group', { name: 'Traveller 2' })).toBeDefined()
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add Room' }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('group', { name: 'Room 2' })).toBeDefined()
+    })
+  })
+
+  it('removes a row and its values, so a submission never carries a deleted row', async () => {
+    const onSubmit = vi.fn()
+    render(
+      <ConfigForm
+        fields={tripEnquiry}
+        defaultValues={{
+          organiser: 'Ada',
+          rooms: [
+            {
+              travellers: [
+                { firstName: 'First', isChild: 'no' },
+                { firstName: 'Second', isChild: 'no' },
+              ],
+            },
+          ],
+        }}
+        onSubmit={onSubmit}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Traveller 1' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Submit' }))
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    expect(onSubmit.mock.calls[0]![0]).toEqual({
+      organiser: 'Ada',
+      rooms: [{ travellers: [{ firstName: 'Second', isChild: 'no' }] }],
+    })
+  })
+
+  it('reorders rows when the move controls are pressed', async () => {
+    const onSubmit = vi.fn()
+    render(
+      <ConfigForm
+        fields={tripEnquiry}
+        defaultValues={{
+          organiser: 'Ada',
+          rooms: [
+            {
+              travellers: [
+                { firstName: 'First', isChild: 'no' },
+                { firstName: 'Second', isChild: 'no' },
+              ],
+            },
+          ],
+        }}
+        onSubmit={onSubmit}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Move Traveller 2 up' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Submit' }))
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    const rooms = onSubmit.mock.calls[0]![0].rooms as { travellers: { firstName: string }[] }[]
+    expect(rooms[0]!.travellers.map((t) => t.firstName)).toEqual(['Second', 'First'])
+  })
+
+  it('evaluates a row condition against that row and not a sibling', async () => {
+    const childFixture: FieldConfig[] = [
+      {
+        name: 'travellers',
+        type: 'fieldArray',
+        label: 'Traveller',
+        fields: [
+          { name: 'firstName', type: 'text', label: 'First name', required: true },
+          { name: 'isChild', type: 'checkbox', label: 'Child' },
+          {
+            name: 'age',
+            type: 'number',
+            label: 'Age',
+            required: true,
+            showWhen: { field: 'isChild', equals: 'true' },
+          },
+        ],
+      },
+    ]
+
+    render(
+      <ConfigForm
+        fields={childFixture}
+        defaultValues={{
+          travellers: [
+            { firstName: 'Kid', isChild: false },
+            { firstName: 'Adult', isChild: false },
+          ],
+        }}
+        onSubmit={vi.fn()}
+      />,
+    )
+
+    const first = screen.getByRole('group', { name: 'Traveller 1' })
+    const second = screen.getByRole('group', { name: 'Traveller 2' })
+
+    fireEvent.click(within(first).getByRole('checkbox', { name: 'Child' }))
+
+    await waitFor(() => {
+      expect(within(first).queryByLabelText('Age')).not.toBeNull()
+      expect(within(second).queryByLabelText('Age')).toBeNull()
+    })
+  })
+
+  it('shows a validation error against the field inside that row', async () => {
+    render(
+      <ConfigForm
+        fields={tripEnquiry}
+        defaultValues={{
+          organiser: 'Ada',
+          rooms: [
+            {
+              travellers: [
+                { firstName: 'Ada', isChild: 'no' },
+                { firstName: '', isChild: 'no' },
+              ],
+            },
+          ],
+        }}
+        onSubmit={vi.fn()}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Submit' }))
+
+    const second = screen.getByRole('group', { name: 'Traveller 2' })
+    await waitFor(() => {
+      expect(within(second).getByText('First name is required')).toBeDefined()
+    })
+    expect(within(screen.getByRole('group', { name: 'Traveller 1' })).queryByText('First name is required')).toBeNull()
+  })
+
+  it('submits bare arrays of plain objects with no identity records', async () => {
+    const onSubmit = vi.fn()
+    render(<ConfigForm fields={tripEnquiry} defaultValues={oneTraveller} onSubmit={onSubmit} />)
+
+    fireEvent.change(screen.getByLabelText('Organiser'), { target: { value: 'Ada' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Submit' }))
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    const submitted = onSubmit.mock.calls[0]![0]
+    expect(submitted).toEqual({
+      organiser: 'Ada',
+      rooms: [{ travellers: [{ firstName: 'Ada', isChild: 'no' }] }],
+    })
+
+    const rows = submitted.rooms as Record<string, unknown>[]
+    const travellerRows = rows[0]!.travellers as Record<string, unknown>[]
+    for (const row of [...rows, ...travellerRows]) {
+      expect(Object.keys(row)).not.toContain('id')
+    }
+  })
+
+  it('reports the minimum when submitting below it', async () => {
+    render(
+      <ConfigForm
+        fields={tripEnquiry}
+        defaultValues={{ organiser: 'Ada', rooms: [] }}
+        onSubmit={vi.fn()}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Submit' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('Add at least one room')).toBeDefined()
+    })
+  })
+
+  it('prevents adding beyond the maximum', () => {
+    render(
+      <ConfigForm
+        fields={tripEnquiry}
+        defaultValues={{
+          organiser: 'Ada',
+          rooms: [
+            {
+              travellers: [
+                { firstName: 'A', isChild: 'no' },
+                { firstName: 'B', isChild: 'no' },
+                { firstName: 'C', isChild: 'no' },
+                { firstName: 'D', isChild: 'no' },
+              ],
+            },
+          ],
+        }}
+        onSubmit={vi.fn()}
+      />,
+    )
+
+    expect(
+      screen.getByRole('button', { name: 'Add Traveller' }).hasAttribute('disabled'),
+    ).toBe(true)
   })
 })
