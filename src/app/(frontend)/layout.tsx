@@ -1,9 +1,7 @@
 import type { Metadata } from 'next'
 import React from 'react'
 
-import { SiteShell } from '@/components/ds/shell/site-shell'
 import { ThemeProvider } from '@/components/theme-provider'
-import { siteNav } from '@/config/site-nav'
 import { SITE_NAME, siteUrl } from '@/lib/site'
 
 import '../globals.css'
@@ -21,7 +19,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
     <html lang="en" suppressHydrationWarning>
       <body>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
-          <SiteShell config={siteNav}>{children}</SiteShell>
+          {children}
         </ThemeProvider>
       </body>
     </html>

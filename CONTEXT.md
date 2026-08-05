@@ -33,8 +33,9 @@ A stacked detail panel opened over a page, whose position in the stack is part o
 _Avoid_: drawer, modal, overlay, panel
 
 **Shell**:
-The persistent chrome that every route in a route group renders inside.
-_Avoid_: template, wrapper, frame
+The persistent chrome a page renders inside, chosen by the page itself rather than by where its
+route lives.
+_Avoid_: template, wrapper, frame, layout
 
 **Action**:
 A named behaviour a config invokes by string rather than by link.

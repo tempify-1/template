@@ -176,6 +176,10 @@ export interface Page {
    * Lower-case words separated by hyphens, e.g. about-us.
    */
   slug: string;
+  /**
+   * Which chrome wraps this page.
+   */
+  shell?: ('website' | 'dashboard' | 'blank') | null;
   sections?:
     | (
         | HeroCenteredBlock
@@ -690,6 +694,7 @@ export interface MediaSelect<T extends boolean = true> {
 export interface PagesSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
+  shell?: T;
   sections?:
     | T
     | {

@@ -4,6 +4,8 @@ import { getPayload } from 'payload'
 import React from 'react'
 
 import { Page } from '@/components/ds/section/page'
+import { SiteShell } from '@/components/ds/shell/site-shell'
+import { siteNav } from '@/config/site-nav'
 import { decodeSections } from '@/lib/preview-config'
 import config from '@/payload.config'
 
@@ -27,5 +29,9 @@ export default async function ConfigPreviewPage({ searchParams }: Props) {
   const sections = decodeSections(c)
   if (!sections) notFound()
 
-  return <Page sections={sections} />
+  return (
+    <SiteShell config={siteNav}>
+      <Page sections={sections} />
+    </SiteShell>
+  )
 }
