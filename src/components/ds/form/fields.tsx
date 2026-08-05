@@ -73,7 +73,7 @@ export function SelectControl({
   const { value, onChange } = field
   const theme = useSectionTheme()
   return (
-    <Select value={String(value ?? '')} onValueChange={onChange}>
+    <Select items={config.options ?? []} value={String(value ?? '')} onValueChange={onChange}>
       <SelectTrigger
         id={controlId}
         aria-invalid={invalid || undefined}

@@ -98,6 +98,52 @@ describe('ConfigForm', () => {
   })
 })
 
+describe('a select shows what the visitor chose, not what is stored', () => {
+  const boardFields: FieldConfig[] = [
+    {
+      name: 'board',
+      type: 'select',
+      label: 'Board basis',
+      placeholder: 'Choose a board basis',
+      options: [
+        { label: 'Room only', value: 'room-only' },
+        { label: 'Bed and breakfast', value: 'bb' },
+      ],
+    },
+  ]
+
+  const trigger = () => screen.getByRole('combobox', { name: 'Board basis' })
+
+  it('renders the option label for a stored value', () => {
+    render(<ConfigForm fields={boardFields} defaultValues={{ board: 'bb' }} onSubmit={vi.fn()} />)
+
+    expect(trigger().textContent).toContain('Bed and breakfast')
+    expect(trigger().textContent).not.toContain('bb')
+  })
+
+  it('renders the placeholder when nothing is chosen', () => {
+    render(<ConfigForm fields={boardFields} defaultValues={{ board: '' }} onSubmit={vi.fn()} />)
+
+    expect(trigger().textContent).toContain('Choose a board basis')
+  })
+
+  it('does not throw when a stored value matches no option', () => {
+    expect(() =>
+      render(<ConfigForm fields={boardFields} defaultValues={{ board: 'retired' }} onSubmit={vi.fn()} />),
+    ).not.toThrow()
+  })
+
+  it('still submits the bare value, not the label', async () => {
+    const onSubmit = vi.fn()
+    render(<ConfigForm fields={boardFields} defaultValues={{ board: 'bb' }} onSubmit={onSubmit} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Submit' }))
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    expect(onSubmit.mock.calls[0]![0]).toEqual({ board: 'bb' })
+  })
+})
+
 describe('two ConfigForms on one page', () => {
   it('gives each control a document-unique id so labels do not cross forms', () => {
     render(
@@ -396,6 +442,46 @@ describe('ConfigForm field array picker', () => {
     const guest2 = screen.getByRole('group', { name: 'Guest 2' })
     expect(within(guest1).getByLabelText('Name')).toHaveProperty('value', 'Ada Lovelace')
     expect(within(guest2).getByLabelText('Name')).toHaveProperty('value', 'Grace Hopper')
+  })
+
+  it('submits what the picker seeded, without the visitor touching a field', async () => {
+    const onSubmit = vi.fn()
+    render(<ConfigForm fields={pickerFields} defaultValues={{ guests: [] }} onSubmit={onSubmit} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add from Presets' }))
+
+    const dialog = await waitFor(() => screen.getByRole('dialog'))
+    fireEvent.click(within(dialog).getByText('Ada'))
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Add 1 selected' }))
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Submit' }))
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    expect(onSubmit.mock.calls[0]![0]).toEqual({ guests: [{ name: 'Ada Lovelace' }] })
+  })
+
+  it('passes validation on a seeded required field that was never touched', async () => {
+    const onSubmit = vi.fn()
+    const required: FieldConfig[] = [
+      {
+        ...pickerFields[0]!,
+        fields: [{ name: 'name', type: 'text', label: 'Name', required: true }],
+      },
+    ]
+    render(<ConfigForm fields={required} defaultValues={{ guests: [] }} onSubmit={onSubmit} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add from Presets' }))
+    const dialog = await waitFor(() => screen.getByRole('dialog'))
+    fireEvent.click(within(dialog).getByText('Ada'))
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Add 1 selected' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Submit' }))
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    expect(screen.queryByText(/is required/)).toBeNull()
   })
 
   it('does not add rows when the picker is cancelled', async () => {

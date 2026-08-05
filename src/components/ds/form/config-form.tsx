@@ -38,6 +38,7 @@ import { isVisible } from '@/lib/forms/conditions'
 import { getAtPath } from '@/lib/forms/paths'
 import { emptyValues } from '@/lib/forms/resolvers'
 import { buildSchema } from '@/lib/forms/schema-builder'
+import { submittedValues } from '@/lib/forms/submitted-values'
 import { inputFields, type FieldConfig, type FormValues } from '@/lib/forms/types'
 
 import { fieldRegistry } from './field-registry'
@@ -398,7 +399,7 @@ export function ConfigForm({ fields, defaultValues, onSubmit, submitLabel }: Con
     resolver: zodResolver(schema),
     defaultValues: seeded,
     mode: 'onSubmit',
-    shouldUnregister: true,
+    shouldUnregister: false,
   })
 
   const uid = useId()
@@ -406,7 +407,7 @@ export function ConfigForm({ fields, defaultValues, onSubmit, submitLabel }: Con
   const submit = fields.find((field) => field.type === 'submit')
 
   const handle: SubmitHandler<Record<string, unknown>> = async (submitted) => {
-    await onSubmit(submitted as FormValues)
+    await onSubmit(submittedValues(fields, submitted as FormValues))
   }
 
   return (
