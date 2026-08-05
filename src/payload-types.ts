@@ -91,8 +91,12 @@ export interface Config {
     defaultIDType: number;
   };
   fallbackLocale: null;
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    navigation: Navigation;
+  };
+  globalsSelect: {
+    navigation: NavigationSelect<false> | NavigationSelect<true>;
+  };
   locale: null;
   widgets: {
     collections: CollectionsWidget;
@@ -1036,6 +1040,249 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "navigation".
+ */
+export interface Navigation {
+  id: number;
+  brand: {
+    label: string;
+    href: string;
+  };
+  header: {
+    items: {
+      kind: 'link' | 'menu' | 'action';
+      label: string;
+      href?: string | null;
+      description?: string | null;
+      icon?:
+        | (
+            | 'activity'
+            | 'chart'
+            | 'check'
+            | 'clock'
+            | 'gauge'
+            | 'globe'
+            | 'layers'
+            | 'lock'
+            | 'plug'
+            | 'rocket'
+            | 'search'
+            | 'shield'
+            | 'sparkles'
+            | 'users'
+            | 'workflow'
+            | 'zap'
+          )
+        | null;
+      external?: boolean | null;
+      items?:
+        | {
+            label: string;
+            href: string;
+            description?: string | null;
+            icon?:
+              | (
+                  | 'activity'
+                  | 'chart'
+                  | 'check'
+                  | 'clock'
+                  | 'gauge'
+                  | 'globe'
+                  | 'layers'
+                  | 'lock'
+                  | 'plug'
+                  | 'rocket'
+                  | 'search'
+                  | 'shield'
+                  | 'sparkles'
+                  | 'users'
+                  | 'workflow'
+                  | 'zap'
+                )
+              | null;
+            external?: boolean | null;
+            id?: string | null;
+          }[]
+        | null;
+      action?: 'toggleTheme' | null;
+      actionIcon?:
+        | (
+            | 'activity'
+            | 'chart'
+            | 'check'
+            | 'clock'
+            | 'gauge'
+            | 'globe'
+            | 'layers'
+            | 'lock'
+            | 'plug'
+            | 'rocket'
+            | 'search'
+            | 'shield'
+            | 'sparkles'
+            | 'users'
+            | 'workflow'
+            | 'zap'
+          )
+        | null;
+      id?: string | null;
+    }[];
+    cta?: {
+      label?: string | null;
+      href?: string | null;
+      external?: boolean | null;
+    };
+  };
+  footer: {
+    tagline?: string | null;
+    columns: {
+      title: string;
+      items: {
+        label: string;
+        href: string;
+        description?: string | null;
+        icon?:
+          | (
+              | 'activity'
+              | 'chart'
+              | 'check'
+              | 'clock'
+              | 'gauge'
+              | 'globe'
+              | 'layers'
+              | 'lock'
+              | 'plug'
+              | 'rocket'
+              | 'search'
+              | 'shield'
+              | 'sparkles'
+              | 'users'
+              | 'workflow'
+              | 'zap'
+            )
+          | null;
+        external?: boolean | null;
+        id?: string | null;
+      }[];
+      id?: string | null;
+    }[];
+    copyright: string;
+    legal?:
+      | {
+          label: string;
+          href: string;
+          description?: string | null;
+          icon?:
+            | (
+                | 'activity'
+                | 'chart'
+                | 'check'
+                | 'clock'
+                | 'gauge'
+                | 'globe'
+                | 'layers'
+                | 'lock'
+                | 'plug'
+                | 'rocket'
+                | 'search'
+                | 'shield'
+                | 'sparkles'
+                | 'users'
+                | 'workflow'
+                | 'zap'
+              )
+            | null;
+          external?: boolean | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "navigation_select".
+ */
+export interface NavigationSelect<T extends boolean = true> {
+  brand?:
+    | T
+    | {
+        label?: T;
+        href?: T;
+      };
+  header?:
+    | T
+    | {
+        items?:
+          | T
+          | {
+              kind?: T;
+              label?: T;
+              href?: T;
+              description?: T;
+              icon?: T;
+              external?: T;
+              items?:
+                | T
+                | {
+                    label?: T;
+                    href?: T;
+                    description?: T;
+                    icon?: T;
+                    external?: T;
+                    id?: T;
+                  };
+              action?: T;
+              actionIcon?: T;
+              id?: T;
+            };
+        cta?:
+          | T
+          | {
+              label?: T;
+              href?: T;
+              external?: T;
+            };
+      };
+  footer?:
+    | T
+    | {
+        tagline?: T;
+        columns?:
+          | T
+          | {
+              title?: T;
+              items?:
+                | T
+                | {
+                    label?: T;
+                    href?: T;
+                    description?: T;
+                    icon?: T;
+                    external?: T;
+                    id?: T;
+                  };
+              id?: T;
+            };
+        copyright?: T;
+        legal?:
+          | T
+          | {
+              label?: T;
+              href?: T;
+              description?: T;
+              icon?: T;
+              external?: T;
+              id?: T;
+            };
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

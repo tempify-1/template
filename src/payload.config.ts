@@ -10,6 +10,7 @@ import { Users } from './collections/Users'
 import { Media } from './collections/Media'
 import { FormSubmissions } from './collections/FormSubmissions'
 import { Pages } from './collections/Pages'
+import { Navigation } from './globals/Navigation'
 import { SITE_NAME, absoluteUrl, pathForSlug } from './lib/site'
 
 const filename = fileURLToPath(import.meta.url)
@@ -23,6 +24,7 @@ export default buildConfig({
     },
   },
   collections: [Users, Media, Pages, FormSubmissions],
+  globals: [Navigation],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

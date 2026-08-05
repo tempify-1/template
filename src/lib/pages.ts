@@ -3,7 +3,7 @@ import { draftMode, headers as getHeaders } from 'next/headers'
 import { cache } from 'react'
 import { getPayload } from 'payload'
 
-import { pageTag } from '@/lib/cache-tags'
+import { pageTag, siteShellTag } from '@/lib/cache-tags'
 import { mapPageResult } from '@/mappers/page'
 import type { SectionDefinition } from '@/lib/presets/types'
 import type { Page } from '@/payload-types'
@@ -25,7 +25,7 @@ async function findPublished(slug: string): Promise<Page | null> {
 
 function cachedPublished(slug: string): Promise<Page | null> {
   return unstable_cache(() => findPublished(slug), ['page', slug], {
-    tags: [pageTag(slug)],
+    tags: [pageTag(slug), siteShellTag()],
     revalidate: 300,
   })()
 }

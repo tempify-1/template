@@ -4,6 +4,8 @@ import { join } from 'node:path'
 import { describe, it, expect, vi } from 'vitest'
 
 import { siteNav } from '@/config/site-nav'
+import { Navigation, type StoredNavigation } from '@/globals/Navigation'
+import { loadNavigation } from '@/lib/navigation'
 import { ICON_NAMES } from '@/lib/icons'
 import {
   NAV_ACTIONS,
@@ -13,6 +15,7 @@ import {
   type ActionContext,
 } from '@/lib/nav/actions'
 import { navLinksOf, type NavItem } from '@/lib/nav/types'
+import { mapNavigation } from '@/mappers/navigation'
 
 function themeContext(resolved: string | undefined): {
   context: ActionContext
@@ -207,5 +210,216 @@ describe('every configured destination', () => {
     const unused = PLACEHOLDER_ROUTES.filter((href) => !internalHrefs.includes(href))
 
     expect(unused).toEqual([])
+  })
+})
+
+describe('navigation mapper', () => {
+  const storedNavigation: StoredNavigation = {
+    brand: { label: 'Tempify', href: '/' },
+    header: {
+      items: [
+        {
+          kind: 'menu' as const,
+          label: 'Product',
+          items: [
+            {
+              label: 'Landing page',
+              href: '/',
+              description: 'Sections composed from typed Presets, rendered on the server.',
+              icon: 'layers',
+            },
+            {
+              label: 'Dashboard',
+              href: '/dashboard',
+              description: 'Sidebar, cards and a data table assembled from shadcn blocks.',
+              icon: 'gauge',
+            },
+            {
+              label: 'Charts',
+              href: '/dashboard/charts',
+              description: 'Recharts wrappers reading the same semantic tokens as everything else.',
+              icon: 'chart',
+            },
+          ],
+        },
+        { kind: 'link' as const, label: 'Admin', href: '/admin' },
+        { kind: 'action' as const, label: 'Toggle theme', action: 'toggleTheme', actionIcon: 'sparkles' },
+      ],
+      cta: { label: 'Start free trial', href: '/signup' },
+    },
+    footer: {
+      tagline: 'A Payload and Next.js template where pages are typed configuration, not markup.',
+      columns: [
+        {
+          title: 'Product',
+          items: [
+            { label: 'Overview', href: '/' },
+            { label: 'Dashboard', href: '/dashboard' },
+            { label: 'Charts', href: '/dashboard/charts' },
+          ],
+        },
+        {
+          title: 'Company',
+          items: [
+            { label: 'Contact', href: '/contact' },
+            { label: 'Community', href: 'https://discord.gg', external: true },
+          ],
+        },
+      ],
+      copyright: '© 2026 Tempify. All rights reserved.',
+      legal: [
+        { label: 'Privacy', href: '/privacy' },
+        { label: 'Terms', href: '/terms' },
+      ],
+    },
+  }
+
+  it('maps a stored global to the typed LayoutConfig', () => {
+    const { config, warnings } = mapNavigation(storedNavigation)
+
+    expect(warnings).toEqual([])
+    expect(config.brand).toEqual({ label: 'Tempify', href: '/' })
+    expect(config.header.items).toHaveLength(3)
+    expect(config.header.items[0]).toEqual({
+      type: 'menu',
+      label: 'Product',
+      items: [
+        {
+          label: 'Landing page',
+          href: '/',
+          description: 'Sections composed from typed Presets, rendered on the server.',
+          icon: 'layers',
+          external: false,
+        },
+        {
+          label: 'Dashboard',
+          href: '/dashboard',
+          description: 'Sidebar, cards and a data table assembled from shadcn blocks.',
+          icon: 'gauge',
+          external: false,
+        },
+        {
+          label: 'Charts',
+          href: '/dashboard/charts',
+          description: 'Recharts wrappers reading the same semantic tokens as everything else.',
+          icon: 'chart',
+          external: false,
+        },
+      ],
+    })
+    expect(config.header.items[2]).toEqual({
+      type: 'action',
+      label: 'Toggle theme',
+      action: 'toggleTheme',
+      icon: 'sparkles',
+    })
+    expect(config.footer.columns).toHaveLength(2)
+    expect(config.footer.legal).toHaveLength(2)
+  })
+
+  it('drops an unknown header kind and warns', () => {
+    const { config, warnings } = mapNavigation({
+      ...storedNavigation,
+      header: {
+        ...storedNavigation.header,
+        items: [{ kind: 'mega', label: 'Mega' }],
+      },
+    } as unknown as StoredNavigation)
+
+    expect(config.header.items).toEqual([])
+    expect(warnings.some((w) => w.includes('unknown kind'))).toBe(true)
+  })
+
+  it('drops an action with an unknown action name and warns', () => {
+    const { config, warnings } = mapNavigation({
+      ...storedNavigation,
+      header: {
+        ...storedNavigation.header,
+        items: [{ kind: 'action', label: 'Do it', action: 'unknownAction' }],
+      },
+    } as unknown as StoredNavigation)
+
+    expect(config.header.items).toEqual([])
+    expect(warnings.some((w) => w.includes('unknown action'))).toBe(true)
+  })
+
+  it('drops an unknown icon from a link but keeps the link', () => {
+    const { config, warnings } = mapNavigation({
+      ...storedNavigation,
+      header: {
+        ...storedNavigation.header,
+        items: [{ kind: 'link', label: 'Admin', href: '/admin', icon: 'notAnIcon' }],
+      },
+    } as unknown as StoredNavigation)
+
+    expect(config.header.items).toEqual([{ type: 'link', label: 'Admin', href: '/admin', external: false }])
+    expect(warnings.some((w) => w.includes('notAnIcon'))).toBe(true)
+  })
+
+  it('drops a menu with no valid items and warns', () => {
+    const { config, warnings } = mapNavigation({
+      ...storedNavigation,
+      header: {
+        ...storedNavigation.header,
+        items: [{ kind: 'menu', label: 'Empty', items: [{ label: '', href: '' }] }],
+      },
+    } as unknown as StoredNavigation)
+
+    expect(config.header.items).toEqual([])
+    expect(warnings.some((w) => w.includes('no valid items'))).toBe(true)
+  })
+
+  it('drops a footer column with no valid items and warns', () => {
+    const { config, warnings } = mapNavigation({
+      ...storedNavigation,
+      footer: {
+        ...storedNavigation.footer,
+        columns: [{ title: 'Empty', items: [{ label: '', href: '' }] }],
+      },
+    } as unknown as StoredNavigation)
+
+    expect(config.footer.columns).toEqual([])
+    expect(warnings.some((w) => w.includes('no valid items'))).toBe(true)
+  })
+
+  it('falls back to a default brand and copyright when they are missing', () => {
+    const { config, warnings } = mapNavigation({
+      header: { items: [] },
+      footer: { columns: [] },
+    } as unknown as StoredNavigation)
+
+    expect(config.brand).toEqual({ label: 'Tempify', href: '/' })
+    expect(config.footer.copyright).toBe('')
+    expect(warnings.length).toBeGreaterThan(0)
+  })
+})
+
+describe('Navigation global access', () => {
+  it('allows public read access', () => {
+    expect(Navigation.access!.read!({ req: { user: null } } as never)).toBe(true)
+  })
+
+  it('denies unauthenticated update', () => {
+    expect(Navigation.access!.update!({ req: { user: null } } as never)).toBe(false)
+  })
+
+  it('allows authenticated update', () => {
+    expect(
+      Navigation.access!.update!({ req: { user: { id: '1', email: 'a@b.com' } } } as never),
+    ).toBe(true)
+  })
+})
+
+describe('loadNavigation', () => {
+  it('falls back to the TypeScript fixture when no global document exists', async () => {
+    const { Client } = await import('pg')
+    const client = new Client({ connectionString: process.env.DATABASE_URL })
+    await client.connect()
+    await client.query('DELETE FROM navigation')
+    await client.end()
+
+    const nav = await loadNavigation()
+
+    expect(nav).toEqual(siteNav)
   })
 })
