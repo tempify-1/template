@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "shadcn": {
+      "command": "npx",
+      "args": ["shadcn@latest", "mcp"]
+    },
+    "nextjs-dev": {
+      "httpUrl": "http://localhost:3000/_next/mcp",
+      "timeout": 10000
+    }
+  },
+  "$version": 4
+}

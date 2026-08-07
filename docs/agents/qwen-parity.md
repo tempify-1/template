@@ -21,6 +21,26 @@ node scripts/sync-qwen.mjs
 | `~/.claude/CLAUDE.md`                                | `~/.qwen/CLAUDE.md`             |
 | project `CLAUDE.md`                                  | read in place via `context.fileName` |
 | `~/.claude.json` → `mcpServers`                      | `~/.qwen/settings.json` → `mcpServers` |
+| project `.mcp.json`                                  | `.qwen/settings.json` → `mcpServers` |
+
+## MCP transport shapes differ
+
+The two agents spell remote servers differently, so the project MCP config cannot be a straight
+copy and the sync script does not attempt one:
+
+| | Claude (`.mcp.json`) | Qwen (`.qwen/settings.json`) |
+| --- | --- | --- |
+| stdio | `{"type":"stdio","command":…,"args":[…]}` | `{"command":…,"args":[…]}` |
+| streamable HTTP | `{"type":"http","url":…}` | `{"httpUrl":…}` |
+| SSE | `{"type":"sse","url":…}` | `{"url":…}` |
+
+Qwen merges project `mcpServers` over the user-scope ones rather than replacing them, so
+`auggie` and `claude-mem` stay available inside this repo. It also stamps `"$version": 4` into
+`.qwen/settings.json` on first read — that is Qwen's own migration marker, not a hand edit.
+
+`nextjs-dev` points at `http://localhost:3000/_next/mcp`. Next 16 defaults `mcpServer` to `true`
+(`next/dist/server/config-shared.js`), so nothing needs enabling — but the endpoint only exists
+while `pnpm dev` is running, and both agents will show the server as failed if it is not.
 
 ## Why the plugin skills are flattened
 

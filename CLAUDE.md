@@ -59,3 +59,19 @@ Single-context: `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/do
 
 Project-local skill at `.claude/skills/payload`. A precondition for Payload work, not a reference
 — see hard rule 14.
+
+### Design tokens
+
+Project-local skill at `.claude/skills/design-tokens`, path-gated to `src/components`, `globals.css`
+and any stylesheet. Encodes hard rule 7 and the Section Theme contract upstream of
+`tests/int/section-theme.int.spec.ts`, which fails on every violation.
+
+### MCP servers
+
+`.mcp.json` registers `shadcn` (registry search — hard rule 4) and `nextjs-dev` (live errors, logs
+and routes off the running dev server — hard rule 13). The Next server needs `pnpm dev` up.
+
+### Qwen Code
+
+Mirrored from `.claude` by `scripts/sync-qwen.mjs`. Re-run it after adding a skill or updating a
+Claude plugin. See `docs/agents/qwen-parity.md`.
