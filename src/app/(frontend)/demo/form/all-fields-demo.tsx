@@ -14,6 +14,7 @@ export function AllFieldsDemo({ fields }: { fields: FieldConfig[] }) {
         fields={fields}
         submitLabel="Submit"
         onSubmit={(values) => {
+          console.log('Form submitted with values:', values)
           setSubmitted(values)
         }}
       />

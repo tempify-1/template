@@ -1,4 +1,4 @@
-import { isVisible } from './conditions'
+import { isVisible, isEnabled } from './conditions'
 import { getAtPath, setAtPath } from './paths'
 import { inputFields, defaultValueFor, type FieldConfig, type FormValues } from './types'
 
@@ -11,6 +11,7 @@ export function submittedValues(fields: FieldConfig[], values: FormValues): Form
 
   for (const field of inputFields(fields)) {
     if (!isVisible(field, values)) continue
+    if (!isEnabled(field, values)) continue
 
     const value = getAtPath(values, field.name)
 
@@ -46,7 +47,7 @@ export function hiddenValues(
   for (const field of inputFields(fields)) {
     const path = `${prefix}${field.name}`
 
-    if (!isVisible(field, values)) {
+    if (!isVisible(field, values) || !isEnabled(field, values)) {
       const current = getAtPath(values, field.name)
       const empty = defaultValueFor(field)
       if (JSON.stringify(current) !== JSON.stringify(empty)) {

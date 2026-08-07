@@ -2,6 +2,7 @@ import type { FieldType } from '@/lib/forms/types'
 
 import {
   CheckboxControl,
+  ComboboxControl,
   NumberControl,
   SelectControl,
   TextControl,
@@ -19,6 +20,7 @@ export const fieldRegistry: ControlRegistry = {
   tel: TextControl,
   textarea: TextareaControl,
   select: SelectControl,
+  combobox: ComboboxControl,
   checkbox: CheckboxControl,
   number: NumberControl,
 }

@@ -74,7 +74,7 @@ describe('dot-path field names', () => {
     const values = { address: { city: 'Leeds' } }
 
     expect(conditionHolds({ field: 'address.city', equals: 'Leeds' }, values)).toBe(true)
-    expect(conditionHolds({ field: 'address.city', notEmpty: true }, values)).toBe(true)
+    expect(conditionHolds({ field: 'address.city', exists: true }, values)).toBe(true)
     expect(conditionHolds({ field: 'address.city', equals: 'York' }, values)).toBe(false)
   })
 })
@@ -96,7 +96,7 @@ describe('condition targets are validated', () => {
 
   it('throws when a requiredWhen targets a field that does not exist', () => {
     expect(() =>
-      buildSchema([{ name: 'a', type: 'text', requiredWhen: { field: 'nope', notEmpty: true } }]),
+      buildSchema([{ name: 'a', type: 'text', requiredWhen: { field: 'nope', exists: true } }]),
     ).toThrow(/nope/)
   })
 

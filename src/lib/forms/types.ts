@@ -6,6 +6,7 @@ export const FIELD_TYPES = [
   'tel',
   'textarea',
   'select',
+  'combobox',
   'checkbox',
   'number',
   'fieldArray',
@@ -20,7 +21,11 @@ export interface Option {
   disabled?: boolean
 }
 
-export type Condition = { field: string; equals: string } | { field: string; notEmpty: true }
+export type Condition =
+  | { field: string; equals: string }
+  | { field: string; not_equals: string }
+  | { field: string; exists: boolean }
+  | { field: string; count_equals: number }
 
 export interface PickerOption extends Option {
   data?: FormValues
@@ -39,8 +44,19 @@ export interface FieldConfig {
   max?: number
   minMessage?: string
   maxMessage?: string
+  minLength?: number
+  maxLength?: number
+  step?: number
+  autocomplete?: string
+  inputmode?: string
+  enterkeyhint?: string
+  ariaLabel?: string
+  ariaDescribedby?: string
+  ariaDescription?: string
+  tabIndex?: number
   fields?: FieldConfig[]
   showWhen?: Condition
+  enableWhen?: Condition
   requiredWhen?: Condition
   picker?: {
     label?: string

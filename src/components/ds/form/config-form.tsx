@@ -34,7 +34,7 @@ import {
   FieldLegend,
   FieldSet,
 } from '@/components/ui/field'
-import { isVisible } from '@/lib/forms/conditions'
+import { isVisible, isEnabled } from '@/lib/forms/conditions'
 import { getAtPath } from '@/lib/forms/paths'
 import { emptyValues } from '@/lib/forms/resolvers'
 import { buildSchema } from '@/lib/forms/schema-builder'
@@ -168,7 +168,7 @@ function FieldArrayControl({
       {config.description ? <FieldDescription>{config.description}</FieldDescription> : null}
 
       {rows.map((row, index) => (
-        <FieldSet key={row.id} className="rounded-lg border border-border p-4">
+        <FieldSet key={row.id} className="rounded-lg border border-border p-4" data-row-index={index}>
           <FieldLegend variant="label">{`${label} ${index + 1}`}</FieldLegend>
 
           <FieldList
@@ -338,6 +338,7 @@ function FieldList({
         const descriptionId = config.description ? `${id}-description` : undefined
         const errorId = message ? `${id}-error` : undefined
         const describedBy = [descriptionId, errorId].filter(Boolean).join(' ') || undefined
+        const disabled = !isEnabled(config, values)
 
         const label = config.label ? <FieldLabel htmlFor={id}>{config.label}</FieldLabel> : null
         const description = config.description ? (
@@ -353,7 +354,7 @@ function FieldList({
             render={({ field }) => (
               <Control
                 config={config}
-                field={field}
+                field={{ ...field, disabled }}
                 controlId={id}
                 invalid={Boolean(message)}
                 describedBy={describedBy}

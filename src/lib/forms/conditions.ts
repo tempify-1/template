@@ -7,6 +7,7 @@ export function assertConditionTargetsExist(fields: FieldConfig[]): void {
   for (const field of fields) {
     for (const [kind, condition] of [
       ['showWhen', field.showWhen],
+      ['enableWhen', field.enableWhen],
       ['requiredWhen', field.requiredWhen],
     ] as const) {
       if (condition && !known.has(condition.field)) {
@@ -27,12 +28,27 @@ export function conditionHolds(condition: Condition | undefined, values: FormVal
 
   const value = getAtPath(values, condition.field)
 
-  if ('notEmpty' in condition) {
-    if (typeof value === 'boolean') return value
-    return typeof value === 'string' && value.trim().length > 0
+  if ('equals' in condition) {
+    return String(value ?? '') === condition.equals
   }
 
-  return String(value ?? '') === condition.equals
+  if ('not_equals' in condition) {
+    return String(value ?? '') !== condition.not_equals
+  }
+
+  if ('exists' in condition) {
+    if (Array.isArray(value)) return value.length > 0
+    if (typeof value === 'boolean') return value
+    if (typeof value === 'string') return value.trim().length > 0
+    return value !== undefined && value !== null
+  }
+
+  if ('count_equals' in condition) {
+    if (!Array.isArray(value)) return false
+    return value.length === condition.count_equals
+  }
+
+  return true
 }
 
 export function isVisible(field: FieldConfig, values: FormValues): boolean {
@@ -43,6 +59,10 @@ export function isRequired(field: FieldConfig, values: FormValues): boolean {
   if (!isVisible(field, values)) return false
   if (field.required) return true
   return field.requiredWhen !== undefined && conditionHolds(field.requiredWhen, values)
+}
+
+export function isEnabled(field: FieldConfig, values: FormValues): boolean {
+  return conditionHolds(field.enableWhen, values)
 }
 
 export function visibleFields(fields: FieldConfig[], values: FormValues): FieldConfig[] {

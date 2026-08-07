@@ -21,7 +21,7 @@ const contact: FieldConfig[] = [
     name: 'message',
     type: 'textarea',
     label: 'Message',
-    requiredWhen: { field: 'name', notEmpty: true },
+    requiredWhen: { field: 'name', exists: true },
   },
   { name: 'consent', type: 'checkbox', label: 'Consent' },
   { name: 'submit', type: 'submit', label: 'Send' },

@@ -13,12 +13,81 @@ function leafFor(field: FieldConfig): z.ZodType {
   switch (field.type) {
     case 'checkbox':
       return z.boolean().optional()
-    case 'number':
-      return z.number().optional()
-    case 'fieldArray':
-      return z.array(shapeFor(field.fields ?? [])).optional()
-    default:
-      return z.string().optional()
+
+    case 'number': {
+      const numSchema = z.number()
+      let schema: z.ZodNumber = numSchema
+      if (field.min !== undefined) {
+        const msg = field.minMessage ?? `Must be at least ${field.min}`
+        schema = schema.min(field.min, { message: msg })
+      }
+      if (field.max !== undefined) {
+        const msg = field.maxMessage ?? `Must be at most ${field.max}`
+        schema = schema.max(field.max, { message: msg })
+      }
+      if (field.step !== undefined) {
+        const minVal = field.min ?? 0
+        const stepVal = field.step
+        schema = schema.refine((val) => {
+          if (val === undefined) return true
+          if (typeof val !== 'number') return true
+          return ((val - minVal) % stepVal) === 0
+        }, { message: `Must be a multiple of ${stepVal}` })
+      }
+      return schema.optional()
+    }
+
+    case 'fieldArray': {
+      const arrSchema = z.array(shapeFor(field.fields ?? []))
+      let schema: z.ZodArray<z.ZodType> = arrSchema
+      if (field.min !== undefined) {
+        const msg = field.minMessage ?? `At least ${field.min} ${(field.label ?? 'rows').toLowerCase()} required`
+        schema = schema.min(field.min, { message: msg })
+      }
+      if (field.max !== undefined) {
+        const msg = field.maxMessage ?? `At most ${field.max} ${(field.label ?? 'rows').toLowerCase()} allowed`
+        schema = schema.max(field.max, { message: msg })
+      }
+      return schema.optional()
+    }
+
+    default: {
+      const strSchema = z.string()
+      let schema: z.ZodString = strSchema
+      // Use min as minLength for textarea, minLength for text/email/tel
+      const minLength = field.type === 'textarea' ? field.min : field.minLength
+      const maxLength = field.type === 'textarea' ? field.max : field.maxLength
+      if (minLength !== undefined) {
+        const msg = field.minMessage ?? `Must be at least ${minLength} characters`
+        schema = schema.refine((val) => val === undefined || val.length === 0 || val.length >= minLength, { message: msg })
+      }
+      if (maxLength !== undefined) {
+        const msg = field.maxMessage ?? `Must be at most ${maxLength} characters`
+        schema = schema.refine((val) => val === undefined || val.length === 0 || val.length <= maxLength, { message: msg })
+      }
+
+      if (field.type === 'email') {
+        schema = schema.refine((val) => val === undefined || val.length === 0 || z.string().email().safeParse(val).success, {
+          message: 'Enter a valid email address',
+        })
+        return schema.optional()
+      }
+
+      if (field.type === 'textarea') {
+        // For textarea, also check minLength/maxLength if set separately
+        if (field.minLength !== undefined) {
+          const len = field.minLength
+          const msg = field.minMessage ?? `Must be at least ${len} characters`
+          schema = schema.refine((val) => val === undefined || val.length === 0 || val.length >= len, { message: msg })
+        }
+        if (field.maxLength !== undefined) {
+          const len = field.maxLength
+          const msg = field.maxMessage ?? `Must be at most ${len} characters`
+          schema = schema.refine((val) => val === undefined || val.length === 0 || val.length <= len, { message: msg })
+        }
+      }
+      return schema.optional()
+    }
   }
 }
 
@@ -74,22 +143,6 @@ function maxMessageFor(field: FieldConfig): string {
   return field.maxMessage ?? `At most ${field.max} ${(field.label ?? 'rows').toLowerCase()} allowed`
 }
 
-function minNumberMessage(field: FieldConfig): string {
-  return field.minMessage ?? `Must be at least ${field.min}`
-}
-
-function maxNumberMessage(field: FieldConfig): string {
-  return field.maxMessage ?? `Must be at most ${field.max}`
-}
-
-function minLengthMessage(field: FieldConfig): string {
-  return field.minMessage ?? `Must be at least ${field.min} characters`
-}
-
-function maxLengthMessage(field: FieldConfig): string {
-  return field.maxMessage ?? `Must be at most ${field.max} characters`
-}
-
 function refineFields(
   fields: FieldConfig[],
   values: FormValues,
@@ -133,32 +186,32 @@ function refineFields(
       if (typeof value !== 'number') continue
 
       if (field.min !== undefined && value < field.min) {
-        ctx.addIssue({ code: 'custom', path, message: minNumberMessage(field) })
+        ctx.addIssue({ code: 'custom', path, message: `Must be at least ${field.min}` })
       }
       if (field.max !== undefined && value > field.max) {
-        ctx.addIssue({ code: 'custom', path, message: maxNumberMessage(field) })
+        ctx.addIssue({ code: 'custom', path, message: `Must be at most ${field.max}` })
       }
       continue
     }
 
     if (typeof value === 'string') {
-      if (field.min !== undefined && value.length < field.min) {
+      if (field.minLength !== undefined && value.length < field.minLength) {
         ctx.addIssue({
           code: 'custom',
           path,
-          message: minLengthMessage(field),
+          message: `Must be at least ${field.minLength} characters`,
         })
       }
 
-      if (field.max !== undefined && value.length > field.max) {
+      if (field.maxLength !== undefined && value.length > field.maxLength) {
         ctx.addIssue({
           code: 'custom',
           path,
-          message: maxLengthMessage(field),
+          message: `Must be at most ${field.maxLength} characters`,
         })
       }
 
-      if (field.type === 'email' && !z.email().safeParse(value).success) {
+      if (field.type === 'email' && !z.string().email().safeParse(value).success) {
         ctx.addIssue({ code: 'custom', path, message: 'Enter a valid email address' })
       }
 

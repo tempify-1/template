@@ -20,7 +20,7 @@ const fields: FieldConfig[] = [
     name: 'detail',
     type: 'textarea',
     label: 'Detail',
-    showWhen: { field: 'name', notEmpty: true },
+    showWhen: { field: 'name', exists: true },
   },
   { name: 'consent', type: 'checkbox', label: 'Keep me posted' },
   { name: 'submit', type: 'submit', label: 'Send it' },
