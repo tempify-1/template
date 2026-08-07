@@ -1,1 +1,0 @@
-review whats been built against the spec and tickets then comit
