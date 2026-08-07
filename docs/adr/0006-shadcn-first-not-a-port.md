@@ -5,6 +5,16 @@ where they don't, its conventions always. A previous Qwik design system exists a
 throughout `docs/frontend/`; it is a source of evidence about **pitfalls**, never a source of
 design.
 
+**Capability parity is not porting.** This ADR bans copying the old system's *implementation* — its
+components, its file layout, its state model. It does not ban wanting what it could do. "The old
+system could take a deposit against a room with four travellers" is a requirement, and the old
+system is the best available evidence that the requirement is real and that the semantics work.
+"The old system solved it with a 516-line `ArrayCombobox` storing `SelectionRecord` objects" is an
+implementation, and it is exactly what this ADR excludes. Feature-parity tickets are legitimate and
+should cite the old system for *semantics*; they must not inherit its shapes. Where a parity ticket
+finds that shadcn's primitive genuinely cannot carry the behaviour, that is a finding to record —
+not a licence to port.
+
 ## Status
 
 accepted

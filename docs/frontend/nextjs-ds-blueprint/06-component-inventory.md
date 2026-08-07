@@ -135,8 +135,9 @@ Attachment, Marker for chat UIs.
 | Piece | Notes |
 |---|---|
 | ConfigForm / FormRenderer / field registry / schema builder | The engine |
-| Composite fields | price (Input Group + currency), slug (derive/lock/regenerate), address (geocode search + subfields), date/dateRange wrappers, multiSelect chips, radioCards/checkboxCards/radioTabs (option cards), numberPickerCards/table (quantity steppers) — each is a thin client wrapper over shadcn primitives |
-| fieldArray / cardArray | Repeatables: drag + keyboard reorder, min/max, card summaries + Dialog editor |
+| Composite fields | price (Input Group + currency), slug (derive/lock/regenerate), address (geocode search + subfields), date/dateRange wrappers, multiSelect chips, radioCards/checkboxCards/radioTabs (option cards), numberPickerCards/table (quantity steppers) — each is a thin client wrapper over shadcn primitives. This row is an inventory of intent; doc 03's `FieldType` union is the contract, and where they disagree the union wins |
+| combobox | Base UI Combobox (already a dependency): type-to-filter, option groups, `multiple` + chips, and an async `optionSource` via `filter={null}` + externally controlled `items` + `Combobox.Status` for loading announcements |
+| fieldArray / cardArray | Repeatables: keyboard reorder (built) and pointer drag (with cardArray), min/max, card summaries + Dialog editor |
 | Wizard (steps) | Tab strip, per-step validation, error summaries, onBeforeNext gate |
 | Autosave | Blur-diff patcher + per-field save state |
 

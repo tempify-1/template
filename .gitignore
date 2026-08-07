@@ -55,3 +55,8 @@ node_modules/
 # session directories from agent tooling
 .agents/
 .kimi-code/
+
+# Qwen Code: mirrored from .claude by scripts/sync-qwen.mjs
+.qwen/settings.local.json
+.qwen/PROJECT_SUMMARY.md
+.qwen/archived-skills/
