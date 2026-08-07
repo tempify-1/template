@@ -32,17 +32,16 @@ const traveller: FieldConfig[] = [
 ]
 
 const room: FieldConfig[] = [
-  { name: 'label', type: 'text', label: 'Room label', required: true },
   {
-    name: 'board',
-    type: 'select',
-    label: 'Board basis',
+    name: 'type',
+    type: 'combobox',
+    label: 'Room type',
     required: true,
     options: [
-      { label: 'Room only', value: 'room-only' },
-      { label: 'Bed and breakfast', value: 'bb' },
-      { label: 'Half board', value: 'half' },
-      { label: 'Full board', value: 'full' },
+      { label: 'Double', value: 'double' },
+      { label: 'Twin', value: 'twin' },
+      { label: 'Single', value: 'single' },
+      { label: 'Suite', value: 'suite' },
     ],
   },
   {
@@ -65,44 +64,6 @@ const room: FieldConfig[] = [
 ]
 
 export const allFieldsForm: FieldConfig[] = [
-  { name: 'text', type: 'text', label: 'text', required: true, placeholder: 'A plain string' },
-  { name: 'email', type: 'email', label: 'email', required: true, placeholder: 'you@company.com' },
-  { name: 'tel', type: 'tel', label: 'tel', placeholder: '+44 20 7946 0000' },
-  {
-    name: 'textarea',
-    type: 'textarea',
-    label: 'textarea',
-    min: 10,
-    description: 'Minimum ten characters, so you can watch the message appear and clear.',
-  },
-  {
-    name: 'select',
-    type: 'select',
-    label: 'select',
-    required: true,
-    options: [
-      { label: 'First', value: 'first' },
-      { label: 'Second', value: 'second' },
-      { label: 'Third (disabled)', value: 'third', disabled: true },
-    ],
-  },
-  { name: 'checkbox', type: 'checkbox', label: 'checkbox' },
-  {
-    name: 'number',
-    type: 'number',
-    label: 'number',
-    min: 1,
-    max: 10,
-    description: 'Stored as a number, not a string.',
-  },
-  {
-    name: 'conditionalText',
-    type: 'text',
-    label: 'conditional text',
-    showWhen: { field: 'checkbox', equals: 'true' },
-    requiredWhen: { field: 'checkbox', equals: 'true' },
-    description: 'Appears only when the checkbox above is ticked, and is required once it does.',
-  },
   {
     name: 'rooms',
     type: 'fieldArray',
@@ -113,9 +74,9 @@ export const allFieldsForm: FieldConfig[] = [
     picker: {
       label: 'room type',
       options: [
-        { label: 'Double, bed and breakfast', value: 'double-bb', data: { board: 'bb' } },
-        { label: 'Twin, half board', value: 'twin-half', data: { board: 'half' } },
-        { label: 'Single, room only', value: 'single-ro', data: { board: 'room-only' } },
+        { label: 'Double, bed and breakfast', value: 'double-bb', data: { type: 'double' } },
+        { label: 'Twin, half board', value: 'twin-half', data: { type: 'twin' } },
+        { label: 'Single, room only', value: 'single-ro', data: { type: 'single' } },
       ],
     },
   },
