@@ -13,7 +13,16 @@ Domain material lives in CONTEXT.md. Rationale and architecture live in docs/.
 4. shadcn best practice first. Check the registry before writing a component; check for a block before assembling primitives. When shadcn has an opinion — token naming, component anatomy, `cva` over per-component CSS — shadcn wins. The old Qwik design system in `~/Development/design-system` is evidence about pitfalls, never a source of design. This is not a port — see `docs/adr/0006`.
 5. Server Components by default; `'use client'` as low in the tree as possible.
 6. Generate configs, not JSX. Pages and sections are authored as typed config objects rendered by design-system components. Never hand-write or generate bespoke JSX for something a config can describe. If the config can't express it, extend the config type and the DS component — dropping to one-off markup is the failure mode this rule exists to prevent.
-7. Semantic tokens only. DS components style with semantic utilities (`bg-background`, `text-foreground`, `bg-primary`, `border-border`). Never raw palette classes (`bg-blue-500`, `text-slate-700`) and never literal colour values. Section colour is set by `data-theme` on a section container; components inherit it and never branch on theme themselves.
+7. Semantic tokens only in components. DS components style with semantic utilities
+   (`bg-background`, `text-foreground`, `bg-primary`, `border-border`). Never raw palette classes
+   (`bg-blue-500`, `text-slate-700`) and never literal colour values. Section colour is set by
+   `data-theme` on a section container; components inherit it and never branch on theme themselves.
+
+   **Why this is stricter than shadcn's baseline**: shadcn's registry allows palette classes in
+   user code, but this project enforces semantic tokens everywhere under `src/components` for
+   three reasons: (1) automatic theme inheritance via `data-theme` scoping, (2) consistency with
+   shadcn's own components which always use semantic tokens, and (3) future-proofing — new section
+   themes work out of the box. Enforcement: `tests/int/section-theme.int.spec.ts`.
 8. Access control: function-per-operation. `authenticated` for admin ops, `authenticatedOrPublished` for public reads. Never leave default-open.
 9. `afterChange` hooks → `revalidatePath` / `revalidateTag`.
 10. Forms: react-hook-form + zod (via `@hookform/resolvers/zod`), field registry. STORE BARE VALUES — string keys, numbers, booleans, `yyyy-MM-dd` strings — wherever the display label can be resolved from an options list. One carve-out: a combobox reading an `optionSource` stores `{value,label}` (Base UI's own convention, not Kallax's `{key,label}`), because there is no options array to resolve against; `value` is the identity for conditions and submission, `label` is display only. Array rows are objects already and need no carve-out. Conditions live at the schema's object level and self-evaluate at validation time, never baked in at render time. Three effects — `showWhen`, `enableWhen`, `requiredWhen` — over Payload's operator names (`equals`, `not_equals`, `exists`, plus `count_equals`). What reaches the payload is HTML's rule, not ours: hidden and disabled are both absent, `readonly` is present. Validation mode is `onTouched`, never `onChange` from empty. Every field collecting personal data carries an `autocomplete` (WCAG 2.1 SC 1.3.5).

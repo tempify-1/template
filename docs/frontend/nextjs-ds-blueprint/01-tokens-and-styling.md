@@ -55,6 +55,30 @@ which is the same violation as `bg-blue-500` in a component one layer up. shadcn
 convention is semantic naming throughout; its own custom-token example is `--warning`, not
 `--amber`. A hue in a page config also means a rebrand is a content migration.
 
+### Why semantic tokens only in components?
+
+This project enforces semantic tokens (`bg-background`, `text-foreground`, etc.) **everywhere under
+`src/components`**, never palette classes (`bg-blue-500`, `text-slate-700`, etc.).
+
+**Is this shadcn's requirement?** No — shadcn's registry allows palette classes in user code.
+
+**Is this shadcn's own practice?** Yes — all official components use semantic tokens, and that's
+what their theming system is designed for.
+
+**Why enforce it here?** Three reasons:
+
+1. **Theme inheritance**: Components inside a `data-theme` section automatically recolor because
+   they only reference semantic tokens, never hard-coded colors.
+
+2. **Consistency with the ecosystem**: Every shadcn component, block, and registry item assumes
+   you're using semantic tokens. Your code matches that expectation.
+
+3. **Future-proofing**: If you ever want to add new section themes (e.g., `theme="warning"`,
+   `theme="info"`), they work out of the box because components don't hard-code specific colors.
+
+The enforcement lives in `tests/int/section-theme.int.spec.ts`, which fails the build on any
+palette class or literal color value in component sources.
+
 ```ts
 export type ThemeColor =
   | "default" | "muted" | "accent" | "inverse" | "brand-dark" | "brand-light";

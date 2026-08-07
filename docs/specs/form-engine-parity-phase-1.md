@@ -164,7 +164,13 @@ Conditions inside an array row continue to evaluate against that row, never the 
 
 ### Combobox
 
-Built on `@base-ui/react@1.6.0`, already a dependency, in three independently verifiable steps:
+**The registry comes first.** Hard rule 4 — check the registry before writing a component, check
+for a block before assembling primitives — is now mechanically checkable through the `shadcn` MCP
+server registered in `.mcp.json`. Search it, take the registry's combobox into
+`src/components/ui/`, and wrap that. `@base-ui/react` is the primitive underneath, not the starting
+point: hand-writing a wrapper over Base UI directly would skip the rule rather than satisfy it.
+
+Then, in three independently verifiable steps:
 
 1. **Static options** — behaves as `select` does, stores a bare `string`, adds type-to-filter.
 2. **Async options** — `filter={null}` disables internal filtering, `items` receives an
@@ -186,6 +192,16 @@ with it off, the option list is a toggle and re-picking an option removes its ro
 re-picking adds another row. Rooms need it on — two Deluxe Twins is a legitimate booking.
 
 `editableOptions: false` maps onto the existing `readonly`, not a new property.
+
+**The popup portals, so it must carry the Section Theme across.** Base UI's Combobox ships
+`Portal`, `Positioner` and `Popup` parts, which mount the list on `document.body` — outside the
+themed subtree. Per the `design-tokens` skill, a DS control that portals must re-stamp `data-theme`
+on its portalled content; `src/components/ds/form/fields.tsx:74-88` is the precedent, where
+`Select` reads `useSectionTheme()` and stamps it on `SelectContent`. Without it, a combobox inside
+a `brand` Section renders its dropdown in page colours. No test covers portalled theming, so this
+is caught by looking or not at all.
+
+The component still decides no colour — it only carries the attribute across the boundary.
 
 ### Accessibility and input purpose
 
@@ -231,6 +247,26 @@ none of them ships unexercised.
 - `src/components/ui/combobox.tsx` — shadcn registry component
 - `src/app/(frontend)/demo/form/` — rooms and travellers; stub option route
 - `tests/e2e/form-engine.e2e.spec.ts` — new
+
+Everything under `src/components/**` falls inside the `design-tokens` skill's path gate, so the
+skill loads automatically for the combobox and field-surface work. Its rules are not advisory:
+`tests/int/section-theme.int.spec.ts` fails the build on a palette-named utility or a literal
+colour value in any component file. Treat `pnpm vitest run tests/int/section-theme.int.spec.ts` as
+a gate before claiming a component done, not as part of the final sweep.
+
+### Tooling
+
+Two MCP servers registered in `.mcp.json` bear directly on this work:
+
+- **`shadcn`** — registry search. This is how hard rule 4 gets satisfied rather than asserted:
+  search before writing a component, and look for a block before assembling primitives.
+- **`nextjs-dev`** — live errors, logs and routes off the running dev server, which is the
+  "observe the live result" half of hard rule 13. It needs `pnpm dev` up; without it the server is
+  simply absent, not broken.
+
+Neither replaces the Playwright assertions. #31 established that this engine's value-shape defects
+survive anything short of a real browser driving a real submission — a clean dev-server log is not
+evidence that the right payload went over the wire.
 
 ### Documentation corrections owed
 
