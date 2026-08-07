@@ -35,7 +35,9 @@ type FieldType =
 //
 // Deferred by decision — the old system has 39 field types, this union has 25, and the balance is
 // listed here so each one is a choice on the record rather than a gap someone rediscovers:
-//   searchableSelect — folded into `combobox`. One type with an async option source, not two.
+//   searchableSelect — the scalar type-to-filter select (one value, bare string). Not built;
+//     the control phase 1 shipped under the name `combobox` was actually this, mis-named.
+//     `combobox` is the array chip control — see spec form-engine-parity-phase-1.5.
 //   numberPickerCards / numberPickerTable — quantity steppers. Wanted; needs a value contract row
 //     first (hard rule 11) because the table variant is a matrix of counts, not a scalar.
 //   address — geocode search plus subfields. A composite over an async combobox, so it is blocked
@@ -214,16 +216,19 @@ warranted when there is no options array to resolve a display label against. Rul
   is separate from the submitted value. Nested arrays are configured as recursive `fields[]` rather
   than dot-path templates with a `#` segment.
 - fieldset / accordion / step → no value (containers)
-- combobox **with a static `options` array** → `string`, exactly like `select`
-- combobox **with an `optionSource`** → `{ value, label }`, plus any extra keys the source
-  supplies. This is the one carve-out, and it exists because the rule above cannot be met: there is
-  no `field.options` array to resolve a label against, so a bare key renders as a raw id on first
-  paint and becomes text only after a round-trip — and on an edit form, one round-trip *per stored
-  value* before the form is even readable. The label is carried, not looked up. `value` is the
-  identity for conditions, equality and submission; `label` is display only and is never what a
-  condition compares against.
+- combobox → **`object[]`, always** — the combobox is an array chip control (spec 1.5), and
+  every row is an object regardless of config: `{ value, label }` from the picked option, merged
+  over the row template, plus whatever nested fields the row's `fields` define. One shape, no
+  branching in the mapper, schema builder or submission path. `value` is the identity for
+  conditions, equality and submission; `label` is display only and never what a condition compares
+  against. Row identity for React keys is owned by `useFieldArray`, never stored in the value.
+- a future async `optionSource` adds no new shape — rows stay `{ value, label, ... }`, with the
+  label carried rather than looked up, because a remote source has no `field.options` array to
+  resolve against. The future scalar `searchableSelect` stores a bare `string` over static options
+  and `{ value, label }` over an async source, per the rule above.
 
-  **`{ value, label }` is Base UI's own convention, not Kallax's.** Given that shape,
+  **`{ value, label }` is Base UI's own convention, not Kallax's.** (This applies to combobox
+  rows and to any future async control alike.) Given that shape,
   `itemToStringLabel` resolves the display string and form submission resolves the value with no
   props supplied; `isItemEqualToValue` handles identity for object values, which is why there is no
   `optionIdField` here. Kallax's `SelectionRecord` was `{ key, label }` — adopting that spelling
@@ -322,9 +327,14 @@ per-form CSS — keep it.
   arrays. Scoped in the parity spec's phase 2, along with the fuller `cardDisplay` surface
   (`modalTitle`, `addable`, `removable`, `hideHeader`, `showCompletionStatus`, `variant`,
   per-entry `description` items with their own `showWhen`) and `singularLabel` for add buttons.
-- An **array-backed combobox** is a `fieldArray` whose rows are appended from a combobox rather
-  than an add button. `reselectOptions` decides whether re-picking an option adds a second row or
-  removes the existing one — see the `Field` config above.
+- **combobox** is the array-backed chip control: rows are appended from a type-to-filter option
+  list, each selection renders as a chip (shadcn's chip exactly; the label is the modal trigger,
+  `aria-haspopup="dialog"`), and each chip opens a live-editing Dialog holding the row's nested
+  `fields` — prev/next between rows, incomplete-fields alert from the schema, footer reorder.
+  `reselectOptions` decides whether re-picking an option adds a second row or removes the existing
+  one. Config flags carry Kallax's names and opt-out semantics (`editableOptions`, `draggable` —
+  off by default here, a recorded divergence — `cardDisplay.addable/removable/showCompletionStatus`,
+  `max`, `singularLabel`). See spec form-engine-parity-phase-1.5.
 - Item templates are recursive `fields[]` carrying bare leaf names (`firstName`), resolved against
   the row's path prefix — conditions inside a row are sibling-relative and evaluate against that
   row, never the form root. The `#` template segment this doc previously described

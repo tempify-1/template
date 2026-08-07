@@ -164,6 +164,13 @@ Conditions inside an array row continue to evaluate against that row, never the 
 
 ### Combobox
 
+**Superseded by `form-engine-parity-phase-1.5.md`.** What this section specifies is a scalar
+type-to-filter select — which is the old system's `searchableSelect`, not its `combobox`. The
+phase 1 implementation followed this section, hand-wrote the wrapper against Base UI, and produced
+a control with a broken anatomy (no Popup rendered). The 1.5 spec replaces this section wholesale:
+`combobox` is the array chip control with a per-row modal editor. The registry-first rule below
+stands and is carried into 1.5 verbatim.
+
 **The registry comes first.** Hard rule 4 — check the registry before writing a component, check
 for a block before assembling primitives — is now mechanically checkable through the `shadcn` MCP
 server registered in `.mcp.json`. Search it, take the registry's combobox into
