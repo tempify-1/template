@@ -210,9 +210,10 @@ for `object[]` rows.
 - **Async option source** — follow-on ticket. Additive: `filter={null}`, externally controlled
   `items`, `Combobox.Status`, request aborting, merging selections with results so chosen chips
   survive a query change. Nothing in this phase's anatomy changes for it.
-- **`searchableSelect`** — the scalar type-to-filter select. Orphaned by this spec: single-choice
-  with filtering has no control until it is ticketed. The phase 1 implementation, corrected, is
-  most of it — but it is not this ticket.
+- **`searchableSelect`** — the scalar type-to-filter select. **Assigned to phase 2**:
+  single-choice with filtering has no control until then. The phase 1 implementation, corrected
+  (registry component, rendered Popup, one input, one focus ring), is most of it — but it is not
+  this ticket.
 - **Pointer drag reorder** — phase 2, with `cardArray`. `draggable: true` renders the grip only
   when drag lands; until then the flag is documented as inert.
 - **`cardArray`, form-level chrome, wizard resumption** — phase 2, unchanged except that
