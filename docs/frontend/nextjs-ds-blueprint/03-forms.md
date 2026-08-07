@@ -32,6 +32,22 @@ type FieldType =
 //   URL query prefill (~110 lines, getQueryPrefillValues) and AI populate (buildAiSchema /
 //     buildAiSystemPrompt + ai-populate-field) are not field types at all — they are value
 //     sources, and are handled by the resolver chain (decision 13) rather than the registry.
+//
+// Deferred by decision — the old system has 39 field types, this union has 25, and the balance is
+// listed here so each one is a choice on the record rather than a gap someone rediscovers:
+//   searchableSelect — folded into `combobox`. One type with an async option source, not two.
+//   numberPickerCards / numberPickerTable — quantity steppers. Wanted; needs a value contract row
+//     first (hard rule 11) because the table variant is a matrix of counts, not a scalar.
+//   address — geocode search plus subfields. A composite over an async combobox, so it is blocked
+//     on that, not on itself.
+//   file — blocked on the storage adapter decision (#20), not on the form engine.
+//   range, color, definitionList, aside, actionButton — no form in the backlog needs them. Add on
+//     demand, with a contract row, never speculatively.
+// Not a field type but a real gap: ADR-0005 records that behaviour in config is a named action,
+//   and the engine has no binding for one (the old system's `action` / `append` / `onFieldAction`).
+//   Not in the parity spec; needs its own ticket.
+// Doc 06's composite-fields row mentions several of these; that row is an inventory of intent, and
+// this union is the contract. Where they disagree, this union wins.
 
 interface Option {
   label: string;
@@ -41,10 +57,15 @@ interface Option {
   image?: { src: string; alt: string };
   badge?: { label: string };
   disabled?: boolean;
+  group?: string;               // heading this option sits under; maps onto Base UI's
+                                // Combobox.Group / Combobox.GroupLabel parts. Options sharing a
+                                // group render together under one heading, in first-seen order.
 }
 
 interface Field {
-  name: string;                  // dot-path; "#" segment inside array item templates.
+  name: string;                  // dot-path. Inside an array item template it is the bare leaf
+                                 // name, resolved against the row's path prefix — there is no "#"
+                                 // segment (superseded by spec #22; see Value contracts).
                                  // Dot-strings all the way through: JSON-serializable for Payload
                                  // (ADR-0002) and consumed natively by react-hook-form's
                                  // FieldPath. No conversion layer.
@@ -55,23 +76,54 @@ interface Field {
   required?: boolean;            // presentational (the *); enforcement is the schema
   requiredMessage?: string;
   disabled?: boolean;
-  readonly?: boolean;
+  readonly?: boolean;            // visible, not editable, and PRESENT in the payload — the tool
+                                 // for "locked but submitted". Contrast enableWhen below.
   options?: Option[];
+  optionSource?: OptionSource;   // async options; mutually exclusive with `options`
   fields?: Field[];              // containers + array item template
   min?: number; max?: number;    // numbers, array counts
+  minLength?: number; maxLength?: number;   // strings
+  step?: number;                 // numeric granularity (not the wizard `step` type)
   minDate?: Date | "today"; maxDate?: Date | "today";
   colSpan?: Responsive<number>;
   validate?: ZodSchema;      // per-field schema fragment, merged into the form schema
   showWhen?: Condition;          // unmounts when false
-  enableWhen?: Condition;        // locked-by-default: disabled unless condition holds
+  enableWhen?: Condition;        // rendered but `disabled` when false
   requiredWhen?: Condition;
+  reselectOptions?: boolean;     // array-backed combobox: when true, re-picking an option adds
+                                 // another row (two Deluxe Twins); when false/absent the option
+                                 // list is a toggle and re-picking removes that row
   cardDisplay?: CardDisplay;     // cardArray summary config (title/description/chips/avatar)
   step?: StepConfig;             // wizard chrome for type: "step"
+
+  // Accessibility and input purpose — pass-through to the control.
+  // `autocomplete` is how WCAG 2.1 SC 1.3.5 (Identify Input Purpose, Level AA) is satisfied; a
+  // config-driven engine can only be as accessible as its config allows, so every field
+  // collecting personal data carries one.
+  autocomplete?: string;         // "given-name", "email", "tel", "address-line1"…
+  inputmode?: "none" | "text" | "tel" | "url" | "email" | "numeric" | "decimal" | "search";
+  enterkeyhint?: "enter" | "done" | "go" | "next" | "previous" | "search" | "send";
+  ariaLabel?: string;
+  ariaDescribedby?: string;
+  ariaDescription?: string;
+  tabIndex?: number;
 }
 
 type Condition =
-  | { field: string; value: string }     // equality (array fields: membership)
-  | { field: string; notEmpty: true };
+  | { field: string; equals: string }       // equality (array fields: membership)
+  | { field: string; not_equals: string }
+  | { field: string; exists: boolean }      // non-empty; for arrays, "has any rows"
+  | { field: string; count_equals: number }; // exact array row count
+// Operator names track Payload's query vocabulary (`equals`, `not_equals`, `exists`) because
+// conditions are CMS-authored and stored as JSON — a form config and a Payload query should not
+// use two words for the same idea. `count_equals` is the deliberate exception: Payload has no
+// length operator, so the name is invented. That divergence is intentional; do not "correct" it
+// to an operator Payload does not have.
+// The equality key is `equals`, not `value`. `src/lib/forms/types.ts` is the built contract.
+
+// An async option source. Returns options for a query; the engine supplies the query from the
+// combobox input and aborts a previous call when a new one starts.
+type OptionSource = (query: string, signal: AbortSignal) => Promise<Option[]>;
 ```
 
 ## Engine architecture (three small pieces)
@@ -85,16 +137,23 @@ shadcn primitives where they fit: Input Group
 (prefix/suffix adornments for price/slug fields), Button Group (wizard nav), Native Select,
 Spinner (saving states), Empty (empty array states).
 
+Every leaf renderer is wrapped in a **per-field error boundary**. A field that throws renders an
+inline error in its own slot; the rest of the form keeps working. A form that loses one field is
+degraded, a form that unmounts has lost the visitor's whole session, and the difference costs one
+boundary component.
+
 **2. Schema builder** — `buildSchema(fields: Field[]): ZodSchema`. Walks the config once and
 produces the whole-form zod schema handed to `useForm({ resolver: zodResolver(schema) })`:
 
-- `required` → `z.string().min(1, msg)` etc. per type; `min/max/minDate/email/url`
-  map to the obvious zod pipes; `field.validate` fragments are merged in.
+- `required` → `z.string().min(1, msg)` etc. per type; `min/max/minLength/maxLength/step/minDate/
+  email/url` map to the obvious zod pipes; `field.validate` fragments are merged in.
 - **Conditions live at the object level**, where the whole values object is in scope:
-  `requiredWhen`/`showWhen` become `superRefine` + `ctx.addIssue({ path })` placing the issue on
-  the right path. A field hidden by `showWhen` is never required. This replaces the old system's
-  self-evaluating-validator workaround and its `shouldActive`/unmounted-field bug class outright
-  — the schema is the single source of truth regardless of what's mounted.
+  `requiredWhen`/`showWhen`/`enableWhen` become `superRefine` + `ctx.addIssue({ path })` placing
+  the issue on the right path. A field hidden by `showWhen` is never required, and neither is one
+  disabled by `enableWhen` — per HTML, a disabled control does not participate in constraint
+  validation. This replaces the old system's self-evaluating-validator workaround and its
+  `shouldActive`/unmounted-field bug class outright — the schema is the single source of truth
+  regardless of what's mounted.
 - Array types → `z.array(itemSchema)` with min/max count messages.
 
 **3. `FormRenderer`** — walks `Field[]`, evaluates conditions against current values
@@ -113,10 +172,33 @@ consecutive `step` fields into a wizard.
 />
 ```
 
+## When validation fires
+
+`mode: 'onTouched'`, and leave `reValidateMode` at its default `'onChange'`. A field is validated
+first at blur, and from then on it re-validates as the visitor types — so a message that appears
+while they are correcting an error updates live, but no message appears before they have finished
+their first attempt at a field.
+
+The two neighbouring choices are both worse, and this doc previously specified neither, which is
+how the engine ended up on react-hook-form's `'onSubmit'` default by accident rather than by
+decision:
+
+- **`'onSubmit'`** (what was built) withholds every error until the submit button, so a long form
+  reveals its problems all at once, after the visitor believes they are done.
+- **`'onChange'`** (what the old system used — `validateOn: 'change'`, itself an override of
+  modular-forms' own `'submit'` default) validates from the first keystroke, so `Enter a valid
+  email` is announced while someone is typing the `j` of their address. With errors wired to
+  `aria-live`, that is not just noise, it is a screen reader reading a failure the visitor has not
+  had a chance to avoid. Matching the old system here would be copying a defect.
+
+Per-step wizard validation is unaffected: `trigger(paths)` on Next is explicit and stays explicit.
+
 ## Value contracts — simpler than the old system
 
-**Store plain values.** The old system stored `{key, label}` "SelectionRecord" objects for every
-select-family field, and unwrapping them was its #1 recurring bug. New rule:
+**Store plain values wherever the label can be resolved from an options list.** The old system
+stored `{key, label}` "SelectionRecord" objects for *every* select-family field, and unwrapping
+them was its #1 recurring bug. The rule is not "never objects" — it is that an object is only
+warranted when there is no options array to resolve a display label against. Rule:
 
 - select / radioCards / radioTabs → `string` (the option value)
 - multiSelect / checkboxCards → `string[]`
@@ -132,11 +214,50 @@ select-family field, and unwrapping them was its #1 recurring bug. New rule:
   is separate from the submitted value. Nested arrays are configured as recursive `fields[]` rather
   than dot-path templates with a `#` segment.
 - fieldset / accordion / step → no value (containers)
+- combobox **with a static `options` array** → `string`, exactly like `select`
+- combobox **with an `optionSource`** → `{ value, label }`, plus any extra keys the source
+  supplies. This is the one carve-out, and it exists because the rule above cannot be met: there is
+  no `field.options` array to resolve a label against, so a bare key renders as a raw id on first
+  paint and becomes text only after a round-trip — and on an edit form, one round-trip *per stored
+  value* before the form is even readable. The label is carried, not looked up. `value` is the
+  identity for conditions, equality and submission; `label` is display only and is never what a
+  condition compares against.
+
+  **`{ value, label }` is Base UI's own convention, not Kallax's.** Given that shape,
+  `itemToStringLabel` resolves the display string and form submission resolves the value with no
+  props supplied; `isItemEqualToValue` handles identity for object values, which is why there is no
+  `optionIdField` here. Kallax's `SelectionRecord` was `{ key, label }` — adopting that spelling
+  would mean hand-writing both converters on every async combobox to land somewhere strictly worse
+  than the library default, and would be inheriting a shape rather than a semantic, which ADR-0006
+  prohibits.
 
 Option metadata (label, icon, image) is looked up from `field.options` at render time when a
-summary needs it. Conditions compare plain strings — no `.key` unwrapping anywhere.
+summary needs it. Conditions compare plain strings — object unwrapping exists in exactly one
+place, the async combobox, and nowhere else.
 
-## Visibility owns the payload, not react-hook-form's unmount
+**A repeating group needs no carve-out.** `fieldArray` / `cardArray` rows are already objects, so a
+row seeded from a picker or an async combobox simply carries its identity and display fields as
+ordinary row keys. Rooms-holding-travellers is expressible today under the bare-value rule; reach
+for the carve-out only for a *scalar* async field.
+
+## Availability owns the payload, not react-hook-form's unmount
+
+What reaches the server is decided by HTML, not by us. Per MDN, a `disabled` control is not
+submitted with form data and does not participate in constraint validation; a `readonly` control
+is focusable and *is* submitted. The three condition effects follow that:
+
+| Effect | Rendering | In the submitted payload |
+|---|---|---|
+| `showWhen` false | unmounted | **absent** |
+| `enableWhen` false | rendered, `disabled` | **absent** |
+| `requiredWhen` true | unchanged | unchanged |
+| `readonly` | rendered, not editable | **present** |
+
+So "visible, locked, still submitted" is `readonly` — a different tool from `enableWhen`, not a
+competing one. And one accessibility consequence worth stating: a disabled control is not
+focusable, so a keyboard or screen-reader user cannot reach it to find out *why* it is
+unavailable. `enableWhen` is therefore the rarest of the three effects; `showWhen` (remove it) or
+`readonly` (show it, locked) are usually the better answer.
 
 A hidden field must not reach the submission, and a value the form seeded must. Those two rules
 sound independent and are not: react-hook-form's `shouldUnregister: true` delivered the first as a
@@ -190,15 +311,24 @@ per-form CSS — keep it.
 
 ## Repeatable groups
 
-- **fieldArray**: stacked rows, add/remove, drag-reorder + keyboard up/down with an `aria-live`
-  position announcement, min/max counts with friendly messages
-  (`At least 1 traveller required`).
-- **cardArray**: rows render as summary Cards (`cardDisplay`: title from field(s), description
-  lines, chips, avatar initials, incomplete-fields badge computed from the schema); clicking
-  opens a shadcn Dialog containing the row's nested `FormRenderer`, with prev/next navigation
-  between rows. One `activeItemId` context so a single dialog is open across nested arrays.
-- Item templates use `#` in nested names (`travellers.#.firstName`) resolved via a path-prefix
-  context — conditions inside a row are sibling-relative.
+- **fieldArray**: stacked rows, add/remove, keyboard up/down reorder with an `aria-live` position
+  announcement, min/max counts with friendly messages (`At least 1 traveller required`). Built.
+  Pointer drag-reorder is additive on top of the keyboard controls, not a replacement for them,
+  and lands with `cardArray`.
+- **cardArray** — *not built*: rows render as summary Cards (`cardDisplay`: title from field(s),
+  description lines, chips, avatar initials, incomplete-fields badge computed from the schema);
+  clicking opens a shadcn Dialog containing the row's nested `FormRenderer`, with prev/next
+  navigation between rows. One `activeItemId` context so a single dialog is open across nested
+  arrays. Scoped in the parity spec's phase 2, along with the fuller `cardDisplay` surface
+  (`modalTitle`, `addable`, `removable`, `hideHeader`, `showCompletionStatus`, `variant`,
+  per-entry `description` items with their own `showWhen`) and `singularLabel` for add buttons.
+- An **array-backed combobox** is a `fieldArray` whose rows are appended from a combobox rather
+  than an add button. `reselectOptions` decides whether re-picking an option adds a second row or
+  removes the existing one — see the `Field` config above.
+- Item templates are recursive `fields[]` carrying bare leaf names (`firstName`), resolved against
+  the row's path prefix — conditions inside a row are sibling-relative and evaluate against that
+  row, never the form root. The `#` template segment this doc previously described
+  (`travellers.#.firstName`) was superseded by spec #22 and is not implemented.
 
 ## Wizard (`step` fields)
 

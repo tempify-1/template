@@ -100,7 +100,9 @@ names (`sm/md/lg/xl/2xl` — no `xs`, no `xxl`), and `dashboard?: boolean` becom
 - modular-forms specifics: `.#.` path rewriting, `shouldActive`, QRL validator arrays,
   `skipIfDisabled` → react-hook-form + schema-level zod checks.
 - The `SelectionRecord {key,label}` stored-value contract → store plain values; resolve option
-  metadata from config at render time (removes the #1 recurring bug class in Kallax).
+  metadata from config at render time (removes the #1 recurring bug class in Kallax). One carve-out
+  since added: a combobox with an async `optionSource` has no options array to resolve against, so
+  it stores `{value,label}` — Base UI's convention, not Kallax's spelling (doc 03, Value contracts).
 - Hand-rolled snackbar stack, theme-mode localStorage util, `popover="manual"` navbar top-layer
   trick, hover-only megamenu singleton, dead per-block AOS config.
 
