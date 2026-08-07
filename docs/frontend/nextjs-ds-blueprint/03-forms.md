@@ -35,8 +35,8 @@ type FieldType =
 //
 // Deferred by decision — the old system has 39 field types, this union has 25, and the balance is
 // listed here so each one is a choice on the record rather than a gap someone rediscovers:
-//   searchableSelect — the scalar type-to-filter select (one value, bare string). Not built;
-//     the control phase 1 shipped under the name `combobox` was actually this, mis-named.
+//   searchableSelect — the scalar type-to-filter select (one value, bare string). Scoped to
+//     phase 2; the control phase 1 shipped under the name `combobox` was actually this, mis-named.
 //     `combobox` is the array chip control — see spec form-engine-parity-phase-1.5.
 //   numberPickerCards / numberPickerTable — quantity steppers. Wanted; needs a value contract row
 //     first (hard rule 11) because the table variant is a matrix of counts, not a scalar.

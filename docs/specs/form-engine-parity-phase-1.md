@@ -319,7 +319,9 @@ dropped on the way to the control satisfies nobody.
 
 ## Out of Scope
 
-**Phase 2, which becomes its own spec written after this one lands.** `cardArray` with the full
+**Phase 2, which becomes its own spec written after this one lands.** `searchableSelect` — the
+scalar type-to-filter select, orphaned when spec 1.5 corrected `combobox` to the array chip
+control — plus `cardArray` with the full
 `cardDisplay` surface (`modalTitle`, `addable`, `removable`, `hideHeader`, `showCompletionStatus`,
 `variant`, per-entry `description` items with their own `showWhen`, chips with `theme` and `dot`),
 `singularLabel`, drag reorder, per-row option sources, and the form-level chrome (`message`
