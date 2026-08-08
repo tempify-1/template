@@ -17,7 +17,7 @@ export function assertConditionTargetsExist(fields: FieldConfig[], extraKnown: s
       }
     }
 
-    if (field.type === 'fieldArray' && field.fields) {
+    if ((field.type === 'fieldArray' || field.type === 'cardArray') && field.fields) {
       assertConditionTargetsExist(field.fields)
     }
 

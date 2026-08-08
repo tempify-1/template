@@ -13,6 +13,7 @@ import {
 } from 'react-hook-form'
 
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
@@ -46,7 +47,7 @@ import {
   useComboboxAnchor,
 } from '@/components/ui/combobox'
 import { useSectionTheme } from '@/components/ds/section/section-theme-context'
-import { isVisible, isEnabled, isRequired } from '@/lib/forms/conditions'
+import { conditionHolds, isVisible, isEnabled, isRequired } from '@/lib/forms/conditions'
 import { getAtPath } from '@/lib/forms/paths'
 import { emptyValues } from '@/lib/forms/resolvers'
 import { buildSchema } from '@/lib/forms/schema-builder'
@@ -106,6 +107,116 @@ function mergeDeep(target: FormValues, source: FormValues): FormValues {
   return result
 }
 
+function PickerDialog({
+  picker,
+  label,
+  uid,
+  fullName,
+  slotsLeft,
+  onAdd,
+}: {
+  picker: NonNullable<FieldConfig['picker']>
+  label: string
+  uid: string
+  fullName: string
+  slotsLeft: number
+  onAdd: (data: FormValues[]) => void
+}) {
+  const pickerLabel = picker.label ?? label
+  const offerable = picker.options.filter((option) => !option.disabled)
+  const pickerDisabled = offerable.length === 0 || slotsLeft <= 0
+  const maxSelectable = Math.min(offerable.length, slotsLeft)
+  const [open, setOpen] = useState(false)
+  const [selected, setSelected] = useState<string[]>([])
+
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next)
+    if (next) setSelected([])
+  }
+
+  const toggleOption = (value: string) => {
+    setSelected((current) =>
+      current.includes(value)
+        ? current.filter((v) => v !== value)
+        : [...current, value].slice(0, maxSelectable),
+    )
+  }
+
+  const addSelected = () => {
+    onAdd(
+      selected
+        .map((value) => picker.options.find((o) => o.value === value))
+        .filter((option): option is NonNullable<typeof option> => Boolean(option))
+        .map((option) => option.data ?? {}),
+    )
+    setOpen(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogTrigger
+        render={
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={pickerDisabled}
+            aria-disabled={pickerDisabled || undefined}
+          >
+            {`Add from ${pickerLabel}`}
+          </Button>
+        }
+      />
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{`Add from ${pickerLabel}`}</DialogTitle>
+          <DialogDescription>Select the items you want to add.</DialogDescription>
+        </DialogHeader>
+
+        <div className="flex flex-col gap-3 py-2">
+          {picker.options.map((option) => {
+            const isSelected = selected.includes(option.value)
+            const selectable = !option.disabled && (isSelected || selected.length < maxSelectable)
+            const optionId = `${uid}${fullName}-picker-${option.value}`
+            return (
+              <label
+                key={option.value}
+                htmlFor={optionId}
+                className={`flex items-center gap-3 rounded-md border p-3 text-sm ${selectable || isSelected ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
+              >
+                <Checkbox
+                  id={optionId}
+                  checked={isSelected}
+                  disabled={!selectable && !isSelected}
+                  onCheckedChange={() => selectable && toggleOption(option.value)}
+                />
+                {option.label}
+              </label>
+            )
+          })}
+        </div>
+
+        <DialogFooter>
+          <DialogClose
+            render={
+              <Button type="button" variant="outline">
+                Cancel
+              </Button>
+            }
+          />
+          <Button
+            type="button"
+            disabled={selected.length === 0 || selected.length > slotsLeft}
+            onClick={addSelected}
+          >
+            {`Add ${selected.length} selected`}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 function FieldArrayControl({
   config,
   form,
@@ -149,39 +260,7 @@ function FieldArrayControl({
   }
 
   const picker = config.picker
-  const pickerLabel = picker?.label ?? label
   const slotsLeft = config.max === undefined ? Infinity : (config.max ?? 0) - rows.length
-  const hasPicker = Boolean(picker)
-  const offerable = picker?.options.filter((option) => !option.disabled) ?? []
-  const pickerDisabled = !picker || offerable.length === 0 || slotsLeft <= 0
-  const maxSelectable = picker ? Math.min(offerable.length, slotsLeft) : 0
-  const [open, setOpen] = useState(false)
-  const [selected, setSelected] = useState<string[]>([])
-
-  const handleOpenChange = (next: boolean) => {
-    setOpen(next)
-    if (next) setSelected([])
-  }
-
-  const toggleOption = (value: string) => {
-    setSelected((current) =>
-      current.includes(value)
-        ? current.filter((v) => v !== value)
-        : [...current, value].slice(0, maxSelectable),
-    )
-  }
-
-  const addSelected = () => {
-    if (!picker) return
-    const template = emptyValues(config.fields ?? [])
-    for (const value of selected) {
-      const option = picker.options.find((o) => o.value === value)
-      if (option) {
-        append(mergeDeep(template, option.data ?? {}))
-      }
-    }
-    setOpen(false)
-  }
 
   return (
     <FieldSet data-field={fullName}>
@@ -248,73 +327,73 @@ function FieldArrayControl({
           {`Add ${label}`}
         </Button>
 
-        {hasPicker ? (
-          <Dialog open={open} onOpenChange={handleOpenChange}>
-            <DialogTrigger
-              render={
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={pickerDisabled}
-                  aria-disabled={pickerDisabled || undefined}
-                >
-                  {`Add from ${pickerLabel}`}
-                </Button>
+        {picker ? (
+          <PickerDialog
+            picker={picker}
+            label={label}
+            uid={uid}
+            fullName={fullName}
+            slotsLeft={slotsLeft}
+            onAdd={(data) => {
+              const template = emptyValues(config.fields ?? [])
+              for (const entry of data) {
+                append(mergeDeep(template, entry))
               }
-            />
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{`Add from ${pickerLabel}`}</DialogTitle>
-                <DialogDescription>Select the items you want to add.</DialogDescription>
-              </DialogHeader>
-
-              <div className="flex flex-col gap-3 py-2">
-                {picker!.options.map((option) => {
-                  const isSelected = selected.includes(option.value)
-                  const selectable =
-                    !option.disabled && (isSelected || selected.length < maxSelectable)
-                  const optionId = `${uid}${fullName}-picker-${option.value}`
-                  return (
-                    <label
-                      key={option.value}
-                      htmlFor={optionId}
-                      className={`flex items-center gap-3 rounded-md border p-3 text-sm ${selectable || isSelected ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
-                    >
-                      <Checkbox
-                        id={optionId}
-                        checked={isSelected}
-                        disabled={!selectable && !isSelected}
-                        onCheckedChange={() => selectable && toggleOption(option.value)}
-                      />
-                      {option.label}
-                    </label>
-                  )
-                })}
-              </div>
-
-              <DialogFooter>
-                <DialogClose
-                  render={
-                    <Button type="button" variant="outline">
-                      Cancel
-                    </Button>
-                  }
-                />
-                <Button
-                  type="button"
-                  disabled={selected.length === 0 || selected.length > slotsLeft}
-                  onClick={addSelected}
-                >
-                  {`Add ${selected.length} selected`}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+            }}
+          />
         ) : null}
       </div>
     </FieldSet>
   )
+}
+
+function resolveRowFieldLabel(config: FieldConfig, name: string, raw: string): string {
+  if (!raw) return ''
+  const rowField = (config.fields ?? []).find((f) => f.name === name)
+  return rowField?.options?.find((o) => o.value === raw)?.label ?? raw
+}
+
+function rowSummaryTitle(
+  config: FieldConfig,
+  row: FormValues,
+  index: number,
+  source?: string | string[],
+): string {
+  const title = source ?? config.cardDisplay?.title
+  if (title) {
+    const keys = Array.isArray(title) ? title : [title]
+    const parts = keys
+      .map((key) => resolveRowFieldLabel(config, key, rowDisplayValue(row, key)))
+      .filter(Boolean)
+    if (parts.length) return parts.join(' - ')
+  }
+  return `${config.singularLabel ?? config.label ?? config.name} ${index + 1}`
+}
+
+function rowSummaryChips(config: FieldConfig, row: FormValues): string[] {
+  return (config.cardDisplay?.chips ?? [])
+    .map((chip) => resolveRowFieldLabel(config, chip.field, rowDisplayValue(row, chip.field)))
+    .filter(Boolean)
+}
+
+function rowSummaryDescriptions(config: FieldConfig, row: FormValues): string[] {
+  return (config.cardDisplay?.description ?? [])
+    .map((entry) => {
+      if (typeof entry === 'string') return entry
+      if (entry.showWhen && !conditionHolds(entry.showWhen, row)) return ''
+      if (entry.field) return resolveRowFieldLabel(config, entry.field, rowDisplayValue(row, entry.field))
+      return entry.text ?? ''
+    })
+    .filter(Boolean)
+}
+
+function avatarInitials(config: FieldConfig, row: FormValues): string {
+  const from = config.cardDisplay?.avatar?.from ?? []
+  const initials = from
+    .map((key) => rowDisplayValue(row, key).charAt(0).toUpperCase())
+    .filter(Boolean)
+    .join('')
+  return initials || (config.cardDisplay?.avatar?.fallbackPrefix ?? '')
 }
 
 function isBlankRowValue(field: FieldConfig, value: unknown): boolean {
@@ -460,37 +539,11 @@ function ComboboxArrayControl({
     return !selectedValues.has(option.value)
   }
 
-  const modalTitle = (index: number): string => {
-    const title = config.cardDisplay?.title
-    if (title) {
-      const keys = Array.isArray(title) ? title : [title]
-      const parts = keys.map((key) => rowDisplayValue(rowValues(index), key)).filter(Boolean)
-      if (parts.length) return parts.join(' - ')
-    }
-    return `${config.singularLabel ?? label} ${index + 1}`
-  }
-
-  const modalChips = (index: number): string[] =>
-    (config.cardDisplay?.chips ?? [])
-      .map((chip) => {
-        const raw = rowDisplayValue(rowValues(index), chip.field)
-        if (!raw) return ''
-        const rowField = (config.fields ?? []).find((f) => f.name === chip.field)
-        const optionLabel = rowField?.options?.find((o) => o.value === raw)?.label
-        return optionLabel ?? raw
-      })
-      .filter(Boolean)
-
+  const modalTitle = (index: number): string =>
+    rowSummaryTitle(config, rowValues(index), index, config.cardDisplay?.modalTitle)
+  const modalChips = (index: number): string[] => rowSummaryChips(config, rowValues(index))
   const modalDescriptions = (index: number): string[] =>
-    (config.cardDisplay?.description ?? [])
-      .map((entry) =>
-        typeof entry === 'string'
-          ? entry
-          : entry.field
-            ? rowDisplayValue(rowValues(index), entry.field)
-            : (entry.text ?? ''),
-      )
-      .filter(Boolean)
+    rowSummaryDescriptions(config, rowValues(index))
 
   return (
     <Field
@@ -663,6 +716,220 @@ function ComboboxArrayControl({
   )
 }
 
+function CardArrayControl({
+  config,
+  form,
+  seeded,
+  basePath,
+  uid,
+  disabled = false,
+}: {
+  config: FieldConfig
+  form: ConfigFormApi
+  seeded: FormValues
+  basePath: string
+  uid: string
+  disabled?: boolean
+}) {
+  const fullName = joinPath(basePath, config.name)
+  const [activeIndex, setActiveIndex] = useState<number | null>(null)
+  const {
+    fields: rows,
+    append,
+    remove,
+    move,
+  } = useFieldArray({
+    control: form.control,
+    name: fullName,
+  }) as unknown as {
+    fields: ({ id: string } & FormValues)[]
+    append: (row: FormValues) => void
+    remove: (index: number) => void
+    move: (from: number, to: number) => void
+  }
+  const currentRows = (useWatch({ control: form.control, name: fullName }) ?? []) as FormValues[]
+
+  const label = config.label ?? config.name
+  const singular = config.singularLabel ?? label
+  const addable = config.cardDisplay?.addable !== false && !disabled
+  const removable = config.cardDisplay?.removable !== false && !disabled
+  const showCompletion = config.cardDisplay?.showCompletionStatus === true
+  const hideHeader = config.cardDisplay?.hideHeader === true
+  const reorderable = config.draggable === true && !disabled
+  const atMax = config.max !== undefined && rows.length >= config.max
+  const message = errorMessageAt(form.formState.errors, fullName)
+  const rowErrorIndexes = rows
+    .map((_, index) => index)
+    .filter((index) => getAtPath(form.formState.errors, `${fullName}.${index}`) !== undefined)
+  const rowErrorMessage =
+    activeIndex === null && rowErrorIndexes.length > 0
+      ? `Complete ${singular.toLowerCase()} ${rowErrorIndexes.map((i) => i + 1).join(', ')}`
+      : undefined
+  const id = `${uid}${fullName}`
+  const errorId = message || rowErrorMessage ? `${id}-error` : undefined
+
+  const rowValues = (index: number): FormValues => currentRows[index] ?? {}
+
+  const picker = config.picker
+  const slotsLeft = config.max === undefined ? Infinity : (config.max ?? 0) - rows.length
+
+  return (
+    <FieldSet data-field={fullName}>
+      <FieldLegend>{label}</FieldLegend>
+      {config.description ? <FieldDescription>{config.description}</FieldDescription> : null}
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        {rows.map((row, index) => {
+          const values = rowValues(index)
+          const incomplete = showCompletion
+            ? incompleteRowFields(config.fields ?? [], values)
+            : []
+          const chips = rowSummaryChips(config, values)
+          const initials = avatarInitials(config, values)
+          return (
+            <div key={row.id} className="relative" data-row-index={index}>
+              <button
+                type="button"
+                aria-haspopup="dialog"
+                aria-label={`Edit ${rowSummaryTitle(config, values, index)}`}
+                className="w-full rounded-xl text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                onClick={() => setActiveIndex(index)}
+              >
+                <Card className="gap-2 py-4">
+                  {!hideHeader ? (
+                    <CardHeader className="px-4">
+                      <CardTitle className="flex items-center gap-2 text-sm">
+                        {initials ? (
+                          <span className="flex size-6 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground">
+                            {initials}
+                          </span>
+                        ) : null}
+                        {rowSummaryTitle(config, values, index)}
+                        {incomplete.length > 0 ? (
+                          <span
+                            role="status"
+                            aria-label={`${incomplete.length} fields incomplete`}
+                            className="size-1.5 rounded-full bg-destructive"
+                          />
+                        ) : null}
+                      </CardTitle>
+                      {chips.length ? (
+                        <CardDescription className="flex flex-wrap gap-1">
+                          {chips.map((chip) => (
+                            <span
+                              key={chip}
+                              className="rounded-sm bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground"
+                            >
+                              {chip}
+                            </span>
+                          ))}
+                        </CardDescription>
+                      ) : null}
+                    </CardHeader>
+                  ) : null}
+                  <CardContent className="px-4 text-sm text-muted-foreground">
+                    {rowSummaryDescriptions(config, values).map((line) => (
+                      <p key={line}>{line}</p>
+                    ))}
+                  </CardContent>
+                </Card>
+              </button>
+              {removable ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label={`Remove ${rowSummaryTitle(config, values, index)}`}
+                  className="absolute top-2 right-2"
+                  onClick={() => {
+                    remove(index)
+                    if (activeIndex === index) setActiveIndex(null)
+                  }}
+                >
+                  <XIcon />
+                </Button>
+              ) : null}
+            </div>
+          )
+        })}
+      </div>
+
+      {message || rowErrorMessage ? (
+        <FieldError id={errorId}>{message ?? rowErrorMessage}</FieldError>
+      ) : null}
+
+      {addable ? (
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={atMax}
+            onClick={() => append(emptyValues(config.fields ?? []))}
+          >
+            {`Add ${singular}`}
+          </Button>
+          {picker ? (
+            <PickerDialog
+              picker={picker}
+              label={label}
+              uid={uid}
+              fullName={fullName}
+              slotsLeft={slotsLeft}
+              onAdd={(data: FormValues[]) => {
+                for (const entry of data) {
+                  append(mergeDeep(emptyValues(config.fields ?? []), entry))
+                }
+              }}
+            />
+          ) : null}
+        </div>
+      ) : null}
+
+      {activeIndex !== null && rows[activeIndex] ? (
+        <RowEditorDialog
+          open
+          onOpenChange={(next) => {
+            if (!next) setActiveIndex(null)
+          }}
+          title={rowSummaryTitle(config, rowValues(activeIndex), activeIndex, config.cardDisplay?.modalTitle)}
+          position={{ index: activeIndex, total: rows.length }}
+          chips={rowSummaryChips(config, rowValues(activeIndex))}
+          descriptions={rowSummaryDescriptions(config, rowValues(activeIndex))}
+          incomplete={incompleteRowFields(config.fields ?? [], rowValues(activeIndex))}
+          onPrev={activeIndex > 0 ? () => setActiveIndex(activeIndex - 1) : undefined}
+          onNext={activeIndex < rows.length - 1 ? () => setActiveIndex(activeIndex + 1) : undefined}
+          onMoveUp={
+            reorderable && activeIndex > 0
+              ? () => {
+                  move(activeIndex, activeIndex - 1)
+                  setActiveIndex(activeIndex - 1)
+                }
+              : undefined
+          }
+          onMoveDown={
+            reorderable && activeIndex < rows.length - 1
+              ? () => {
+                  move(activeIndex, activeIndex + 1)
+                  setActiveIndex(activeIndex + 1)
+                }
+              : undefined
+          }
+        >
+          <FieldList
+            fields={config.fields ?? []}
+            form={form}
+            seeded={seeded}
+            values={rowValues(activeIndex)}
+            basePath={`${fullName}.${activeIndex}`}
+            uid={uid}
+          />
+        </RowEditorDialog>
+      ) : null}
+    </FieldSet>
+  )
+}
+
 function FieldList({
   fields,
   form,
@@ -692,6 +959,20 @@ function FieldList({
               seeded={seeded}
               basePath={basePath}
               uid={uid}
+            />
+          )
+        }
+
+        if (config.type === 'cardArray') {
+          return (
+            <CardArrayControl
+              key={config.name}
+              config={config}
+              form={form}
+              seeded={seeded}
+              basePath={basePath}
+              uid={uid}
+              disabled={!isEnabled(config, values)}
             />
           )
         }

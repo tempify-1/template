@@ -209,37 +209,45 @@ test.describe('combobox chip control', () => {
     expect('age' in (travellers[0] ?? {})).toBe(false)
   })
 
-  test('nested combobox per array row stays row-scoped (#39)', async ({ page }) => {
+  test('cardArray rows edit through the shared editor; nested combobox stays row-scoped (#39)', async ({
+    page,
+  }) => {
     await pickDestination(page, 'mad', 'Madrid')
     await addRoom(page, 'dou', 'Double')
 
-    await page.getByRole('button', { name: 'Add Party room' }).click()
-    await page.getByRole('button', { name: 'Add Party room' }).click()
+    await page.getByRole('button', { name: 'Add Party room', exact: true }).click()
+    await page.getByRole('button', { name: 'Add Party room', exact: true }).click()
 
-    const room1 = page.locator('[data-field="partyRooms.0.travellers"]')
-    const room2 = page.locator('[data-field="partyRooms.1.travellers"]')
+    const cards = page.locator('[data-field="partyRooms"] [data-row-index]')
+    await expect(cards).toHaveCount(2)
+    await expect(cards.nth(0)).toContainText('No travellers yet')
 
-    await addViaKeyboard(page, room1.getByPlaceholder('Type to add travellers'), 'adu', 'Adult')
-    await addViaKeyboard(page, room2.getByPlaceholder('Type to add travellers'), 'chi', 'Child')
-
-    await expect(room1.locator('[data-slot="combobox-chip"]')).toHaveCount(1)
-    await expect(room2.locator('[data-slot="combobox-chip"]')).toHaveCount(1)
-    await expect(room1.locator('[data-slot="combobox-chip"]')).toContainText('Adult')
-    await expect(room2.locator('[data-slot="combobox-chip"]')).toContainText('Child')
-
-    await room1.getByRole('button', { name: 'Edit Adult' }).click()
-    const modal = page.getByRole('dialog')
-    const first = modal.locator('[data-field="partyRooms.0.travellers.0.firstName"] input')
+    await cards.nth(0).getByRole('button', { name: /Edit Party room 1/ }).click()
+    const roomModal1 = page.getByRole('dialog').first()
+    const trav1 = roomModal1.locator('[data-field="partyRooms.0.travellers"]')
+    await addViaKeyboard(page, trav1.getByPlaceholder('Type to add travellers'), 'adu', 'Adult')
+    await trav1.getByRole('button', { name: 'Edit Adult' }).click()
+    const travModal = page.getByRole('dialog').last()
+    const first = travModal.locator('[data-field="partyRooms.0.travellers.0.firstName"] input')
     await expect(first).toHaveAttribute('autocomplete', 'given-name')
     await first.fill('Ana')
-    await modal.locator('[data-field="partyRooms.0.travellers.0.lastName"] input').fill('One')
-    await modal.getByRole('button', { name: 'Done' }).click()
+    await travModal.locator('[data-field="partyRooms.0.travellers.0.lastName"] input').fill('One')
+    await travModal.getByRole('button', { name: 'Done' }).click()
+    await roomModal1.getByRole('button', { name: 'Done' }).click()
 
-    await room2.getByRole('button', { name: 'Edit Child' }).click()
-    const modal2 = page.getByRole('dialog')
-    await modal2.locator('[data-field="partyRooms.1.travellers.0.firstName"] input').fill('Kit')
-    await modal2.locator('[data-field="partyRooms.1.travellers.0.lastName"] input').fill('Two')
-    await modal2.getByRole('button', { name: 'Done' }).click()
+    await cards.nth(1).getByRole('button', { name: /Edit Party room 2/ }).click()
+    const roomModal2 = page.getByRole('dialog').first()
+    const trav2 = roomModal2.locator('[data-field="partyRooms.1.travellers"]')
+    await addViaKeyboard(page, trav2.getByPlaceholder('Type to add travellers'), 'chi', 'Child')
+    await expect(trav2.locator('[data-slot="combobox-chip"]')).toHaveCount(1)
+    await trav2.getByRole('button', { name: 'Edit Child' }).click()
+    const travModal2 = page.getByRole('dialog').last()
+    await travModal2.locator('[data-field="partyRooms.1.travellers.0.firstName"] input').fill('Kit')
+    await travModal2.locator('[data-field="partyRooms.1.travellers.0.lastName"] input').fill('Two')
+    await travModal2.getByRole('button', { name: 'Done' }).click()
+    await roomModal2.getByRole('button', { name: 'Done' }).click()
+
+    await expect(cards.nth(0)).toContainText('Travellers assigned')
 
     await page.getByRole('button', { name: 'Edit Double' }).click()
     const roomModal = page.getByRole('dialog')

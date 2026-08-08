@@ -60,6 +60,7 @@ function leafFor(field: FieldConfig): z.ZodType {
       return z.array(toZod(tree)).optional()
     }
 
+    case 'cardArray':
     case 'fieldArray': {
       const arrSchema = z.array(shapeFor(field.fields ?? []))
       let schema: z.ZodArray<z.ZodType> = arrSchema
@@ -168,10 +169,14 @@ function refineFields(
     const value = getAtPath(values, field.name)
     const path = [...basePath, ...pathSegments(field.name)]
 
-    if (field.type === 'fieldArray' || field.type === 'combobox') {
+    if (field.type === 'fieldArray' || field.type === 'combobox' || field.type === 'cardArray') {
       const rows = Array.isArray(value) ? value : []
 
-      if (field.type === 'combobox' && isRequired(field, values) && rows.length === 0) {
+      if (
+        (field.type === 'combobox' || field.type === 'cardArray') &&
+        isRequired(field, values) &&
+        rows.length === 0
+      ) {
         ctx.addIssue({ code: 'custom', path, message: requiredMessageFor(field) })
       }
       if (field.min !== undefined && rows.length < field.min) {

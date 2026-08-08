@@ -45,6 +45,11 @@ export function SearchableSelectControl({
   const selected = isAsync
     ? storedObject
     : (items.find((option) => option.value === String(field.value ?? '')) ?? null)
+  const query = inputValue.trim().toLowerCase()
+  const offered =
+    isAsync || query === '' || query === selected?.label.trim().toLowerCase()
+      ? items
+      : items.filter((option) => option.label.toLowerCase().includes(query))
 
   return (
     <span
@@ -56,7 +61,7 @@ export function SearchableSelectControl({
       }}
     >
       <Combobox
-        items={items}
+        items={offered}
         value={selected}
         onValueChange={(next: Option | null) => {
           if (isAsync) {
@@ -68,7 +73,7 @@ export function SearchableSelectControl({
         }}
         inputValue={inputValue}
         onInputValueChange={setInputValue}
-        filter={isAsync ? null : undefined}
+        filter={null}
         isItemEqualToValue={(a: Option, b: Option) => a.value === b.value}
         autoHighlight
       >

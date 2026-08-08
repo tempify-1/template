@@ -157,9 +157,37 @@ export const allFieldsForm: FieldConfig[] = [
   },
   {
     name: 'partyRooms',
-    type: 'fieldArray',
+    type: 'cardArray',
     label: 'Party room',
+    singularLabel: 'Party room',
     max: 3,
+    cardDisplay: {
+      showCompletionStatus: true,
+      description: [
+        { text: 'Travellers assigned', showWhen: { field: 'travellers', exists: true } },
+        { text: 'No travellers yet', showWhen: { field: 'travellers', exists: false } },
+      ],
+    },
+    picker: {
+      label: 'party size',
+      options: [
+        {
+          label: 'Couple',
+          value: 'couple',
+          data: {
+            travellers: [
+              { value: 'adult', label: 'Adult' },
+              { value: 'adult', label: 'Adult' },
+            ],
+          },
+        },
+        {
+          label: 'Solo traveller',
+          value: 'solo',
+          data: { travellers: [{ value: 'adult', label: 'Adult' }] },
+        },
+      ],
+    },
     fields: [
       {
         name: 'travellers',
