@@ -253,5 +253,25 @@ export const allFieldsForm: FieldConfig[] = [
       },
     ],
   },
+  {
+    name: 'bunkRooms',
+    type: 'fieldArray',
+    label: 'Bunk room',
+    max: 2,
+    fields: [
+      {
+        name: 'sleepers',
+        type: 'combobox',
+        label: 'Sleepers',
+        singularLabel: 'sleeper',
+        reselectOptions: true,
+        editableOptions: false,
+        options: [
+          { label: 'Adult', value: 'adult' },
+          { label: 'Child', value: 'child' },
+        ],
+      },
+    ],
+  },
   { name: 'submit', type: 'submit', label: 'Submit enquiry' },
 ]

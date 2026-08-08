@@ -134,18 +134,32 @@ function DragGrip({
       onPointerDown={(down) => {
         down.preventDefault()
         const grip = down.currentTarget
-        grip.setPointerCapture(down.pointerId)
+        const pointerId = down.pointerId
+        grip.setPointerCapture(pointerId)
         let target: number | null = null
-        const handleMove = (ev: PointerEvent) => {
-          target = rowIndexUnderPointer(fullName, ev.clientX, ev.clientY)
-        }
-        const handleUp = () => {
+        const teardown = () => {
           grip.removeEventListener('pointermove', handleMove)
           grip.removeEventListener('pointerup', handleUp)
+          grip.removeEventListener('pointercancel', handleCancel)
+          grip.removeEventListener('lostpointercapture', handleCancel)
+        }
+        const handleMove = (ev: PointerEvent) => {
+          if (ev.pointerId !== pointerId) return
+          target = rowIndexUnderPointer(fullName, ev.clientX, ev.clientY)
+        }
+        const handleUp = (ev: PointerEvent) => {
+          if (ev.pointerId !== pointerId) return
+          teardown()
           if (target !== null && target !== index) onDrop(index, target)
+        }
+        const handleCancel = (ev: PointerEvent) => {
+          if (ev.pointerId !== pointerId) return
+          teardown()
         }
         grip.addEventListener('pointermove', handleMove)
         grip.addEventListener('pointerup', handleUp)
+        grip.addEventListener('pointercancel', handleCancel)
+        grip.addEventListener('lostpointercapture', handleCancel)
       }}
     >
       <GripVerticalIcon aria-hidden className="size-3.5" />
@@ -393,10 +407,17 @@ function FieldArrayControl({
   )
 }
 
-function resolveRowFieldLabel(config: FieldConfig, name: string, raw: string): string {
+function resolveRowFieldLabel(
+  config: FieldConfig,
+  row: FormValues,
+  name: string,
+  raw: string,
+): string {
   if (!raw) return ''
   const rowField = (config.fields ?? []).find((f) => f.name === name)
-  return rowField?.options?.find((o) => o.value === raw)?.label ?? raw
+  if (!rowField) return raw
+  const offered = resolveRowOptions(rowField, row)
+  return offered.find((o) => o.value === raw)?.label ?? raw
 }
 
 function rowSummaryTitle(
@@ -409,7 +430,7 @@ function rowSummaryTitle(
   if (title) {
     const keys = Array.isArray(title) ? title : [title]
     const parts = keys
-      .map((key) => resolveRowFieldLabel(config, key, rowDisplayValue(row, key)))
+      .map((key) => resolveRowFieldLabel(config, row, key, rowDisplayValue(row, key)))
       .filter(Boolean)
     if (parts.length) return parts.join(' - ')
   }
@@ -418,7 +439,7 @@ function rowSummaryTitle(
 
 function rowSummaryChips(config: FieldConfig, row: FormValues): string[] {
   return (config.cardDisplay?.chips ?? [])
-    .map((chip) => resolveRowFieldLabel(config, chip.field, rowDisplayValue(row, chip.field)))
+    .map((chip) => resolveRowFieldLabel(config, row, chip.field, rowDisplayValue(row, chip.field)))
     .filter(Boolean)
 }
 
@@ -427,7 +448,8 @@ function rowSummaryDescriptions(config: FieldConfig, row: FormValues): string[] 
     .map((entry) => {
       if (typeof entry === 'string') return entry
       if (entry.showWhen && !conditionHolds(entry.showWhen, row)) return ''
-      if (entry.field) return resolveRowFieldLabel(config, entry.field, rowDisplayValue(row, entry.field))
+      if (entry.field)
+        return resolveRowFieldLabel(config, row, entry.field, rowDisplayValue(row, entry.field))
       return entry.text ?? ''
     })
     .filter(Boolean)
@@ -436,7 +458,9 @@ function rowSummaryDescriptions(config: FieldConfig, row: FormValues): string[] 
 function avatarInitials(config: FieldConfig, row: FormValues): string {
   const from = config.cardDisplay?.avatar?.from ?? []
   const initials = from
-    .map((key) => rowDisplayValue(row, key).charAt(0).toUpperCase())
+    .map((key) =>
+      resolveRowFieldLabel(config, row, key, rowDisplayValue(row, key)).charAt(0).toUpperCase(),
+    )
     .filter(Boolean)
     .join('')
   return initials || (config.cardDisplay?.avatar?.fallbackPrefix ?? '')
@@ -453,7 +477,7 @@ function incompleteRowFields(fields: FieldConfig[], row: FormValues): string[] {
   for (const field of inputFields(fields)) {
     if (!isVisible(field, row) || !isEnabled(field, row)) continue
     const value = getAtPath(row, field.name)
-    if (field.type === 'fieldArray' || field.type === 'combobox') {
+    if (field.type === 'fieldArray' || field.type === 'combobox' || field.type === 'cardArray') {
       const count = Array.isArray(value) ? value.length : 0
       const minCount = field.min ?? (field.required ? 1 : 0)
       if (count < minCount) names.push(field.label ?? field.name)
@@ -493,6 +517,7 @@ function ComboboxArrayControl({
   const [inputValue, setInputValue] = useState('')
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
   const [announcement, setAnnouncement] = useState('')
+  const [engaged, setEngaged] = useState(false)
   const {
     fields: rows,
     append,
@@ -519,7 +544,7 @@ function ComboboxArrayControl({
   const singular = config.singularLabel
   const addPlaceholder =
     config.placeholder ?? `Type to add ${singular ? `${singular}s` : label.toLowerCase()}`
-  const { items, status, isAsync } = useOptionSource(config, inputValue, selectedAsOptions)
+  const { items, status, isAsync } = useOptionSource(config, inputValue, selectedAsOptions, engaged)
   const options = items
   const reselect = config.reselectOptions === true
   const addable = config.cardDisplay?.addable !== false && !disabled
@@ -686,6 +711,7 @@ function ComboboxArrayControl({
               id={id}
               placeholder={addPlaceholder}
               disabled={disabled}
+              onFocus={() => setEngaged(true)}
               aria-describedby={describedBy}
               aria-description={config.ariaDescription}
               aria-label={config.ariaLabel}
@@ -877,9 +903,9 @@ function CardArrayControl({
                       </CardTitle>
                       {chips.length ? (
                         <CardDescription className="flex flex-wrap gap-1">
-                          {chips.map((chip) => (
+                          {chips.map((chip, chipIndex) => (
                             <span
-                              key={chip}
+                              key={`${chipIndex}-${chip}`}
                               className="rounded-sm bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground"
                             >
                               {chip}
@@ -890,8 +916,8 @@ function CardArrayControl({
                     </CardHeader>
                   ) : null}
                   <CardContent className="px-4 text-sm text-muted-foreground">
-                    {rowSummaryDescriptions(config, values).map((line) => (
-                      <p key={line}>{line}</p>
+                    {rowSummaryDescriptions(config, values).map((line, lineIndex) => (
+                      <p key={`${lineIndex}-${line}`}>{line}</p>
                     ))}
                   </CardContent>
                 </Card>

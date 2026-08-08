@@ -10,7 +10,21 @@ type ShapeTree = { [key: string]: z.ZodType | ShapeTree }
 type IssuePath = (string | number)[]
 type IssueSink = { addIssue: (issue: { code: 'custom'; path: IssuePath; message: string }) => void }
 
+function assertOptionSourceExclusivity(field: FieldConfig): void {
+  if (field.optionsFrom && field.options) {
+    throw new Error(
+      `Field "${field.name}" declares both optionsFrom and options — the map is the only source`,
+    )
+  }
+  if (field.optionSource && field.options) {
+    throw new Error(
+      `Field "${field.name}" declares both optionSource and options — they are mutually exclusive`,
+    )
+  }
+}
+
 function leafFor(field: FieldConfig): z.ZodType {
+  assertOptionSourceExclusivity(field)
   switch (field.type) {
     case 'checkbox':
       return z.boolean().optional()

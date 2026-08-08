@@ -31,16 +31,22 @@ export function SearchableSelectControl({
       return String((field.value as unknown as Option).label ?? '')
     }
     const initial = String(field.value ?? '')
-    return (config.options ?? []).find((option) => option.value === initial)?.label ?? ''
+    if (initial === '') return ''
+    if (config.optionSource) return initial
+    return (config.options ?? []).find((option) => option.value === initial)?.label ?? initial
   })
   const storedObject =
     field.value !== null && typeof field.value === 'object' && !Array.isArray(field.value)
       ? (field.value as unknown as Option)
-      : null
+      : config.optionSource && typeof field.value === 'string' && field.value !== ''
+        ? { value: field.value, label: field.value }
+        : null
+  const [engaged, setEngaged] = React.useState(false)
   const { items, status, isAsync } = useOptionSource(
     config,
     inputValue,
     storedObject ? [storedObject] : [],
+    engaged,
   )
   const selected = isAsync
     ? storedObject
@@ -88,6 +94,7 @@ export function SearchableSelectControl({
           aria-label={config.ariaLabel}
           aria-description={config.ariaDescription}
           tabIndex={config.tabIndex}
+          onFocus={() => setEngaged(true)}
           onBlur={field.onBlur}
         />
         <ComboboxContent data-theme={theme ?? undefined}>

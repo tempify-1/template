@@ -348,7 +348,12 @@ per-form CSS — keep it.
   `removable`, `showCompletionStatus`. Option-valued fields resolve display labels through
   `field.options` in every summary — a raw stored value never renders on a card. Kallax's
   `variant` is deliberately not carried: a per-card visual variant is a DS decision nobody has
-  made; if a real form needs one it arrives with a contract row, not a prop.
+  made; if a real form needs one it arrives with a contract row, not a prop. **Nested editors
+  stack**: an array control inside a row opens its own editor above the row's editor — Base UI
+  nested dialogs are first-class (`data-nested`, `data-nested-dialog-open`) — and Escape or
+  backdrop closes the innermost dialog only. This supersedes the earlier single-open-dialog
+  (`activeItemId`) sketch: each array control owns its `activeIndex`, and the stacked reading
+  matches how the row was entered.
 - **combobox** is the array-backed chip control: rows are appended from a type-to-filter option
   list, each selection renders as a chip (shadcn's chip exactly; the label is the modal trigger,
   `aria-haspopup="dialog"`), and each chip opens a live-editing Dialog holding the row's nested

@@ -102,7 +102,12 @@ export function SelectControl({
       items={options}
       value={chosen}
       onValueChange={(next: string | null) => {
-        if (next !== null) onChange(next)
+        if (next !== null) {
+          onChange(next)
+          return
+        }
+        const orphaned = stored !== '' && !options.some((option) => option.value === stored)
+        if (orphaned && !config.required && !config.requiredWhen) onChange('')
       }}
     >
       <SelectTrigger

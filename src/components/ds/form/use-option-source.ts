@@ -18,6 +18,7 @@ export function useOptionSource(
   config: FieldConfig,
   query: string,
   selected: Option[],
+  enabled: boolean,
 ): { items: Option[]; status: OptionSourceStatus; isAsync: boolean } {
   const source = config.optionSource
   const [state, setState] = React.useState<SourceState>({
@@ -27,7 +28,7 @@ export function useOptionSource(
   })
 
   React.useEffect(() => {
-    if (!source) return
+    if (!source || !enabled) return
     const controller = new AbortController()
     source(query, controller.signal)
       .then((results) => {
@@ -39,10 +40,14 @@ export function useOptionSource(
         setState({ query, results: [], failed: true })
       })
     return () => controller.abort()
-  }, [source, query])
+  }, [source, query, enabled])
 
   if (!source) {
     return { items: config.options ?? [], status: 'idle', isAsync: false }
+  }
+
+  if (!enabled) {
+    return { items: mergeSelectedOptions([], selected), status: 'idle', isAsync: true }
   }
 
   const status: OptionSourceStatus =

@@ -239,12 +239,16 @@ test.describe('combobox chip control', () => {
 
     await ageBand.click()
     await page.getByRole('option', { name: 'Adult', exact: true }).click()
+    await expect(title).toContainText('Choose one')
     await modal.getByRole('button', { name: 'Done' }).click()
     await page.getByRole('button', { name: 'Submit enquiry' }).click()
-    await expect(page.locator('pre')).toContainText('Nothing submitted yet')
+
+    const cleared = await submittedJson(page)
+    const clearedTravellers = (cleared.rooms as Record<string, unknown>[])[0]
+      ?.travellers as Record<string, unknown>[]
+    expect(clearedTravellers[0]?.title ?? '').toBe('')
 
     await page.getByRole('button', { name: 'Edit Double' }).click()
-    await expect(page.getByRole('dialog')).toContainText('no longer available')
     await title.click()
     await page.getByRole('option', { name: 'Dr' }).click()
     await page.getByRole('dialog').getByRole('button', { name: 'Done' }).click()
@@ -254,6 +258,28 @@ test.describe('combobox chip control', () => {
     const rooms = values.rooms as Record<string, unknown>[]
     const travellers = rooms[0]?.travellers as Record<string, unknown>[]
     expect(travellers[0]).toMatchObject({ title: 'dr', ageBand: 'adult' })
+  })
+
+  test('inline nested combobox stays row-scoped without any dialog', async ({ page }) => {
+    await page.getByRole('button', { name: 'Add Bunk room' }).click()
+    await page.getByRole('button', { name: 'Add Bunk room' }).click()
+
+    const bunk1 = page.locator('[data-field="bunkRooms.0.sleepers"]')
+    const bunk2 = page.locator('[data-field="bunkRooms.1.sleepers"]')
+
+    await addViaKeyboard(page, bunk1.getByPlaceholder('Type to add sleepers'), 'adu', 'Adult')
+    await addViaKeyboard(page, bunk2.getByPlaceholder('Type to add sleepers'), 'chi', 'Child')
+
+    await expect(bunk1.locator('[data-slot="combobox-chip"]')).toHaveCount(1)
+    await expect(bunk2.locator('[data-slot="combobox-chip"]')).toHaveCount(1)
+    await expect(bunk1.locator('[data-slot="combobox-chip"]')).toContainText('Adult')
+    await expect(bunk2.locator('[data-slot="combobox-chip"]')).toContainText('Child')
+
+    const input1 = bunk1.getByPlaceholder('Type to add sleepers')
+    await input1.click()
+    await input1.press('Backspace')
+    await expect(bunk1.locator('[data-slot="combobox-chip"]')).toHaveCount(0)
+    await expect(bunk2.locator('[data-slot="combobox-chip"]')).toHaveCount(1)
   })
 
   test('an unopened incomplete row surfaces a visible error on submit', async ({ page }) => {
