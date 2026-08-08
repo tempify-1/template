@@ -27,7 +27,19 @@ function leafFor(field: FieldConfig): z.ZodType {
   assertOptionSourceExclusivity(field)
   switch (field.type) {
     case 'checkbox':
+    case 'switch':
       return z.boolean().optional()
+
+    case 'price':
+      return z.number().int().optional()
+
+    case 'multiSelect': {
+      let schema = z.array(z.string())
+      if (field.max !== undefined) {
+        schema = schema.max(field.max, { message: maxMessageFor(field) })
+      }
+      return schema.optional()
+    }
 
     case 'number': {
       const numSchema = z.number()
@@ -154,7 +166,8 @@ function requiredMessageFor(field: FieldConfig): string {
 }
 
 function isBlank(field: FieldConfig, value: unknown): boolean {
-  if (field.type === 'checkbox') return value !== true
+  if (field.type === 'checkbox' || field.type === 'switch') return value !== true
+  if (field.type === 'multiSelect') return !Array.isArray(value) || value.length === 0
   if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
     return String((value as { value?: unknown }).value ?? '').trim() === ''
   }

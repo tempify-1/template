@@ -5,6 +5,7 @@ import { ArrowDownIcon, ArrowUpIcon, GripVerticalIcon, XIcon } from 'lucide-reac
 import { useEffect, useId, useMemo, useState } from 'react'
 import {
   Controller,
+  FormProvider,
   useFieldArray,
   useForm,
   useWatch,
@@ -1202,6 +1203,33 @@ function FieldList({
           )
         }
 
+        if (config.type === 'hidden') return null
+
+        if (config.type === 'paragraph') {
+          return (
+            <p key={config.name} data-field={config.name} className="text-sm text-muted-foreground">
+              {config.description ?? config.label}
+            </p>
+          )
+        }
+
+        if (config.type === 'alert') {
+          return (
+            <div
+              key={config.name}
+              role="status"
+              data-field={config.name}
+              data-severity={config.severity ?? 'neutral'}
+              className={`rounded-md border border-border p-3 text-sm ${
+                config.severity === 'error' ? 'text-destructive' : 'text-foreground'
+              } bg-muted`}
+            >
+              {config.label ? <strong className="mr-1">{config.label}</strong> : null}
+              {config.description}
+            </div>
+          )
+        }
+
         const Control = fieldRegistry[config.type as keyof typeof fieldRegistry]
         if (!Control) return null
 
@@ -1237,13 +1265,14 @@ function FieldList({
                   invalid={Boolean(message)}
                   describedBy={describedBy}
                   disabled={disabled || undefined}
+                  fieldPath={fullName}
                 />
               </FieldControlBoundary>
             )}
           />
         )
 
-        if (config.type === 'checkbox') {
+        if (config.type === 'checkbox' || config.type === 'switch') {
           return (
             <Field key={fullName} orientation="horizontal" data-field={fullName}>
               {control}
@@ -1316,6 +1345,7 @@ export function ConfigForm({
   }
 
   return (
+    <FormProvider {...form}>
     <form onSubmit={form.handleSubmit(handle)} noValidate>
       {steps.length > 0 ? (
         <Wizard
@@ -1356,5 +1386,6 @@ export function ConfigForm({
         </FieldGroup>
       )}
     </form>
+    </FormProvider>
   )
 }

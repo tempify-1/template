@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 
 async function submittedJson(page: Page): Promise<Record<string, unknown>> {
-  const pre = page.locator('pre')
+  const pre = page.locator('[data-slot="submitted-values"]')
   await expect(pre).not.toContainText('Nothing submitted yet', { timeout: 10_000 })
   return JSON.parse((await pre.textContent()) ?? '{}')
 }
@@ -56,7 +56,7 @@ test.describe('combobox chip control', () => {
     const chips = page.locator('[data-field="rooms"] [data-slot="combobox-chip"]')
     await expect(chips).toHaveCount(3)
     await expect(chips.filter({ hasText: 'Double' })).toHaveCount(2)
-    await expect(page.locator('pre')).toContainText('Nothing submitted yet')
+    await expect(page.locator('[data-slot="submitted-values"]')).toContainText('Nothing submitted yet')
   })
 
   test('Enter never submits, Backspace on empty input removes the last chip', async ({ page }) => {
@@ -64,7 +64,7 @@ test.describe('combobox chip control', () => {
     await addRoom(page, 'sui', 'Suite')
     const input = roomsInput(page)
     await input.press('Enter')
-    await expect(page.locator('pre')).toContainText('Nothing submitted yet')
+    await expect(page.locator('[data-slot="submitted-values"]')).toContainText('Nothing submitted yet')
 
     await expect(page.locator('[data-field="rooms"] [data-slot="combobox-chip"]')).toHaveCount(1)
     await input.press('Backspace')
@@ -87,7 +87,7 @@ test.describe('combobox chip control', () => {
     await expect(page.getByRole('option', { name: 'Ljubljana' })).toBeVisible()
     await input.press('Enter')
     await expect(input).toHaveValue('Ljubljana')
-    await expect(page.locator('pre')).toContainText('Nothing submitted yet')
+    await expect(page.locator('[data-slot="submitted-values"]')).toContainText('Nothing submitted yet')
 
     await field.locator('[data-slot="combobox-clear"]').click()
     await expect(input).toHaveValue('')
@@ -107,6 +107,7 @@ test.describe('combobox chip control', () => {
     await page.getByRole('option', { name: 'Adult', exact: true }).click()
     await modal.getByRole('button', { name: 'Done' }).click()
 
+    await nextStep(page)
     await page.getByRole('button', { name: 'Submit enquiry' }).click()
     const values = await submittedJson(page)
     expect(values.destination).toBe('lis')
@@ -138,6 +139,7 @@ test.describe('combobox chip control', () => {
     await page.getByRole('option', { name: 'Adult', exact: true }).click()
     await modal.getByRole('button', { name: 'Done' }).click()
 
+    await nextStep(page)
     await page.getByRole('button', { name: 'Submit enquiry' }).click()
     const values = await submittedJson(page)
     expect(values.destinationAsync).toEqual({ value: 'mad', label: 'Madrid' })
@@ -210,6 +212,7 @@ test.describe('combobox chip control', () => {
       await modal.getByRole('button', { name: 'Done' }).click()
     }
 
+    await nextStep(page)
     await page.getByRole('button', { name: 'Submit enquiry' }).click()
     const values = await submittedJson(page)
     const rooms = values.rooms as Record<string, unknown>[]
@@ -259,6 +262,7 @@ test.describe('combobox chip control', () => {
     await page.getByRole('option', { name: 'Adult', exact: true }).click()
     await expect(title).toContainText('Choose one')
     await modal.getByRole('button', { name: 'Done' }).click()
+    await nextStep(page)
     await page.getByRole('button', { name: 'Submit enquiry' }).click()
 
     const cleared = await submittedJson(page)
@@ -266,10 +270,12 @@ test.describe('combobox chip control', () => {
       ?.travellers as Record<string, unknown>[]
     expect(clearedTravellers[0]?.title ?? '').toBe('')
 
+    await page.getByRole('tab', { name: /Rooms & party/ }).click()
     await page.getByRole('button', { name: 'Edit Double' }).click()
     await title.click()
     await page.getByRole('option', { name: 'Dr' }).click()
     await page.getByRole('dialog').getByRole('button', { name: 'Done' }).click()
+    await nextStep(page)
     await page.getByRole('button', { name: 'Submit enquiry' }).click()
 
     const values = await submittedJson(page)
@@ -301,13 +307,14 @@ test.describe('combobox chip control', () => {
     await expect(bunk2.locator('[data-slot="combobox-chip"]')).toHaveCount(1)
   })
 
-  test('an unopened incomplete row surfaces a visible error on submit', async ({ page }) => {
+  test('an unopened incomplete row surfaces a visible error on Next', async ({ page }) => {
     await gotoRooms(page)
     await addRoom(page, 'dou', 'Double')
-    await page.getByRole('button', { name: 'Submit enquiry' }).click()
+    await nextStep(page)
     const field = page.locator('[data-field="rooms"]')
     await expect(field).toContainText('Complete room 1')
-    await expect(page.locator('pre')).toContainText('Nothing submitted yet')
+    await expect(page.locator('[data-slot="step-error-summary"]')).toBeVisible()
+    await expect(page.locator('[data-slot="submitted-values"]')).toContainText('Nothing submitted yet')
   })
 
   test('Enter activates the chip edit button for keyboard users', async ({ page }) => {
@@ -345,6 +352,7 @@ test.describe('combobox chip control', () => {
     await modal.getByRole('button', { name: 'Done' }).click()
     await expect(modal).not.toBeVisible()
 
+    await nextStep(page)
     await page.getByRole('button', { name: 'Submit enquiry' }).click()
     const values = await submittedJson(page)
 
@@ -409,6 +417,7 @@ test.describe('combobox chip control', () => {
     await page.getByRole('option', { name: 'Adult', exact: true }).click()
     await roomModal.getByRole('button', { name: 'Done' }).click()
 
+    await nextStep(page)
     await page.getByRole('button', { name: 'Submit enquiry' }).click()
     const values = await submittedJson(page)
 
@@ -457,9 +466,81 @@ test.describe('accordion container', () => {
       .click()
     await page.getByRole('option', { name: 'Adult', exact: true }).click()
     await modal.getByRole('button', { name: 'Done' }).click()
+    await nextStep(page)
     await page.getByRole('button', { name: 'Submit enquiry' }).click()
     const values = await submittedJson(page)
     expect(values.extras).toEqual([{ value: 'cot', label: 'Cot' }])
+  })
+})
+
+test.describe('trivial nine (#56-#64)', () => {
+  test('the details step submits every trivial type with its contracted shape', async ({
+    page,
+  }) => {
+    await page.goto('/demo/form')
+    await pickDestination(page, 'mad', 'Madrid')
+    await nextStep(page)
+    await addRoom(page, 'dou', 'Double')
+    await page.getByRole('button', { name: 'Edit Double' }).click()
+    const modal = page.getByRole('dialog')
+    await modal.locator('[data-field^="rooms.0.board"] [data-slot="select-trigger"]').click()
+    await page.getByRole('option', { name: 'Room only' }).click()
+    await modal.getByRole('button', { name: 'Add Traveller' }).click()
+    await modal.locator('[data-field="rooms.0.travellers.0.name"] input').fill('Solo')
+    await modal
+      .locator('[data-field^="rooms.0.travellers.0.ageBand"] [data-slot="select-trigger"]')
+      .click()
+    await page.getByRole('option', { name: 'Adult', exact: true }).click()
+    await modal.getByRole('button', { name: 'Done' }).click()
+    await nextStep(page)
+
+    await expect(page.locator('[data-field="intro"]')).toContainText('Almost done')
+    await expect(page.locator('[data-field="holdWarning"]')).toContainText('20 minutes')
+    await expect(page.locator('[data-field="campaign"]')).toHaveCount(0)
+
+    await page.locator('[data-field="tripName"] input').fill('Summer Escape 2026')
+    const slugInput = page.locator('[data-field="tripSlug"] input')
+    await expect(slugInput).toHaveValue('summer-escape-2026')
+    await slugInput.fill('my custom trip')
+    await expect(slugInput).toHaveValue('my-custom-trip')
+    await page.locator('[data-field="tripName"] input').fill('Changed Again')
+    await expect(slugInput).toHaveValue('my-custom-trip')
+    await page
+      .locator('[data-field="tripSlug"]')
+      .getByRole('button', { name: 'Regenerate from source' })
+      .click()
+    await expect(slugInput).toHaveValue('changed-again')
+
+    const password = page.locator('[data-field="accountPassword"] input')
+    await expect(password).toHaveAttribute('type', 'password')
+    await expect(password).toHaveAttribute('autocomplete', 'new-password')
+    await password.fill('hunter22222')
+
+    await page.locator('[data-field="marketingOptIn"] [role="switch"]').click()
+    await page.locator('[data-field="brandColor"] input').fill('#ff6600')
+    await page.locator('[data-field="budget"] input').fill('149.50')
+
+    const amenities = page.locator('[data-field="amenities"]')
+    const amenityInput = amenities.getByPlaceholder('Type to add…')
+    await amenityInput.click()
+    await amenityInput.pressSequentially('poo', { delay: 30 })
+    await expect(page.getByRole('option', { name: 'Pool' })).toBeVisible()
+    await amenityInput.press('Enter')
+    await amenityInput.pressSequentially('gym', { delay: 30 })
+    await expect(page.getByRole('option', { name: 'Gym' })).toBeVisible()
+    await amenityInput.press('Enter')
+    await expect(amenities.locator('[data-slot="combobox-chip"]')).toHaveCount(2)
+
+    await page.getByRole('button', { name: 'Submit enquiry' }).click()
+    const values = await submittedJson(page)
+    expect(values.tripName).toBe('Changed Again')
+    expect(values.tripSlug).toBe('changed-again')
+    expect(values.accountPassword).toBe('•••')
+    expect(values.marketingOptIn).toBe(true)
+    expect(values.brandColor).toBe('#ff6600')
+    expect(values.budget).toBe(14950)
+    expect(values.amenities).toEqual(['pool', 'gym'])
+    expect(values.campaign).toBe('summer-24')
   })
 })
 
@@ -501,15 +582,12 @@ test.describe('wizard', () => {
   })
 
   test('submit failure sweeps to the first invalid step', async ({ page }) => {
-    await gotoRooms(page)
+    await page.goto('/demo/form?step=2')
     await page.getByRole('button', { name: 'Submit enquiry' }).click()
     await expect(page.locator('[data-slot="step-error-summary"]')).toContainText(
-      'Add at least one room',
+      'Destination is required',
     )
-    await expect(page.getByRole('tab', { name: /Rooms & party/ })).toHaveAttribute(
-      'aria-selected',
-      'true',
-    )
+    await expect(page.getByRole('tab', { name: /Trip/ })).toHaveAttribute('aria-selected', 'true')
   })
 
   test('resumption opens at the requested step with earlier steps completed', async ({ page }) => {

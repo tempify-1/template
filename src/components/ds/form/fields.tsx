@@ -14,6 +14,19 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { useSectionTheme } from '@/components/ds/section/section-theme-context'
+import { useWatch } from 'react-hook-form'
+import { LockIcon, RefreshCwIcon } from 'lucide-react'
+
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from '@/components/ui/input-group'
+import { Switch } from '@/components/ui/switch'
+import { formatMinorUnits } from '@/lib/forms/price'
+import { parseToMinorUnits } from '@/lib/forms/price'
+import { slugify } from '@/lib/forms/slug'
 import type { FieldConfig, FormValues } from '@/lib/forms/types'
 
 export interface FieldControlProps {
@@ -23,11 +36,13 @@ export interface FieldControlProps {
   invalid: boolean
   describedBy?: string
   disabled?: boolean
+  fieldPath: string
 }
 
 const HTML_INPUT_TYPES: Partial<Record<FieldConfig['type'], string>> = {
   email: 'email',
   tel: 'tel',
+  password: 'password',
 }
 
 export function TextControl({ config, field, controlId, invalid, describedBy, disabled }: FieldControlProps) {
@@ -212,4 +227,125 @@ export class FieldControlBoundary extends React.Component<
     }
     return this.props.children
   }
+}
+
+export function SwitchControl({ config, field, controlId, invalid, describedBy, disabled }: FieldControlProps) {
+  const { value, onChange, ...control } = field
+  return (
+    <Switch
+      {...control}
+      id={controlId}
+      checked={Boolean(value)}
+      onCheckedChange={(next: boolean) => onChange(next)}
+      disabled={disabled}
+      aria-invalid={invalid || undefined}
+      aria-describedby={describedBy || undefined}
+      aria-label={config.ariaLabel}
+      tabIndex={config.tabIndex}
+    />
+  )
+}
+
+export function ColorControl({ config, field, controlId, invalid, describedBy, disabled }: FieldControlProps) {
+  const { value, ...control } = field
+  const current = String(value ?? '')
+  return (
+    <div className="flex items-center gap-2">
+      <Input
+        {...control}
+        id={controlId}
+        type="color"
+        value={current}
+        disabled={disabled}
+        className="h-8 w-14 p-1"
+        aria-invalid={invalid || undefined}
+        aria-describedby={describedBy || undefined}
+        aria-label={config.ariaLabel}
+      />
+      <span className="text-sm text-muted-foreground" data-slot="color-value">
+        {String(value ?? '')}
+      </span>
+    </div>
+  )
+}
+
+export function SlugControl({ config, field, controlId, invalid, describedBy, disabled, fieldPath }: FieldControlProps) {
+  const { value, onChange, ...control } = field
+  const [locked, setLocked] = React.useState(false)
+  const sourcePath = config.slugFrom
+    ? fieldPath.split('.').slice(0, -1).concat(config.slugFrom).join('.')
+    : undefined
+  const source = useWatch({ name: sourcePath ?? fieldPath })
+  const derived = slugify(String(source ?? ''))
+
+  React.useEffect(() => {
+    if (!locked && sourcePath && String(value ?? '') !== derived) {
+      onChange(derived)
+    }
+  }, [derived, locked, sourcePath, value, onChange])
+
+  return (
+    <InputGroup>
+      <InputGroupInput
+        {...control}
+        id={controlId}
+        value={String(value ?? '')}
+        onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+          setLocked(true)
+          onChange(slugify(event.target.value) || event.target.value.toLowerCase())
+        }}
+        disabled={disabled}
+        aria-invalid={invalid || undefined}
+        aria-describedby={describedBy || undefined}
+      />
+      <InputGroupAddon align="inline-end">
+        {locked ? <LockIcon className="size-3.5 text-muted-foreground" aria-hidden /> : null}
+        {sourcePath ? (
+          <InputGroupButton
+            size="icon-xs"
+            variant="ghost"
+            aria-label="Regenerate from source"
+            onClick={() => {
+              setLocked(false)
+              onChange(derived)
+            }}
+          >
+            <RefreshCwIcon />
+          </InputGroupButton>
+        ) : null}
+      </InputGroupAddon>
+    </InputGroup>
+  )
+}
+
+export function PriceControl({ config, field, controlId, invalid, describedBy, disabled }: FieldControlProps) {
+  const { value, onChange, onBlur } = field
+  const [text, setText] = React.useState(() =>
+    typeof value === 'number' ? formatMinorUnits(value) : '',
+  )
+  return (
+    <InputGroup>
+      <InputGroupAddon>
+        <span className="text-sm text-muted-foreground">{config.currency ?? '$'}</span>
+      </InputGroupAddon>
+      <InputGroupInput
+        id={controlId}
+        value={text}
+        inputMode="decimal"
+        placeholder={config.placeholder ?? '0.00'}
+        disabled={disabled}
+        aria-invalid={invalid || undefined}
+        aria-describedby={describedBy || undefined}
+        onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+          const next = event.target.value
+          setText(next)
+          onChange(next.trim() === '' ? undefined : parseToMinorUnits(next))
+        }}
+        onBlur={() => {
+          if (typeof value === 'number') setText(formatMinorUnits(value))
+          onBlur()
+        }}
+      />
+    </InputGroup>
+  )
 }

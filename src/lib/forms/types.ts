@@ -9,7 +9,16 @@ export const FIELD_TYPES = [
   'searchableSelect',
   'combobox',
   'checkbox',
+  'switch',
   'number',
+  'password',
+  'hidden',
+  'color',
+  'slug',
+  'price',
+  'multiSelect',
+  'paragraph',
+  'alert',
   'fieldArray',
   'cardArray',
   'fieldset',
@@ -75,6 +84,9 @@ export interface FieldConfig {
   ariaDescription?: string
   tabIndex?: number
   fields?: FieldConfig[]
+  slugFrom?: string
+  currency?: string
+  severity?: 'neutral' | 'error' | 'ok' | 'warning'
   singularLabel?: string
   reselectOptions?: boolean
   editableOptions?: boolean
@@ -110,8 +122,12 @@ export function isContainer(field: FieldConfig): boolean {
   return (CONTAINER_TYPES as readonly string[]).includes(field.type)
 }
 
+export const STATIC_TYPES = ['paragraph', 'alert'] as const
+
 export function isInputField(field: FieldConfig): boolean {
-  return field.type !== 'submit'
+  return (
+    field.type !== 'submit' && !(STATIC_TYPES as readonly string[]).includes(field.type)
+  )
 }
 
 export function inputFields(fields: FieldConfig[]): FieldConfig[] {
@@ -128,7 +144,7 @@ export function inputFields(fields: FieldConfig[]): FieldConfig[] {
 }
 
 export function renderFields(fields: FieldConfig[]): FieldConfig[] {
-  return fields.filter(isInputField)
+  return fields.filter((field) => field.type !== 'submit')
 }
 
 export function defaultValueFor(field: FieldConfig): FormValue {
@@ -138,5 +154,8 @@ export function defaultValueFor(field: FieldConfig): FormValue {
   if (field.type === 'cardArray') return []
   if (field.type === 'number') return undefined
   if (field.type === 'searchableSelect' && field.optionSource) return undefined
+  if (field.type === 'multiSelect') return []
+  if (field.type === 'switch') return false
+  if (field.type === 'price') return undefined
   return ''
 }
