@@ -40,6 +40,35 @@ const DESTINATIONS = [
   { label: 'Marrakesh', value: 'rak' },
 ]
 
+const delay = (ms: number, signal: AbortSignal) =>
+  new Promise<void>((resolve, reject) => {
+    const timer = setTimeout(resolve, ms)
+    signal.addEventListener('abort', () => {
+      clearTimeout(timer)
+      reject(new DOMException('aborted', 'AbortError'))
+    })
+  })
+
+const destinationSource = async (query: string, signal: AbortSignal) => {
+  await delay(250, signal)
+  if (query.toLowerCase() === 'error') throw new Error('stub failure')
+  return DESTINATIONS.filter((option) =>
+    option.label.toLowerCase().includes(query.toLowerCase()),
+  )
+}
+
+const EXTRAS = [
+  { label: 'Airport transfer', value: 'transfer' },
+  { label: 'Cot', value: 'cot' },
+  { label: 'Late checkout', value: 'late-checkout' },
+  { label: 'Sea view upgrade', value: 'sea-view' },
+]
+
+const extrasSource = async (query: string, signal: AbortSignal) => {
+  await delay(250, signal)
+  return EXTRAS.filter((option) => option.label.toLowerCase().includes(query.toLowerCase()))
+}
+
 export const allFieldsForm: FieldConfig[] = [
   {
     name: 'destination',
@@ -48,6 +77,23 @@ export const allFieldsForm: FieldConfig[] = [
     placeholder: 'Search destinations…',
     required: true,
     options: DESTINATIONS,
+  },
+  {
+    name: 'destinationAsync',
+    type: 'searchableSelect',
+    label: 'Destination (live search)',
+    placeholder: 'Type to search…',
+    optionSource: destinationSource,
+    description: 'Options load from a stub source with an artificial delay.',
+  },
+  {
+    name: 'extras',
+    type: 'combobox',
+    label: 'Extras',
+    singularLabel: 'extra',
+    editableOptions: false,
+    optionSource: extrasSource,
+    placeholder: 'Type to add extras',
   },
   {
     name: 'rooms',

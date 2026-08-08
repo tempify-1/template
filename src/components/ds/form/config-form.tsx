@@ -42,6 +42,7 @@ import {
   ComboboxEmpty,
   ComboboxItem,
   ComboboxList,
+  ComboboxStatus,
   useComboboxAnchor,
 } from '@/components/ui/combobox'
 import { useSectionTheme } from '@/components/ds/section/section-theme-context'
@@ -61,6 +62,7 @@ import {
 import { fieldRegistry } from './field-registry'
 import { FieldControlBoundary } from './fields'
 import { RowEditorDialog } from './row-editor-dialog'
+import { useOptionSource } from './use-option-source'
 
 export interface ConfigFormProps {
   fields: FieldConfig[]
@@ -382,10 +384,17 @@ function ComboboxArrayControl({
   const currentRows = (useWatch({ control: form.control, name: fullName }) ?? []) as FormValues[]
 
   const label = config.label ?? config.name
+  const selectedAsOptions: Option[] = currentRows
+    .map((row) => ({
+      value: rowDisplayValue(row, 'value'),
+      label: rowDisplayValue(row, 'label'),
+    }))
+    .filter((option) => option.value !== '')
   const singular = config.singularLabel
   const addPlaceholder =
     config.placeholder ?? `Type to add ${singular ? `${singular}s` : label.toLowerCase()}`
-  const options = config.options ?? []
+  const { items, status, isAsync } = useOptionSource(config, inputValue, selectedAsOptions)
+  const options = items
   const reselect = config.reselectOptions === true
   const addable = config.cardDisplay?.addable !== false && !disabled
   const removable = config.cardDisplay?.removable !== false && !disabled
@@ -506,6 +515,7 @@ function ComboboxArrayControl({
         onValueChange={handleValueChange}
         inputValue={inputValue}
         onInputValueChange={setInputValue}
+        filter={isAsync ? null : undefined}
         isItemEqualToValue={(a: Option, b: Option) => a.value === b.value}
       >
         <ComboboxChips ref={anchorRef} aria-label={config.ariaLabel ?? `${label} items`}>
@@ -589,7 +599,11 @@ function ComboboxArrayControl({
         </ComboboxChips>
         {addable ? (
           <ComboboxContent anchor={anchorRef} data-theme={theme ?? undefined}>
-            <ComboboxEmpty>No results.</ComboboxEmpty>
+            {status === 'loading' ? <ComboboxStatus>Loading…</ComboboxStatus> : null}
+            {status === 'error' ? (
+              <ComboboxStatus>Couldn&apos;t load results</ComboboxStatus>
+            ) : null}
+            {status === 'idle' ? <ComboboxEmpty>No results.</ComboboxEmpty> : null}
             <ComboboxList>
               {(option: Option) => (
                 <ComboboxItem key={option.value} value={option} disabled={itemDisabled(option)}>

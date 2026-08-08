@@ -50,6 +50,7 @@ export interface FieldConfig {
   required?: boolean
   requiredMessage?: string
   options?: Option[]
+  optionSource?: (query: string, signal: AbortSignal) => Promise<Option[]>
   min?: number
   max?: number
   minMessage?: string
@@ -106,5 +107,6 @@ export function defaultValueFor(field: FieldConfig): FormValue {
   if (field.type === 'fieldArray') return []
   if (field.type === 'combobox') return []
   if (field.type === 'number') return undefined
+  if (field.type === 'searchableSelect' && field.optionSource) return undefined
   return ''
 }

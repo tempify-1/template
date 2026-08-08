@@ -98,6 +98,63 @@ test.describe('combobox chip control', () => {
     expect(values.destination).toBe('lis')
   })
 
+  test('async searchableSelect loads, announces, and submits {value,label}', async ({ page }) => {
+    const field = page.locator('[data-field="destinationAsync"]')
+    const input = field.getByPlaceholder('Type to search…')
+    await input.click()
+    await input.pressSequentially('ma', { delay: 40 })
+    await expect(page.locator('[data-slot="combobox-status"]')).toContainText('Loading')
+    await expect(page.getByRole('option', { name: 'Madrid' })).toBeVisible()
+    await input.press('ArrowDown')
+    await input.press('Enter')
+    await expect(input).toHaveValue('Madrid')
+
+    await pickDestination(page, 'lis', 'Lisbon')
+    await addRoom(page, 'dou', 'Double')
+    await page.getByRole('button', { name: 'Edit Double' }).click()
+    const modal = page.getByRole('dialog')
+    await modal.locator('[data-field^="rooms.0.board"] [data-slot="select-trigger"]').click()
+    await page.getByRole('option', { name: 'Room only' }).click()
+    await modal.getByRole('button', { name: 'Add Traveller' }).click()
+    await modal.locator('[data-field="rooms.0.travellers.0.name"] input').fill('Solo')
+    await modal
+      .locator('[data-field^="rooms.0.travellers.0.ageBand"] [data-slot="select-trigger"]')
+      .click()
+    await page.getByRole('option', { name: 'Adult', exact: true }).click()
+    await modal.getByRole('button', { name: 'Done' }).click()
+
+    await page.getByRole('button', { name: 'Submit enquiry' }).click()
+    const values = await submittedJson(page)
+    expect(values.destinationAsync).toEqual({ value: 'mad', label: 'Madrid' })
+  })
+
+  test('async error state renders a failure status, not an empty list', async ({ page }) => {
+    const input = page
+      .locator('[data-field="destinationAsync"]')
+      .getByPlaceholder('Type to search…')
+    await input.click()
+    await input.pressSequentially('error', { delay: 30 })
+    await expect(page.locator('[data-slot="combobox-status"]')).toContainText(
+      "Couldn't load results",
+    )
+  })
+
+  test('a selected async chip survives a query change', async ({ page }) => {
+    const field = page.locator('[data-field="extras"]')
+    const input = field.getByPlaceholder('Type to add extras')
+    await input.click()
+    await input.pressSequentially('cot', { delay: 40 })
+    await expect(page.getByRole('option', { name: 'Cot' })).toBeVisible()
+    await input.press('ArrowDown')
+    await input.press('Enter')
+    await expect(field.locator('[data-slot="combobox-chip"]')).toHaveCount(1)
+
+    await input.pressSequentially('late', { delay: 40 })
+    await expect(page.getByRole('option', { name: 'Late checkout' })).toBeVisible()
+    await expect(field.locator('[data-slot="combobox-chip"]')).toHaveCount(1)
+    await expect(field.locator('[data-slot="combobox-chip"]')).toContainText('Cot')
+  })
+
   test('an unopened incomplete row surfaces a visible error on submit', async ({ page }) => {
     await addRoom(page, 'dou', 'Double')
     await page.getByRole('button', { name: 'Submit enquiry' }).click()

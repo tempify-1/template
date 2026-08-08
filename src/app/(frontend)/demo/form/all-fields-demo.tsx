@@ -3,15 +3,17 @@
 import { useState } from 'react'
 
 import { ConfigForm } from '@/components/ds/form/config-form'
-import type { FieldConfig, FormValues } from '@/lib/forms/types'
+import type { FormValues } from '@/lib/forms/types'
 
-export function AllFieldsDemo({ fields }: { fields: FieldConfig[] }) {
+import { allFieldsForm } from './fields'
+
+export function AllFieldsDemo() {
   const [submitted, setSubmitted] = useState<FormValues | null>(null)
 
   return (
     <div className="grid gap-10 lg:grid-cols-2 lg:items-start">
       <ConfigForm
-        fields={fields}
+        fields={allFieldsForm}
         submitLabel="Submit"
         onSubmit={(values) => {
           console.log('Form submitted with values:', values)

@@ -38,6 +38,13 @@ function leafFor(field: FieldConfig): z.ZodType {
       return schema.optional()
     }
 
+    case 'searchableSelect': {
+      if (field.optionSource) {
+        return z.object({ value: z.string(), label: z.string() }).optional()
+      }
+      return z.string().optional()
+    }
+
     case 'combobox': {
       const tree: ShapeTree = {}
       for (const rowField of inputFields(field.fields ?? [])) {
@@ -132,6 +139,9 @@ function requiredMessageFor(field: FieldConfig): string {
 
 function isBlank(field: FieldConfig, value: unknown): boolean {
   if (field.type === 'checkbox') return value !== true
+  if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+    return String((value as { value?: unknown }).value ?? '').trim() === ''
+  }
   return String(value ?? '').trim() === ''
 }
 
