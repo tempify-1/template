@@ -15,12 +15,19 @@ export function submittedValues(fields: FieldConfig[], values: FormValues): Form
 
     const value = getAtPath(values, field.name)
 
-    if (field.type === 'fieldArray') {
+    if (field.type === 'fieldArray' || field.type === 'combobox') {
       const rows = Array.isArray(value) ? value : []
       setAtPath(
         result,
         field.name,
-        rows.map((row) => (isRow(row) ? submittedValues(field.fields ?? [], row) : {})),
+        rows.map((row) => {
+          if (!isRow(row)) return {}
+          const projected = submittedValues(field.fields ?? [], row)
+          if (field.type === 'combobox') {
+            return { value: row.value, label: row.label, ...projected }
+          }
+          return projected
+        }),
       )
       continue
     }
@@ -56,7 +63,7 @@ export function hiddenValues(
       continue
     }
 
-    if (field.type === 'fieldArray') {
+    if (field.type === 'fieldArray' || field.type === 'combobox') {
       const rows = getAtPath(values, field.name)
       if (!Array.isArray(rows)) continue
       rows.forEach((row, index) => {

@@ -1,8 +1,8 @@
 import { getAtPath } from './paths'
 import { inputFields, type Condition, type FieldConfig, type FormValues } from './types'
 
-export function assertConditionTargetsExist(fields: FieldConfig[]): void {
-  const known = new Set(inputFields(fields).map((field) => field.name))
+export function assertConditionTargetsExist(fields: FieldConfig[], extraKnown: string[] = []): void {
+  const known = new Set([...inputFields(fields).map((field) => field.name), ...extraKnown])
 
   for (const field of fields) {
     for (const [kind, condition] of [
@@ -19,6 +19,10 @@ export function assertConditionTargetsExist(fields: FieldConfig[]): void {
 
     if (field.type === 'fieldArray' && field.fields) {
       assertConditionTargetsExist(field.fields)
+    }
+
+    if (field.type === 'combobox' && field.fields) {
+      assertConditionTargetsExist(field.fields, ['value', 'label'])
     }
   }
 }

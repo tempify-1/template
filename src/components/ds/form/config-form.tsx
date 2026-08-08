@@ -34,14 +34,32 @@ import {
   FieldLegend,
   FieldSet,
 } from '@/components/ui/field'
-import { isVisible, isEnabled } from '@/lib/forms/conditions'
+import {
+  Combobox,
+  ComboboxChips,
+  ComboboxChipsInput,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxItem,
+  ComboboxList,
+  useComboboxAnchor,
+} from '@/components/ui/combobox'
+import { useSectionTheme } from '@/components/ds/section/section-theme-context'
+import { isVisible, isEnabled, isRequired } from '@/lib/forms/conditions'
 import { getAtPath } from '@/lib/forms/paths'
 import { emptyValues } from '@/lib/forms/resolvers'
 import { buildSchema } from '@/lib/forms/schema-builder'
 import { hiddenValues, submittedValues } from '@/lib/forms/submitted-values'
-import { inputFields, type FieldConfig, type FormValues } from '@/lib/forms/types'
+import {
+  inputFields,
+  type FieldConfig,
+  type FormValues,
+  type Option,
+  type PickerOption,
+} from '@/lib/forms/types'
 
 import { fieldRegistry } from './field-registry'
+import { RowEditorDialog } from './row-editor-dialog'
 
 export interface ConfigFormProps {
   fields: FieldConfig[]
@@ -296,6 +314,303 @@ function FieldArrayControl({
   )
 }
 
+function isBlankRowValue(field: FieldConfig, value: unknown): boolean {
+  if (field.type === 'checkbox') return value !== true
+  if (field.type === 'number') return value === undefined || value === null
+  return String(value ?? '').trim() === ''
+}
+
+function incompleteRowFields(fields: FieldConfig[], row: FormValues): string[] {
+  return inputFields(fields)
+    .filter(
+      (field) =>
+        isVisible(field, row) &&
+        isEnabled(field, row) &&
+        isRequired(field, row) &&
+        isBlankRowValue(field, getAtPath(row, field.name)),
+    )
+    .map((field) => field.label ?? field.name)
+}
+
+function rowDisplayValue(row: FormValues, key: string): string {
+  const value = getAtPath(row, key)
+  if (value === undefined || value === null) return ''
+  return String(value)
+}
+
+function ComboboxArrayControl({
+  config,
+  form,
+  seeded,
+  basePath,
+  uid,
+}: {
+  config: FieldConfig
+  form: ConfigFormApi
+  seeded: FormValues
+  basePath: string
+  uid: string
+}) {
+  const fullName = joinPath(basePath, config.name)
+  const theme = useSectionTheme()
+  const anchorRef = useComboboxAnchor()
+  const [inputValue, setInputValue] = useState('')
+  const [activeIndex, setActiveIndex] = useState<number | null>(null)
+  const {
+    fields: rows,
+    append,
+    remove,
+    move,
+  } = useFieldArray({
+    control: form.control,
+    name: fullName,
+  }) as unknown as {
+    fields: ({ id: string } & FormValues)[]
+    append: (row: FormValues) => void
+    remove: (index: number) => void
+    move: (from: number, to: number) => void
+  }
+  const currentRows = (useWatch({ control: form.control, name: fullName }) ?? []) as FormValues[]
+
+  const label = config.label ?? config.name
+  const singular = config.singularLabel ?? label.toLowerCase()
+  const options = config.options ?? []
+  const reselect = config.reselectOptions === true
+  const addable = config.cardDisplay?.addable !== false
+  const removable = config.cardDisplay?.removable !== false
+  const editable = config.editableOptions !== false
+  const showCompletion = config.cardDisplay?.showCompletionStatus === true
+  const atMax = config.max !== undefined && rows.length >= config.max
+  const message = errorMessageAt(form.formState.errors, fullName)
+  const id = `${uid}${fullName}`
+  const errorId = message ? `${id}-error` : undefined
+
+  const rowValues = (index: number): FormValues => currentRows[index] ?? {}
+  const selectedValues = new Set(currentRows.map((row) => rowDisplayValue(row, 'value')))
+  const comboboxValue = reselect
+    ? []
+    : options.filter((option) => selectedValues.has(option.value))
+
+  const addRow = (option: Option) => {
+    if (atMax) return
+    const template = emptyValues(config.fields ?? [])
+    const seededRow = mergeDeep(template, { value: option.value, label: option.label })
+    append(mergeDeep(seededRow, (option as PickerOption).data ?? {}))
+  }
+
+  const handleValueChange = (next: Option[]) => {
+    setInputValue('')
+    if (reselect) {
+      const picked = next[next.length - 1]
+      if (picked) addRow(picked)
+      return
+    }
+    const nextValues = new Set(next.map((option) => option.value))
+    for (const option of next) {
+      if (!selectedValues.has(option.value)) addRow(option)
+    }
+    if (removable) {
+      const goneIndex = currentRows.findIndex(
+        (row) => !nextValues.has(rowDisplayValue(row, 'value')),
+      )
+      if (goneIndex >= 0) {
+        remove(goneIndex)
+        if (activeIndex === goneIndex) setActiveIndex(null)
+      }
+    }
+  }
+
+  const itemDisabled = (option: Option): boolean => {
+    if (option.disabled) return true
+    if (!atMax) return false
+    if (reselect) return true
+    return !selectedValues.has(option.value)
+  }
+
+  const modalTitle = (index: number): string => {
+    const title = config.cardDisplay?.title
+    if (title) {
+      const keys = Array.isArray(title) ? title : [title]
+      const parts = keys.map((key) => rowDisplayValue(rowValues(index), key)).filter(Boolean)
+      if (parts.length) return parts.join(' - ')
+    }
+    return `${config.singularLabel ?? label} ${index + 1}`
+  }
+
+  const modalChips = (index: number): string[] =>
+    (config.cardDisplay?.chips ?? [])
+      .map((chip) => {
+        const raw = rowDisplayValue(rowValues(index), chip.field)
+        if (!raw) return ''
+        const rowField = (config.fields ?? []).find((f) => f.name === chip.field)
+        const optionLabel = rowField?.options?.find((o) => o.value === raw)?.label
+        return optionLabel ?? raw
+      })
+      .filter(Boolean)
+
+  const modalDescriptions = (index: number): string[] =>
+    (config.cardDisplay?.description ?? [])
+      .map((entry) =>
+        typeof entry === 'string'
+          ? entry
+          : entry.field
+            ? rowDisplayValue(rowValues(index), entry.field)
+            : (entry.text ?? ''),
+      )
+      .filter(Boolean)
+
+  return (
+    <Field data-field={fullName} onKeyDown={(event) => {
+      if (event.key === 'Enter') event.preventDefault()
+    }}>
+      <FieldLabel htmlFor={id}>{label}</FieldLabel>
+      {config.description ? <FieldDescription>{config.description}</FieldDescription> : null}
+
+      <Combobox
+        multiple
+        autoHighlight
+        items={options}
+        value={comboboxValue}
+        onValueChange={handleValueChange}
+        inputValue={inputValue}
+        onInputValueChange={setInputValue}
+        isItemEqualToValue={(a: Option, b: Option) => a.value === b.value}
+      >
+        <ComboboxChips ref={anchorRef} aria-label={config.ariaLabel ?? `${label} items`}>
+          {rows.map((row, index) => {
+            const values = rowValues(index)
+            const chipLabel = rowDisplayValue(values, 'label') || `${singular} ${index + 1}`
+            const incomplete = showCompletion
+              ? incompleteRowFields(config.fields ?? [], values)
+              : []
+            return (
+              <span
+                key={row.id}
+                data-slot="combobox-chip"
+                data-row-index={index}
+                className="flex h-[calc(--spacing(5.25))] w-fit items-center justify-center gap-1 rounded-sm bg-muted px-1.5 text-xs font-medium whitespace-nowrap text-foreground has-data-[slot=combobox-chip-remove]:pr-0"
+              >
+                {editable ? (
+                  <button
+                    type="button"
+                    aria-haspopup="dialog"
+                    aria-label={`Edit ${chipLabel}`}
+                    className="rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                    onClick={() => setActiveIndex(index)}
+                  >
+                    {chipLabel}
+                  </button>
+                ) : (
+                  <span>{chipLabel}</span>
+                )}
+                {incomplete.length > 0 ? (
+                  <span
+                    role="status"
+                    aria-label={`${incomplete.length} fields incomplete`}
+                    className="size-1.5 rounded-full bg-destructive"
+                  />
+                ) : null}
+                {removable ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-xs"
+                    data-slot="combobox-chip-remove"
+                    aria-label={`Remove ${chipLabel}`}
+                    className="-ml-1 opacity-50 hover:opacity-100"
+                    onClick={() => {
+                      remove(index)
+                      if (activeIndex === index) setActiveIndex(null)
+                    }}
+                  >
+                    <XIcon className="pointer-events-none" />
+                  </Button>
+                ) : null}
+              </span>
+            )
+          })}
+          {addable ? (
+            <ComboboxChipsInput
+              id={id}
+              placeholder={config.placeholder ?? `Type to add ${singular}s`}
+              aria-describedby={errorId}
+              aria-invalid={message ? true : undefined}
+              onKeyDown={(event) => {
+                if (
+                  event.key === 'Backspace' &&
+                  event.currentTarget.value === '' &&
+                  rows.length > 0
+                ) {
+                  event.preventDefault()
+                  if (removable) {
+                    remove(rows.length - 1)
+                    if (activeIndex === rows.length - 1) setActiveIndex(null)
+                  }
+                }
+              }}
+            />
+          ) : null}
+        </ComboboxChips>
+        {addable ? (
+          <ComboboxContent anchor={anchorRef} data-theme={theme ?? undefined}>
+            <ComboboxEmpty>No results.</ComboboxEmpty>
+            <ComboboxList>
+              {(option: Option) => (
+                <ComboboxItem key={option.value} value={option} disabled={itemDisabled(option)}>
+                  {option.label}
+                </ComboboxItem>
+              )}
+            </ComboboxList>
+          </ComboboxContent>
+        ) : null}
+      </Combobox>
+
+      {message ? <FieldError id={errorId}>{message}</FieldError> : null}
+
+      {activeIndex !== null && rows[activeIndex] ? (
+        <RowEditorDialog
+          open
+          onOpenChange={(next) => {
+            if (!next) setActiveIndex(null)
+          }}
+          title={modalTitle(activeIndex)}
+          position={{ index: activeIndex, total: rows.length }}
+          chips={modalChips(activeIndex)}
+          descriptions={modalDescriptions(activeIndex)}
+          incomplete={incompleteRowFields(config.fields ?? [], rowValues(activeIndex))}
+          onPrev={activeIndex > 0 ? () => setActiveIndex(activeIndex - 1) : undefined}
+          onNext={activeIndex < rows.length - 1 ? () => setActiveIndex(activeIndex + 1) : undefined}
+          onMoveUp={
+            activeIndex > 0
+              ? () => {
+                  move(activeIndex, activeIndex - 1)
+                  setActiveIndex(activeIndex - 1)
+                }
+              : undefined
+          }
+          onMoveDown={
+            activeIndex < rows.length - 1
+              ? () => {
+                  move(activeIndex, activeIndex + 1)
+                  setActiveIndex(activeIndex + 1)
+                }
+              : undefined
+          }
+        >
+          <FieldList
+            fields={config.fields ?? []}
+            form={form}
+            seeded={seeded}
+            values={rowValues(activeIndex)}
+            basePath={`${fullName}.${activeIndex}`}
+            uid={uid}
+          />
+        </RowEditorDialog>
+      ) : null}
+    </Field>
+  )
+}
+
 function FieldList({
   fields,
   form,
@@ -319,6 +634,19 @@ function FieldList({
         if (config.type === 'fieldArray') {
           return (
             <FieldArrayControl
+              key={config.name}
+              config={config}
+              form={form}
+              seeded={seeded}
+              basePath={basePath}
+              uid={uid}
+            />
+          )
+        }
+
+        if (config.type === 'combobox') {
+          return (
+            <ComboboxArrayControl
               key={config.name}
               config={config}
               form={form}
@@ -358,6 +686,7 @@ function FieldList({
                 controlId={id}
                 invalid={Boolean(message)}
                 describedBy={describedBy}
+                disabled={disabled || undefined}
               />
             )}
           />

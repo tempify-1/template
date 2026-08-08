@@ -22,8 +22,8 @@ export function AllFieldsDemo({ fields }: { fields: FieldConfig[] }) {
       <div className="lg:sticky lg:top-8">
         <h2 className="text-sm font-medium text-foreground">Submitted values</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          What the action would receive. Strings, numbers and booleans only — no{' '}
-          <code>{'{key,label}'}</code> objects, and array rows are bare.
+          What the action would receive. Bare strings, numbers and booleans — except combobox
+          rows, which are objects carrying <code>{'{value,label}'}</code> plus their row fields.
         </p>
         <pre className="mt-4 max-h-[60vh] overflow-auto rounded-md border border-border bg-muted p-4 text-xs text-foreground">
           {submitted ? JSON.stringify(submitted, null, 2) : 'Nothing submitted yet.'}

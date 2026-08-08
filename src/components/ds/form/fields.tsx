@@ -220,5 +220,3 @@ class ErrorBoundaryClass extends React.Component<{ children: React.ReactNode; se
     return this.props.children
   }
 }
-
-export { ComboboxControl } from './fields/combobox'
