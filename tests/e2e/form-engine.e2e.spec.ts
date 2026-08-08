@@ -544,6 +544,80 @@ test.describe('trivial nine (#56-#64)', () => {
   })
 })
 
+test.describe('option cards, dates, numeric (#65-#72)', () => {
+  test('cards, tabs, dates, slider and steppers submit their contracted shapes', async ({
+    page,
+  }) => {
+    await page.goto('/demo/form')
+
+    await page.locator('[data-field="travelStyle"]').getByText('Explore').click()
+    await page.locator('[data-field="season"]').getByRole('button', { name: 'Summer' }).click()
+    const boards = page.locator('[data-field="boards"]')
+    await boards.getByText('Bed & breakfast').click()
+    await boards.getByText('Half board').click()
+    await expect(boards.getByRole('checkbox', { name: /All inclusive/ })).toBeDisabled()
+
+    await pickDestination(page, 'mad', 'Madrid')
+    await nextStep(page)
+    await addRoom(page, 'dou', 'Double')
+    await page.getByRole('button', { name: 'Edit Double' }).click()
+    const modal = page.getByRole('dialog')
+    await modal.locator('[data-field^="rooms.0.board"] [data-slot="select-trigger"]').click()
+    await page.getByRole('option', { name: 'Room only' }).click()
+    await modal.getByRole('button', { name: 'Add Traveller' }).click()
+    await modal.locator('[data-field="rooms.0.travellers.0.name"] input').fill('Solo')
+    await modal
+      .locator('[data-field^="rooms.0.travellers.0.ageBand"] [data-slot="select-trigger"]')
+      .click()
+    await page.getByRole('option', { name: 'Adult', exact: true }).click()
+    await modal.getByRole('button', { name: 'Done' }).click()
+    await nextStep(page)
+
+    await page.locator('[data-field="checkIn"] input').fill('2030-01-15')
+
+    await page.locator('[data-field="stay"] button').first().click()
+    const grid = page.getByRole('dialog').getByRole('grid').first()
+    await grid.getByText('10', { exact: true }).first().click()
+    await grid.getByText('14', { exact: true }).first().click()
+    await page.keyboard.press('Escape')
+
+    const slider = page.locator('[data-field="flexibility"]').getByRole('slider').first()
+    await slider.focus()
+    for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowRight')
+
+    const roomCounts = page.locator('[data-field="roomCounts"]')
+    await roomCounts
+      .locator('[data-option="standard"]')
+      .getByRole('button', { name: 'More Standard' })
+      .click()
+    await roomCounts
+      .locator('[data-option="standard"]')
+      .getByRole('button', { name: 'More Standard' })
+      .click()
+    await roomCounts
+      .locator('[data-option="deluxe"]')
+      .getByRole('button', { name: 'More Deluxe' })
+      .click()
+
+    await page
+      .locator('[data-field="transfers"] [data-option="airport"]')
+      .getByRole('button', { name: 'More Airport pickup' })
+      .click()
+
+    await page.getByRole('button', { name: 'Submit enquiry' }).click()
+    const values = await submittedJson(page)
+    expect(values.travelStyle).toBe('explore')
+    expect(values.season).toBe('summer')
+    expect(values.boards).toEqual(['bb', 'hb'])
+    expect(values.checkIn).toBe('2030-01-15')
+    const stay = values.stay as { start: string; end: string }
+    expect(stay.start < stay.end).toBe(true)
+    expect(values.flexibility).toBe(3)
+    expect(values.roomCounts).toEqual({ standard: 2, deluxe: 1 })
+    expect(values.transfers).toEqual({ airport: 1 })
+  })
+})
+
 test.describe('wizard', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/demo/form')

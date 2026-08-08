@@ -17,6 +17,14 @@ export const FIELD_TYPES = [
   'slug',
   'price',
   'multiSelect',
+  'radioCards',
+  'radioTabs',
+  'checkboxCards',
+  'date',
+  'dateRange',
+  'range',
+  'numberPickerCards',
+  'numberPickerTable',
   'paragraph',
   'alert',
   'fieldArray',
@@ -32,6 +40,8 @@ export type FieldType = (typeof FIELD_TYPES)[number]
 export interface Option {
   label: string
   value: string
+  description?: string
+  icon?: string
   disabled?: boolean
 }
 
@@ -85,6 +95,8 @@ export interface FieldConfig {
   tabIndex?: number
   fields?: FieldConfig[]
   slugFrom?: string
+  minDate?: Date | 'today'
+  maxDate?: Date | 'today'
   currency?: string
   severity?: 'neutral' | 'error' | 'ok' | 'warning'
   singularLabel?: string
@@ -154,7 +166,10 @@ export function defaultValueFor(field: FieldConfig): FormValue {
   if (field.type === 'cardArray') return []
   if (field.type === 'number') return undefined
   if (field.type === 'searchableSelect' && field.optionSource) return undefined
-  if (field.type === 'multiSelect') return []
+  if (field.type === 'multiSelect' || field.type === 'checkboxCards') return []
+  if (field.type === 'numberPickerCards' || field.type === 'numberPickerTable') return {}
+  if (field.type === 'dateRange') return undefined
+  if (field.type === 'range') return undefined
   if (field.type === 'switch') return false
   if (field.type === 'price') return undefined
   return ''

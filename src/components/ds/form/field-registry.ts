@@ -6,13 +6,24 @@ import {
   NumberControl,
   PriceControl,
   SelectControl,
+  RangeControl,
   SlugControl,
   SwitchControl,
   TextControl,
   TextareaControl,
   type FieldControlProps,
 } from './fields'
+import { DateControl, DateRangeControl } from './fields/date'
 import { MultiSelectControl } from './fields/multi-select'
+import {
+  NumberPickerCardsControl,
+  NumberPickerTableControl,
+} from './fields/number-picker'
+import {
+  CheckboxCardsControl,
+  RadioCardsControl,
+  RadioTabsControl,
+} from './fields/option-cards'
 import { SearchableSelectControl } from './fields/searchable-select'
 
 export type FieldControl = (props: FieldControlProps) => React.ReactNode
@@ -34,4 +45,12 @@ export const fieldRegistry: ControlRegistry = {
   slug: SlugControl,
   price: PriceControl,
   multiSelect: MultiSelectControl,
+  radioCards: RadioCardsControl,
+  radioTabs: RadioTabsControl,
+  checkboxCards: CheckboxCardsControl,
+  date: DateControl,
+  dateRange: DateRangeControl,
+  range: RangeControl,
+  numberPickerCards: NumberPickerCardsControl,
+  numberPickerTable: NumberPickerTableControl,
 }

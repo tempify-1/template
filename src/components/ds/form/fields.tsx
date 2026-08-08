@@ -23,6 +23,7 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from '@/components/ui/input-group'
+import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import { formatMinorUnits } from '@/lib/forms/price'
 import { parseToMinorUnits } from '@/lib/forms/price'
@@ -347,5 +348,32 @@ export function PriceControl({ config, field, controlId, invalid, describedBy, d
         }}
       />
     </InputGroup>
+  )
+}
+
+export function RangeControl({ config, field, controlId, invalid, describedBy, disabled }: FieldControlProps) {
+  const { value, onChange } = field
+  const current = typeof value === 'number' ? value : (config.min ?? 0)
+  return (
+    <div className="flex items-center gap-3">
+      <Slider
+        id={controlId}
+        value={current}
+        min={config.min}
+        max={config.max}
+        step={config.step}
+        disabled={disabled}
+        aria-invalid={invalid || undefined}
+        aria-describedby={describedBy || undefined}
+        aria-label={config.ariaLabel ?? config.label}
+        onValueChange={(next: number | readonly number[]) =>
+          onChange(Array.isArray(next) ? next[0] : next)
+        }
+        className="max-w-64"
+      />
+      <span className="w-8 text-sm tabular-nums text-muted-foreground" data-slot="range-value">
+        {typeof value === 'number' ? value : '—'}
+      </span>
+    </div>
   )
 }
