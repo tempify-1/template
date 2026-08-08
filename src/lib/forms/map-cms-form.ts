@@ -36,7 +36,13 @@ function mapField(row: CmsFieldRow): FieldConfig | null {
   if (row.description) field.description = row.description
   if (row.required === true) field.required = true
 
-  if (type === 'select' && row.options && row.options.length > 0) {
+  const optionBearing =
+    type === 'select' ||
+    type === 'multiSelect' ||
+    type === 'radioCards' ||
+    type === 'radioTabs' ||
+    type === 'checkboxCards'
+  if (optionBearing && row.options && row.options.length > 0) {
     field.options = row.options.map((option) => ({
       label: option.label,
       value: option.value,
