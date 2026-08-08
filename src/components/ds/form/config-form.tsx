@@ -59,6 +59,7 @@ import {
 } from '@/lib/forms/types'
 
 import { fieldRegistry } from './field-registry'
+import { FieldControlBoundary } from './fields'
 import { RowEditorDialog } from './row-editor-dialog'
 
 export interface ConfigFormProps {
@@ -718,14 +719,16 @@ function FieldList({
             name={fullName}
             defaultValue={getAtPath(seeded, fullName) as never}
             render={({ field }) => (
-              <Control
-                config={config}
-                field={{ ...field, disabled }}
-                controlId={id}
-                invalid={Boolean(message)}
-                describedBy={describedBy}
-                disabled={disabled || undefined}
-              />
+              <FieldControlBoundary>
+                <Control
+                  config={config}
+                  field={{ ...field, disabled }}
+                  controlId={id}
+                  invalid={Boolean(message)}
+                  describedBy={describedBy}
+                  disabled={disabled || undefined}
+                />
+              </FieldControlBoundary>
             )}
           />
         )

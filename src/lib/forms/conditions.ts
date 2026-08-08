@@ -41,10 +41,14 @@ export function conditionHolds(condition: Condition | undefined, values: FormVal
   }
 
   if ('exists' in condition) {
-    if (Array.isArray(value)) return value.length > 0
-    if (typeof value === 'boolean') return value
-    if (typeof value === 'string') return value.trim().length > 0
-    return value !== undefined && value !== null
+    const present = Array.isArray(value)
+      ? value.length > 0
+      : typeof value === 'boolean'
+        ? value
+        : typeof value === 'string'
+          ? value.trim().length > 0
+          : value !== undefined && value !== null
+    return condition.exists ? present : !present
   }
 
   if ('count_equals' in condition) {

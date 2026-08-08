@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { assertConditionTargetsExist, isRequired, isVisible } from './conditions'
+import { assertConditionTargetsExist, isEnabled, isRequired, isVisible } from './conditions'
 import { getAtPath, pathSegments } from './paths'
 import { inputFields, type FieldConfig, type FormSchema, type FormValues } from './types'
 
@@ -31,7 +31,8 @@ function leafFor(field: FieldConfig): z.ZodType {
         schema = schema.refine((val) => {
           if (val === undefined) return true
           if (typeof val !== 'number') return true
-          return ((val - minVal) % stepVal) === 0
+          const steps = (val - minVal) / stepVal
+          return Math.abs(steps - Math.round(steps)) < 1e-8
         }, { message: `Must be a multiple of ${stepVal}` })
       }
       return schema.optional()
@@ -69,9 +70,8 @@ function leafFor(field: FieldConfig): z.ZodType {
     default: {
       const strSchema = z.string()
       let schema: z.ZodString = strSchema
-      // Use min as minLength for textarea, minLength for text/email/tel
-      const minLength = field.type === 'textarea' ? field.min : field.minLength
-      const maxLength = field.type === 'textarea' ? field.max : field.maxLength
+      const minLength = field.minLength ?? field.min
+      const maxLength = field.maxLength ?? field.max
       if (minLength !== undefined) {
         const msg = field.minMessage ?? `Must be at least ${minLength} characters`
         schema = schema.refine((val) => val === undefined || val.length === 0 || val.length >= minLength, { message: msg })
@@ -88,19 +88,6 @@ function leafFor(field: FieldConfig): z.ZodType {
         return schema.optional()
       }
 
-      if (field.type === 'textarea') {
-        // For textarea, also check minLength/maxLength if set separately
-        if (field.minLength !== undefined) {
-          const len = field.minLength
-          const msg = field.minMessage ?? `Must be at least ${len} characters`
-          schema = schema.refine((val) => val === undefined || val.length === 0 || val.length >= len, { message: msg })
-        }
-        if (field.maxLength !== undefined) {
-          const len = field.maxLength
-          const msg = field.maxMessage ?? `Must be at most ${len} characters`
-          schema = schema.refine((val) => val === undefined || val.length === 0 || val.length <= len, { message: msg })
-        }
-      }
       return schema.optional()
     }
   }
@@ -166,6 +153,7 @@ function refineFields(
 ): void {
   for (const field of inputFields(fields)) {
     if (!isVisible(field, values)) continue
+    if (!isEnabled(field, values)) continue
 
     const value = getAtPath(values, field.name)
     const path = [...basePath, ...pathSegments(field.name)]

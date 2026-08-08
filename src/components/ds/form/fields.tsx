@@ -152,8 +152,7 @@ export function NumberControl({
   const { value, onChange, ...control } = field
   const ariaDescribedBy = [describedBy, config.ariaDescribedby].filter(Boolean).join(' ')
   return (
-    <ErrorBoundary>
-      <Input
+    <Input
         {...control}
         id={controlId}
         type="number"
@@ -165,6 +164,7 @@ export function NumberControl({
         }}
         min={config.min}
         max={config.max}
+        step={config.step}
         disabled={disabled}
         aria-invalid={invalid || undefined}
         aria-describedby={ariaDescribedBy || undefined}
@@ -175,48 +175,30 @@ export function NumberControl({
         tabIndex={config.tabIndex}
         autoComplete={config.autocomplete}
       />
-    </ErrorBoundary>
   )
 }
 
-function ErrorBoundary({ children }: { children: React.ReactNode }) {
-  const [hasError] = React.useState(false)
-  const [error, setError] = React.useState<Error | null>(null)
-
-  if (hasError && error) {
-    return (
-      <div className="text-sm font-normal text-destructive" role="alert" data-slot="field-error">
-        {error.message || 'An error occurred'}
-      </div>
-    )
-  }
-
-  return <ErrorBoundaryClass setError={setError}>{children}</ErrorBoundaryClass>
-}
-
-class ErrorBoundaryClass extends React.Component<{ children: React.ReactNode; setError: (error: Error | null) => void }, { hasError: boolean; error: Error | null }> {
-  constructor(props: { children: React.ReactNode; setError: (error: Error | null) => void }) {
+export class FieldControlBoundary extends React.Component<
+  { children: React.ReactNode },
+  { error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
     super(props)
-    this.state = { hasError: false, error: null }
+    this.state = { error: null }
   }
 
-  static getDerivedStateFromError(error: Error): Partial<{ hasError: boolean; error: Error | null }> {
-    return { hasError: true, error }
-  }
-
-  override componentDidCatch(error: Error): void {
-    this.props.setError(error)
+  static getDerivedStateFromError(error: Error): { error: Error } {
+    return { error }
   }
 
   override render() {
-    if (this.state.hasError && this.state.error) {
+    if (this.state.error) {
       return (
         <div className="text-sm font-normal text-destructive" role="alert" data-slot="field-error">
-          {this.state.error.message || 'An error occurred'}
+          {this.state.error.message || 'This field failed to render'}
         </div>
       )
     }
-
     return this.props.children
   }
 }

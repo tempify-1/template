@@ -54,7 +54,7 @@ export function hiddenValues(
   for (const field of inputFields(fields)) {
     const path = `${prefix}${field.name}`
 
-    if (!isVisible(field, values) || !isEnabled(field, values)) {
+    if (!isVisible(field, values)) {
       const current = getAtPath(values, field.name)
       const empty = defaultValueFor(field)
       if (JSON.stringify(current) !== JSON.stringify(empty)) {
