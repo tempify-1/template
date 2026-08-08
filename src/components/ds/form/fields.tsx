@@ -98,7 +98,18 @@ export function SelectControl({
   const ariaDescribedBy = [describedBy, config.ariaDescribedby].filter(Boolean).join(' ')
 
   return (
-    <Select items={options} value={chosen} onValueChange={onChange}>
+    <Select
+      items={options}
+      value={chosen}
+      onValueChange={(next: string | null) => {
+        if (next !== null) {
+          onChange(next)
+          return
+        }
+        const orphaned = stored !== '' && !options.some((option) => option.value === stored)
+        if (orphaned && !config.required && !config.requiredWhen) onChange('')
+      }}
+    >
       <SelectTrigger
         id={controlId}
         aria-invalid={invalid || undefined}

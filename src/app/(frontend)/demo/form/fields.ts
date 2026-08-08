@@ -14,6 +14,29 @@ const traveller: FieldConfig[] = [
     ],
   },
   {
+    name: 'title',
+    type: 'select',
+    label: 'Title',
+    optionsFrom: {
+      field: 'ageBand',
+      map: {
+        adult: [
+          { label: 'Mr', value: 'mr' },
+          { label: 'Ms', value: 'ms' },
+          { label: 'Dr', value: 'dr' },
+        ],
+        child: [
+          { label: 'Master', value: 'master' },
+          { label: 'Miss', value: 'miss' },
+        ],
+        infant: [
+          { label: 'Master', value: 'master' },
+          { label: 'Miss', value: 'miss' },
+        ],
+      },
+    },
+  },
+  {
     name: 'age',
     type: 'number',
     label: 'Age',
@@ -31,12 +54,76 @@ const traveller: FieldConfig[] = [
   },
 ]
 
+const DESTINATIONS = [
+  { label: 'Lisbon', value: 'lis' },
+  { label: 'Ljubljana', value: 'lju' },
+  { label: 'London', value: 'lon' },
+  { label: 'Lyon', value: 'lyo' },
+  { label: 'Madrid', value: 'mad' },
+  { label: 'Marrakesh', value: 'rak' },
+]
+
+const delay = (ms: number, signal: AbortSignal) =>
+  new Promise<void>((resolve, reject) => {
+    const timer = setTimeout(resolve, ms)
+    signal.addEventListener('abort', () => {
+      clearTimeout(timer)
+      reject(new DOMException('aborted', 'AbortError'))
+    })
+  })
+
+const destinationSource = async (query: string, signal: AbortSignal) => {
+  await delay(250, signal)
+  if (query.toLowerCase() === 'error') throw new Error('stub failure')
+  return DESTINATIONS.filter((option) =>
+    option.label.toLowerCase().includes(query.toLowerCase()),
+  )
+}
+
+const EXTRAS = [
+  { label: 'Airport transfer', value: 'transfer' },
+  { label: 'Cot', value: 'cot' },
+  { label: 'Late checkout', value: 'late-checkout' },
+  { label: 'Sea view upgrade', value: 'sea-view' },
+]
+
+const extrasSource = async (query: string, signal: AbortSignal) => {
+  await delay(250, signal)
+  return EXTRAS.filter((option) => option.label.toLowerCase().includes(query.toLowerCase()))
+}
+
 export const allFieldsForm: FieldConfig[] = [
+  {
+    name: 'destination',
+    type: 'searchableSelect',
+    label: 'Destination',
+    placeholder: 'Search destinations…',
+    required: true,
+    options: DESTINATIONS,
+  },
+  {
+    name: 'destinationAsync',
+    type: 'searchableSelect',
+    label: 'Destination (live search)',
+    placeholder: 'Type to search…',
+    optionSource: destinationSource,
+    description: 'Options load from a stub source with an artificial delay.',
+  },
+  {
+    name: 'extras',
+    type: 'combobox',
+    label: 'Extras',
+    singularLabel: 'extra',
+    editableOptions: false,
+    optionSource: extrasSource,
+    placeholder: 'Type to add extras',
+  },
   {
     name: 'rooms',
     type: 'combobox',
     label: 'Rooms',
     singularLabel: 'room',
+    draggable: true,
     required: true,
     requiredMessage: 'Add at least one room',
     max: 4,
@@ -94,9 +181,38 @@ export const allFieldsForm: FieldConfig[] = [
   },
   {
     name: 'partyRooms',
-    type: 'fieldArray',
+    type: 'cardArray',
     label: 'Party room',
+    singularLabel: 'Party room',
+    draggable: true,
     max: 3,
+    cardDisplay: {
+      showCompletionStatus: true,
+      description: [
+        { text: 'Travellers assigned', showWhen: { field: 'travellers', exists: true } },
+        { text: 'No travellers yet', showWhen: { field: 'travellers', exists: false } },
+      ],
+    },
+    picker: {
+      label: 'party size',
+      options: [
+        {
+          label: 'Couple',
+          value: 'couple',
+          data: {
+            travellers: [
+              { value: 'adult', label: 'Adult' },
+              { value: 'adult', label: 'Adult' },
+            ],
+          },
+        },
+        {
+          label: 'Solo traveller',
+          value: 'solo',
+          data: { travellers: [{ value: 'adult', label: 'Adult' }] },
+        },
+      ],
+    },
     fields: [
       {
         name: 'travellers',
@@ -133,6 +249,26 @@ export const allFieldsForm: FieldConfig[] = [
             required: true,
             autocomplete: 'family-name',
           },
+        ],
+      },
+    ],
+  },
+  {
+    name: 'bunkRooms',
+    type: 'fieldArray',
+    label: 'Bunk room',
+    max: 2,
+    fields: [
+      {
+        name: 'sleepers',
+        type: 'combobox',
+        label: 'Sleepers',
+        singularLabel: 'sleeper',
+        reselectOptions: true,
+        editableOptions: false,
+        options: [
+          { label: 'Adult', value: 'adult' },
+          { label: 'Child', value: 'child' },
         ],
       },
     ],

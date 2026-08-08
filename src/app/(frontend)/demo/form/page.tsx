@@ -2,7 +2,6 @@ import { SiteShell } from '@/components/ds/shell/site-shell'
 import { loadNavigation } from '@/lib/navigation'
 
 import { AllFieldsDemo } from './all-fields-demo'
-import { allFieldsForm } from './fields'
 
 export const metadata = {
   title: 'Demo: every form field',
@@ -20,7 +19,7 @@ export default async function AllFieldsFormPage() {
           picker, and a rooms array carrying one travellers combobox per row.
         </p>
         <div className="mt-10">
-          <AllFieldsDemo fields={allFieldsForm} />
+          <AllFieldsDemo />
         </div>
       </div>
     </SiteShell>

@@ -17,7 +17,7 @@ export function assertConditionTargetsExist(fields: FieldConfig[], extraKnown: s
       }
     }
 
-    if (field.type === 'fieldArray' && field.fields) {
+    if ((field.type === 'fieldArray' || field.type === 'cardArray') && field.fields) {
       assertConditionTargetsExist(field.fields)
     }
 
@@ -30,7 +30,11 @@ export function assertConditionTargetsExist(fields: FieldConfig[], extraKnown: s
 export function conditionHolds(condition: Condition | undefined, values: FormValues): boolean {
   if (!condition) return true
 
-  const value = getAtPath(values, condition.field)
+  const raw = getAtPath(values, condition.field)
+  const value =
+    raw !== null && typeof raw === 'object' && !Array.isArray(raw) && 'value' in raw
+      ? (raw as { value: unknown }).value
+      : raw
 
   if ('equals' in condition) {
     return String(value ?? '') === condition.equals

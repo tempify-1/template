@@ -15,7 +15,7 @@ export function submittedValues(fields: FieldConfig[], values: FormValues): Form
 
     const value = getAtPath(values, field.name)
 
-    if (field.type === 'fieldArray' || field.type === 'combobox') {
+    if (field.type === 'fieldArray' || field.type === 'combobox' || field.type === 'cardArray') {
       const rows = Array.isArray(value) ? value : []
       setAtPath(
         result,
@@ -63,7 +63,7 @@ export function hiddenValues(
       continue
     }
 
-    if (field.type === 'fieldArray' || field.type === 'combobox') {
+    if (field.type === 'fieldArray' || field.type === 'combobox' || field.type === 'cardArray') {
       const rows = getAtPath(values, field.name)
       if (!Array.isArray(rows)) continue
       rows.forEach((row, index) => {

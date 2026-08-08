@@ -6,10 +6,12 @@ export const FIELD_TYPES = [
   'tel',
   'textarea',
   'select',
+  'searchableSelect',
   'combobox',
   'checkbox',
   'number',
   'fieldArray',
+  'cardArray',
   'submit',
 ] as const
 
@@ -33,8 +35,12 @@ export interface PickerOption extends Option {
 
 export interface CardDisplayConfig {
   title?: string | string[]
-  description?: (string | { field?: string; text?: string })[]
+  modalTitle?: string | string[]
+  description?: (string | { field?: string; text?: string; showWhen?: Condition })[]
   chips?: { field: string; label?: string }[]
+  icon?: string
+  avatar?: { from: string[]; fallbackPrefix?: string }
+  hideHeader?: boolean
   addable?: boolean
   removable?: boolean
   showCompletionStatus?: boolean
@@ -49,6 +55,8 @@ export interface FieldConfig {
   required?: boolean
   requiredMessage?: string
   options?: Option[]
+  optionSource?: (query: string, signal: AbortSignal) => Promise<Option[]>
+  optionsFrom?: { field: string; map: Record<string, Option[]> }
   min?: number
   max?: number
   minMessage?: string
@@ -104,6 +112,8 @@ export function defaultValueFor(field: FieldConfig): FormValue {
   if (field.type === 'checkbox') return false
   if (field.type === 'fieldArray') return []
   if (field.type === 'combobox') return []
+  if (field.type === 'cardArray') return []
   if (field.type === 'number') return undefined
+  if (field.type === 'searchableSelect' && field.optionSource) return undefined
   return ''
 }

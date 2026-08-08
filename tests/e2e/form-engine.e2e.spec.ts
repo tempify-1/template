@@ -22,6 +22,15 @@ async function addRoom(page: Page, query: string, optionName: string) {
   await addViaKeyboard(page, roomsInput(page), query, optionName)
 }
 
+async function pickDestination(page: Page, query: string, optionName: string) {
+  const input = page.locator('[data-field="destination"]').getByPlaceholder('Search destinations…')
+  await input.click()
+  await input.pressSequentially(query, { delay: 40 })
+  await expect(page.getByRole('option', { name: optionName })).toBeVisible()
+  await input.press('Enter')
+  await expect(input).toHaveValue(optionName)
+}
+
 test.describe('combobox chip control', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/demo/form')
@@ -57,6 +66,222 @@ test.describe('combobox chip control', () => {
     await expect(phone).toBeEnabled()
   })
 
+  test('searchableSelect filters, selects, clears, and submits a bare string', async ({ page }) => {
+    const field = page.locator('[data-field="destination"]')
+    const input = field.getByPlaceholder('Search destinations…')
+    await input.click()
+    await input.pressSequentially('lj', { delay: 40 })
+    await expect(page.getByRole('option', { name: 'Ljubljana' })).toBeVisible()
+    await input.press('Enter')
+    await expect(input).toHaveValue('Ljubljana')
+    await expect(page.locator('pre')).toContainText('Nothing submitted yet')
+
+    await field.locator('[data-slot="combobox-clear"]').click()
+    await expect(input).toHaveValue('')
+
+    await pickDestination(page, 'lis', 'Lisbon')
+    await addRoom(page, 'dou', 'Double')
+    await page.getByRole('button', { name: 'Edit Double' }).click()
+    const modal = page.getByRole('dialog')
+    await modal.locator('[data-field^="rooms.0.board"] [data-slot="select-trigger"]').click()
+    await page.getByRole('option', { name: 'Room only' }).click()
+    await modal.getByRole('button', { name: 'Add Traveller' }).click()
+    await modal.locator('[data-field="rooms.0.travellers.0.name"] input').fill('Solo')
+    await modal
+      .locator('[data-field^="rooms.0.travellers.0.ageBand"] [data-slot="select-trigger"]')
+      .click()
+    await page.getByRole('option', { name: 'Adult', exact: true }).click()
+    await modal.getByRole('button', { name: 'Done' }).click()
+
+    await page.getByRole('button', { name: 'Submit enquiry' }).click()
+    const values = await submittedJson(page)
+    expect(values.destination).toBe('lis')
+  })
+
+  test('async searchableSelect loads, announces, and submits {value,label}', async ({ page }) => {
+    const field = page.locator('[data-field="destinationAsync"]')
+    const input = field.getByPlaceholder('Type to search…')
+    await input.click()
+    await input.pressSequentially('ma', { delay: 40 })
+    await expect(page.locator('[data-slot="combobox-status"]')).toContainText('Loading')
+    await expect(page.getByRole('option', { name: 'Madrid' })).toBeVisible()
+    await input.press('ArrowDown')
+    await input.press('Enter')
+    await expect(input).toHaveValue('Madrid')
+
+    await pickDestination(page, 'lis', 'Lisbon')
+    await addRoom(page, 'dou', 'Double')
+    await page.getByRole('button', { name: 'Edit Double' }).click()
+    const modal = page.getByRole('dialog')
+    await modal.locator('[data-field^="rooms.0.board"] [data-slot="select-trigger"]').click()
+    await page.getByRole('option', { name: 'Room only' }).click()
+    await modal.getByRole('button', { name: 'Add Traveller' }).click()
+    await modal.locator('[data-field="rooms.0.travellers.0.name"] input').fill('Solo')
+    await modal
+      .locator('[data-field^="rooms.0.travellers.0.ageBand"] [data-slot="select-trigger"]')
+      .click()
+    await page.getByRole('option', { name: 'Adult', exact: true }).click()
+    await modal.getByRole('button', { name: 'Done' }).click()
+
+    await page.getByRole('button', { name: 'Submit enquiry' }).click()
+    const values = await submittedJson(page)
+    expect(values.destinationAsync).toEqual({ value: 'mad', label: 'Madrid' })
+  })
+
+  test('async error state renders a failure status, not an empty list', async ({ page }) => {
+    const input = page
+      .locator('[data-field="destinationAsync"]')
+      .getByPlaceholder('Type to search…')
+    await input.click()
+    await input.pressSequentially('error', { delay: 30 })
+    await expect(page.locator('[data-slot="combobox-status"]')).toContainText(
+      "Couldn't load results",
+    )
+  })
+
+  test('a selected async chip survives a query change', async ({ page }) => {
+    const field = page.locator('[data-field="extras"]')
+    const input = field.getByPlaceholder('Type to add extras')
+    await input.click()
+    await input.pressSequentially('cot', { delay: 40 })
+    await expect(page.getByRole('option', { name: 'Cot' })).toBeVisible()
+    await input.press('ArrowDown')
+    await input.press('Enter')
+    await expect(field.locator('[data-slot="combobox-chip"]')).toHaveCount(1)
+
+    await input.pressSequentially('late', { delay: 40 })
+    await expect(page.getByRole('option', { name: 'Late checkout' })).toBeVisible()
+    await expect(field.locator('[data-slot="combobox-chip"]')).toHaveCount(1)
+    await expect(field.locator('[data-slot="combobox-chip"]')).toContainText('Cot')
+  })
+
+  test('pointer drag reorders chips and the payload proves it (#46)', async ({ page }) => {
+    await pickDestination(page, 'mad', 'Madrid')
+    await addRoom(page, 'dou', 'Double')
+    await addRoom(page, 'twi', 'Twin')
+
+    const chips = page.locator('[data-field="rooms"] [data-slot="combobox-chip"]')
+    await expect(chips.nth(0)).toContainText('Double')
+    const grips = page.locator('[data-field="rooms"] [data-slot="row-drag-grip"]')
+    await expect(grips).toHaveCount(2)
+
+    const from = await grips.nth(1).boundingBox()
+    const to = await chips.nth(0).boundingBox()
+    if (!from || !to) throw new Error('missing bounding boxes')
+    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(to.x + 4, to.y + to.height / 2, { steps: 8 })
+    await page.mouse.up()
+
+    await expect(chips.nth(0)).toContainText('Twin')
+    await expect(
+      page.locator('[data-field="rooms"] [data-slot="reorder-announcement"]'),
+    ).toContainText('moved to position 1')
+
+    for (const index of [0, 1]) {
+      await page.getByRole('button', { name: index === 0 ? 'Edit Twin' : 'Edit Double' }).click()
+      const modal = page.getByRole('dialog')
+      await modal
+        .locator(`[data-field^="rooms.${index}.board"] [data-slot="select-trigger"]`)
+        .click()
+      await page.getByRole('option', { name: 'Room only' }).click()
+      await modal.getByRole('button', { name: 'Add Traveller' }).click()
+      await modal.locator(`[data-field="rooms.${index}.travellers.0.name"] input`).fill('T')
+      await modal
+        .locator(`[data-field^="rooms.${index}.travellers.0.ageBand"] [data-slot="select-trigger"]`)
+        .click()
+      await page.getByRole('option', { name: 'Adult', exact: true }).click()
+      await modal.getByRole('button', { name: 'Done' }).click()
+    }
+
+    await page.getByRole('button', { name: 'Submit enquiry' }).click()
+    const values = await submittedJson(page)
+    const rooms = values.rooms as Record<string, unknown>[]
+    expect(rooms.map((r) => r.value)).toEqual(['twin', 'double'])
+  })
+
+  test('grips absent without draggable; cards show grips with it', async ({ page }) => {
+    await expect(
+      page.locator('[data-field="extras"] [data-slot="row-drag-grip"]'),
+    ).toHaveCount(0)
+    await page.getByRole('button', { name: 'Add Party room', exact: true }).click()
+    await expect(
+      page.locator('[data-field="partyRooms"] [data-slot="row-drag-grip"]'),
+    ).toHaveCount(1)
+  })
+
+  test('per-row optionsFrom keys on the sibling and surfaces orphaned values (#47)', async ({
+    page,
+  }) => {
+    await pickDestination(page, 'mad', 'Madrid')
+    await addRoom(page, 'dou', 'Double')
+    await page.getByRole('button', { name: 'Edit Double' }).click()
+    const modal = page.getByRole('dialog')
+    await modal.locator('[data-field^="rooms.0.board"] [data-slot="select-trigger"]').click()
+    await page.getByRole('option', { name: 'Room only' }).click()
+    await modal.getByRole('button', { name: 'Add Traveller' }).click()
+    await modal.locator('[data-field="rooms.0.travellers.0.name"] input').fill('Kit')
+
+    const ageBand = modal.locator(
+      '[data-field^="rooms.0.travellers.0.ageBand"] [data-slot="select-trigger"]',
+    )
+    const title = modal.locator(
+      '[data-field^="rooms.0.travellers.0.title"] [data-slot="select-trigger"]',
+    )
+
+    await ageBand.click()
+    await page.getByRole('option', { name: 'Child', exact: true }).click()
+    await title.click()
+    await expect(page.getByRole('option', { name: 'Master' })).toBeVisible()
+    await expect(page.getByRole('option', { name: 'Mr', exact: true })).toHaveCount(0)
+    await page.getByRole('option', { name: 'Miss' }).click()
+    await modal.locator('[data-field="rooms.0.travellers.0.age"] input').fill('8')
+
+    await ageBand.click()
+    await page.getByRole('option', { name: 'Adult', exact: true }).click()
+    await expect(title).toContainText('Choose one')
+    await modal.getByRole('button', { name: 'Done' }).click()
+    await page.getByRole('button', { name: 'Submit enquiry' }).click()
+
+    const cleared = await submittedJson(page)
+    const clearedTravellers = (cleared.rooms as Record<string, unknown>[])[0]
+      ?.travellers as Record<string, unknown>[]
+    expect(clearedTravellers[0]?.title ?? '').toBe('')
+
+    await page.getByRole('button', { name: 'Edit Double' }).click()
+    await title.click()
+    await page.getByRole('option', { name: 'Dr' }).click()
+    await page.getByRole('dialog').getByRole('button', { name: 'Done' }).click()
+    await page.getByRole('button', { name: 'Submit enquiry' }).click()
+
+    const values = await submittedJson(page)
+    const rooms = values.rooms as Record<string, unknown>[]
+    const travellers = rooms[0]?.travellers as Record<string, unknown>[]
+    expect(travellers[0]).toMatchObject({ title: 'dr', ageBand: 'adult' })
+  })
+
+  test('inline nested combobox stays row-scoped without any dialog', async ({ page }) => {
+    await page.getByRole('button', { name: 'Add Bunk room' }).click()
+    await page.getByRole('button', { name: 'Add Bunk room' }).click()
+
+    const bunk1 = page.locator('[data-field="bunkRooms.0.sleepers"]')
+    const bunk2 = page.locator('[data-field="bunkRooms.1.sleepers"]')
+
+    await addViaKeyboard(page, bunk1.getByPlaceholder('Type to add sleepers'), 'adu', 'Adult')
+    await addViaKeyboard(page, bunk2.getByPlaceholder('Type to add sleepers'), 'chi', 'Child')
+
+    await expect(bunk1.locator('[data-slot="combobox-chip"]')).toHaveCount(1)
+    await expect(bunk2.locator('[data-slot="combobox-chip"]')).toHaveCount(1)
+    await expect(bunk1.locator('[data-slot="combobox-chip"]')).toContainText('Adult')
+    await expect(bunk2.locator('[data-slot="combobox-chip"]')).toContainText('Child')
+
+    const input1 = bunk1.getByPlaceholder('Type to add sleepers')
+    await input1.click()
+    await input1.press('Backspace')
+    await expect(bunk1.locator('[data-slot="combobox-chip"]')).toHaveCount(0)
+    await expect(bunk2.locator('[data-slot="combobox-chip"]')).toHaveCount(1)
+  })
+
   test('an unopened incomplete row surfaces a visible error on submit', async ({ page }) => {
     await addRoom(page, 'dou', 'Double')
     await page.getByRole('button', { name: 'Submit enquiry' }).click()
@@ -77,6 +302,7 @@ test.describe('combobox chip control', () => {
   test('chip modal live-edits the row; picker-seeded traveller submits its seeded values (#31)', async ({
     page,
   }) => {
+    await pickDestination(page, 'mad', 'Madrid')
     await addRoom(page, 'dou', 'Double')
 
     await page.getByRole('button', { name: 'Edit Double' }).click()
@@ -110,36 +336,45 @@ test.describe('combobox chip control', () => {
     expect('age' in (travellers[0] ?? {})).toBe(false)
   })
 
-  test('nested combobox per array row stays row-scoped (#39)', async ({ page }) => {
+  test('cardArray rows edit through the shared editor; nested combobox stays row-scoped (#39)', async ({
+    page,
+  }) => {
+    await pickDestination(page, 'mad', 'Madrid')
     await addRoom(page, 'dou', 'Double')
 
-    await page.getByRole('button', { name: 'Add Party room' }).click()
-    await page.getByRole('button', { name: 'Add Party room' }).click()
+    await page.getByRole('button', { name: 'Add Party room', exact: true }).click()
+    await page.getByRole('button', { name: 'Add Party room', exact: true }).click()
 
-    const room1 = page.locator('[data-field="partyRooms.0.travellers"]')
-    const room2 = page.locator('[data-field="partyRooms.1.travellers"]')
+    const cards = page.locator('[data-field="partyRooms"] [data-row-index]')
+    await expect(cards).toHaveCount(2)
+    await expect(cards.nth(0)).toContainText('No travellers yet')
 
-    await addViaKeyboard(page, room1.getByPlaceholder('Type to add travellers'), 'adu', 'Adult')
-    await addViaKeyboard(page, room2.getByPlaceholder('Type to add travellers'), 'chi', 'Child')
-
-    await expect(room1.locator('[data-slot="combobox-chip"]')).toHaveCount(1)
-    await expect(room2.locator('[data-slot="combobox-chip"]')).toHaveCount(1)
-    await expect(room1.locator('[data-slot="combobox-chip"]')).toContainText('Adult')
-    await expect(room2.locator('[data-slot="combobox-chip"]')).toContainText('Child')
-
-    await room1.getByRole('button', { name: 'Edit Adult' }).click()
-    const modal = page.getByRole('dialog')
-    const first = modal.locator('[data-field="partyRooms.0.travellers.0.firstName"] input')
+    await cards.nth(0).getByRole('button', { name: /Edit Party room 1/ }).click()
+    const roomModal1 = page.getByRole('dialog').first()
+    const trav1 = roomModal1.locator('[data-field="partyRooms.0.travellers"]')
+    await addViaKeyboard(page, trav1.getByPlaceholder('Type to add travellers'), 'adu', 'Adult')
+    await trav1.getByRole('button', { name: 'Edit Adult' }).click()
+    const travModal = page.getByRole('dialog').last()
+    const first = travModal.locator('[data-field="partyRooms.0.travellers.0.firstName"] input')
     await expect(first).toHaveAttribute('autocomplete', 'given-name')
     await first.fill('Ana')
-    await modal.locator('[data-field="partyRooms.0.travellers.0.lastName"] input').fill('One')
-    await modal.getByRole('button', { name: 'Done' }).click()
+    await travModal.locator('[data-field="partyRooms.0.travellers.0.lastName"] input').fill('One')
+    await travModal.getByRole('button', { name: 'Done' }).click()
+    await roomModal1.getByRole('button', { name: 'Done' }).click()
 
-    await room2.getByRole('button', { name: 'Edit Child' }).click()
-    const modal2 = page.getByRole('dialog')
-    await modal2.locator('[data-field="partyRooms.1.travellers.0.firstName"] input').fill('Kit')
-    await modal2.locator('[data-field="partyRooms.1.travellers.0.lastName"] input').fill('Two')
-    await modal2.getByRole('button', { name: 'Done' }).click()
+    await cards.nth(1).getByRole('button', { name: /Edit Party room 2/ }).click()
+    const roomModal2 = page.getByRole('dialog').first()
+    const trav2 = roomModal2.locator('[data-field="partyRooms.1.travellers"]')
+    await addViaKeyboard(page, trav2.getByPlaceholder('Type to add travellers'), 'chi', 'Child')
+    await expect(trav2.locator('[data-slot="combobox-chip"]')).toHaveCount(1)
+    await trav2.getByRole('button', { name: 'Edit Child' }).click()
+    const travModal2 = page.getByRole('dialog').last()
+    await travModal2.locator('[data-field="partyRooms.1.travellers.0.firstName"] input').fill('Kit')
+    await travModal2.locator('[data-field="partyRooms.1.travellers.0.lastName"] input').fill('Two')
+    await travModal2.getByRole('button', { name: 'Done' }).click()
+    await roomModal2.getByRole('button', { name: 'Done' }).click()
+
+    await expect(cards.nth(0)).toContainText('Travellers assigned')
 
     await page.getByRole('button', { name: 'Edit Double' }).click()
     const roomModal = page.getByRole('dialog')

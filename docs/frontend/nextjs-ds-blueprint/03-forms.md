@@ -124,8 +124,19 @@ type Condition =
 // The equality key is `equals`, not `value`. `src/lib/forms/types.ts` is the built contract.
 
 // An async option source. Returns options for a query; the engine supplies the query from the
-// combobox input and aborts a previous call when a new one starts.
+// combobox input and aborts a previous call when a new one starts. Debounce is the source's
+// concern, not the engine's.
 type OptionSource = (query: string, signal: AbortSignal) => Promise<Option[]>;
+
+// Per-row options: a row field may take its options from a static map keyed by a sibling field's
+// current value. `field` resolves against the same row (row-scoped, like conditions). JSON only —
+// no functions (ADR-0002); async per-row sources are deliberately unsupported. A missing key
+// offers no options; a key change that orphans a stored value surfaces that value as invalid —
+// never silently kept, never silently deleted.
+interface OptionsFrom {
+  field: string;
+  map: Record<string, Option[]>;
+}
 ```
 
 ## Engine architecture (three small pieces)
@@ -222,10 +233,17 @@ warranted when there is no options array to resolve a display label against. Rul
   branching in the mapper, schema builder or submission path. `value` is the identity for
   conditions, equality and submission; `label` is display only and never what a condition compares
   against. Row identity for React keys is owned by `useFieldArray`, never stored in the value.
-- a future async `optionSource` adds no new shape — rows stay `{ value, label, ... }`, with the
+- an async `optionSource` adds no new shape — rows stay `{ value, label, ... }`, with the
   label carried rather than looked up, because a remote source has no `field.options` array to
-  resolve against. The future scalar `searchableSelect` stores a bare `string` over static options
-  and `{ value, label }` over an async source, per the rule above.
+  resolve against. The scalar `searchableSelect` stores a bare `string` over static options
+  and `{ value, label }` over an async source, per the rule above. When a source's results
+  replace the list, **current selections are merged in** so a chosen value never vanishes because
+  the query moved on; "No results" and "Couldn't load results" are different states and render as
+  different status lines, never as an empty list.
+- cardArray → `object[]`, the same seam treatment as `combobox` rows — but **no `value`/`label`
+  leaves and no reserved row-field names**: cardArray rows are template-born, not option-born, so
+  the row schema is the row `fields` alone, exactly as `fieldArray`. Cards are a presentation of
+  rows, never a shape.
 
   **`{ value, label }` is Base UI's own convention, not Kallax's.** (This applies to combobox
   rows and to any future async control alike.) Given that shape,
@@ -318,15 +336,24 @@ per-form CSS — keep it.
 
 - **fieldArray**: stacked rows, add/remove, keyboard up/down reorder with an `aria-live` position
   announcement, min/max counts with friendly messages (`At least 1 traveller required`). Built.
-  Pointer drag-reorder is additive on top of the keyboard controls, not a replacement for them,
-  and lands with `cardArray`.
-- **cardArray** — *not built*: rows render as summary Cards (`cardDisplay`: title from field(s),
-  description lines, chips, avatar initials, incomplete-fields badge computed from the schema);
-  clicking opens a shadcn Dialog containing the row's nested `FormRenderer`, with prev/next
-  navigation between rows. One `activeItemId` context so a single dialog is open across nested
-  arrays. Scoped in the parity spec's phase 2, along with the fuller `cardDisplay` surface
-  (`modalTitle`, `addable`, `removable`, `hideHeader`, `showCompletionStatus`, `variant`,
-  per-entry `description` items with their own `showWhen`) and `singularLabel` for add buttons.
+  On `combobox` and `cardArray`, `draggable: true` additionally renders a pointer-drag grip on
+  each chip or card — sugar over the same `move`, announced through the same `aria-live` path,
+  never a replacement for the keyboard controls.
+- **cardArray** — rows render as summary Cards; the whole card is a button
+  (`aria-haspopup="dialog"`) opening the same shared row-editor Dialog the combobox uses, with
+  prev/next, footer reorder and the incomplete alert. `cardDisplay` is shared by both array
+  controls: `title` / `modalTitle` (field name or names, joined), `description` entries — strings
+  or `{ field }` / `{ text }`, each optionally carrying a row-scoped `showWhen` — `chips`,
+  `icon`, `avatar { from, fallbackPrefix }` (initials from row fields), `hideHeader`, `addable`,
+  `removable`, `showCompletionStatus`. Option-valued fields resolve display labels through
+  `field.options` in every summary — a raw stored value never renders on a card. Kallax's
+  `variant` is deliberately not carried: a per-card visual variant is a DS decision nobody has
+  made; if a real form needs one it arrives with a contract row, not a prop. **Nested editors
+  stack**: an array control inside a row opens its own editor above the row's editor — Base UI
+  nested dialogs are first-class (`data-nested`, `data-nested-dialog-open`) — and Escape or
+  backdrop closes the innermost dialog only. This supersedes the earlier single-open-dialog
+  (`activeItemId`) sketch: each array control owns its `activeIndex`, and the stacked reading
+  matches how the row was entered.
 - **combobox** is the array-backed chip control: rows are appended from a type-to-filter option
   list, each selection renders as a chip (shadcn's chip exactly; the label is the modal trigger,
   `aria-haspopup="dialog"`), and each chip opens a live-editing Dialog holding the row's nested

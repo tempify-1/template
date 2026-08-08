@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { assertConditionTargetsExist, isEnabled, isRequired, isVisible } from './conditions'
+import { resolveRowOptions } from './options-from'
 import { getAtPath, pathSegments } from './paths'
 import { inputFields, type FieldConfig, type FormSchema, type FormValues } from './types'
 
@@ -9,7 +10,21 @@ type ShapeTree = { [key: string]: z.ZodType | ShapeTree }
 type IssuePath = (string | number)[]
 type IssueSink = { addIssue: (issue: { code: 'custom'; path: IssuePath; message: string }) => void }
 
+function assertOptionSourceExclusivity(field: FieldConfig): void {
+  if (field.optionsFrom && field.options) {
+    throw new Error(
+      `Field "${field.name}" declares both optionsFrom and options — the map is the only source`,
+    )
+  }
+  if (field.optionSource && field.options) {
+    throw new Error(
+      `Field "${field.name}" declares both optionSource and options — they are mutually exclusive`,
+    )
+  }
+}
+
 function leafFor(field: FieldConfig): z.ZodType {
+  assertOptionSourceExclusivity(field)
   switch (field.type) {
     case 'checkbox':
       return z.boolean().optional()
@@ -38,6 +53,13 @@ function leafFor(field: FieldConfig): z.ZodType {
       return schema.optional()
     }
 
+    case 'searchableSelect': {
+      if (field.optionSource) {
+        return z.object({ value: z.string(), label: z.string() }).optional()
+      }
+      return z.string().optional()
+    }
+
     case 'combobox': {
       const tree: ShapeTree = {}
       for (const rowField of inputFields(field.fields ?? [])) {
@@ -53,6 +75,7 @@ function leafFor(field: FieldConfig): z.ZodType {
       return z.array(toZod(tree)).optional()
     }
 
+    case 'cardArray':
     case 'fieldArray': {
       const arrSchema = z.array(shapeFor(field.fields ?? []))
       let schema: z.ZodArray<z.ZodType> = arrSchema
@@ -132,6 +155,9 @@ function requiredMessageFor(field: FieldConfig): string {
 
 function isBlank(field: FieldConfig, value: unknown): boolean {
   if (field.type === 'checkbox') return value !== true
+  if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+    return String((value as { value?: unknown }).value ?? '').trim() === ''
+  }
   return String(value ?? '').trim() === ''
 }
 
@@ -158,10 +184,14 @@ function refineFields(
     const value = getAtPath(values, field.name)
     const path = [...basePath, ...pathSegments(field.name)]
 
-    if (field.type === 'fieldArray' || field.type === 'combobox') {
+    if (field.type === 'fieldArray' || field.type === 'combobox' || field.type === 'cardArray') {
       const rows = Array.isArray(value) ? value : []
 
-      if (field.type === 'combobox' && isRequired(field, values) && rows.length === 0) {
+      if (
+        (field.type === 'combobox' || field.type === 'cardArray') &&
+        isRequired(field, values) &&
+        rows.length === 0
+      ) {
         ctx.addIssue({ code: 'custom', path, message: requiredMessageFor(field) })
       }
       if (field.min !== undefined && rows.length < field.min) {
@@ -187,6 +217,18 @@ function refineFields(
     }
 
     if (blank) continue
+
+    if (field.optionsFrom && typeof value === 'string') {
+      const offered = resolveRowOptions(field, values)
+      if (!offered.some((option) => option.value === value)) {
+        ctx.addIssue({
+          code: 'custom',
+          path,
+          message: `${field.label ?? field.name} is no longer available — choose again`,
+        })
+        continue
+      }
+    }
 
     if (field.type === 'number') {
       if (typeof value !== 'number') continue
