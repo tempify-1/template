@@ -13,6 +13,8 @@ export const FIELD_TYPES = [
   'fieldArray',
   'cardArray',
   'fieldset',
+  'accordion',
+  'step',
   'submit',
 ] as const
 
@@ -78,6 +80,7 @@ export interface FieldConfig {
   editableOptions?: boolean
   draggable?: boolean
   cardDisplay?: CardDisplayConfig
+  wizard?: { confetti?: boolean }
   showWhen?: Condition
   enableWhen?: Condition
   requiredWhen?: Condition
@@ -101,7 +104,7 @@ export type ValueResolver = (current: FormValues) => FormValues | Promise<FormVa
 
 export type FormSchema = z.ZodType<FormValues, FormValues>
 
-export const CONTAINER_TYPES = ['fieldset'] as const
+export const CONTAINER_TYPES = ['fieldset', 'accordion', 'step'] as const
 
 export function isContainer(field: FieldConfig): boolean {
   return (CONTAINER_TYPES as readonly string[]).includes(field.type)

@@ -22,6 +22,16 @@ async function addRoom(page: Page, query: string, optionName: string) {
   await addViaKeyboard(page, roomsInput(page), query, optionName)
 }
 
+async function nextStep(page: Page) {
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
+}
+
+async function gotoRooms(page: Page) {
+  await pickDestination(page, 'mad', 'Madrid')
+  await nextStep(page)
+  await expect(roomsInput(page)).toBeVisible()
+}
+
 async function pickDestination(page: Page, query: string, optionName: string) {
   const input = page.locator('[data-field="destination"]').getByPlaceholder('Search destinations…')
   await input.click()
@@ -38,6 +48,7 @@ test.describe('combobox chip control', () => {
   })
 
   test('three Enters add three chips, duplicates allowed under reselect', async ({ page }) => {
+    await gotoRooms(page)
     await addRoom(page, 'dou', 'Double')
     await addRoom(page, 'dou', 'Double')
     await addRoom(page, 'twi', 'Twin')
@@ -49,6 +60,7 @@ test.describe('combobox chip control', () => {
   })
 
   test('Enter never submits, Backspace on empty input removes the last chip', async ({ page }) => {
+    await gotoRooms(page)
     await addRoom(page, 'sui', 'Suite')
     const input = roomsInput(page)
     await input.press('Enter')
@@ -60,6 +72,7 @@ test.describe('combobox chip control', () => {
   })
 
   test('phone is disabled until a room exists', async ({ page }) => {
+    await gotoRooms(page)
     const phone = page.locator('[data-field="phone"] input')
     await expect(phone).toBeDisabled()
     await addRoom(page, 'dou', 'Double')
@@ -80,6 +93,7 @@ test.describe('combobox chip control', () => {
     await expect(input).toHaveValue('')
 
     await pickDestination(page, 'lis', 'Lisbon')
+    await nextStep(page)
     await addRoom(page, 'dou', 'Double')
     await page.getByRole('button', { name: 'Edit Double' }).click()
     const modal = page.getByRole('dialog')
@@ -110,6 +124,7 @@ test.describe('combobox chip control', () => {
     await expect(input).toHaveValue('Madrid')
 
     await pickDestination(page, 'lis', 'Lisbon')
+    await nextStep(page)
     await addRoom(page, 'dou', 'Double')
     await page.getByRole('button', { name: 'Edit Double' }).click()
     const modal = page.getByRole('dialog')
@@ -140,6 +155,7 @@ test.describe('combobox chip control', () => {
   })
 
   test('a selected async chip survives a query change', async ({ page }) => {
+    await page.getByRole('button', { name: 'Optional extras' }).click()
     const field = page.locator('[data-field="extras"]')
     const input = field.getByPlaceholder('Type to add extras')
     await input.click()
@@ -156,7 +172,7 @@ test.describe('combobox chip control', () => {
   })
 
   test('pointer drag reorders chips and the payload proves it (#46)', async ({ page }) => {
-    await pickDestination(page, 'mad', 'Madrid')
+    await gotoRooms(page)
     await addRoom(page, 'dou', 'Double')
     await addRoom(page, 'twi', 'Twin')
 
@@ -201,9 +217,11 @@ test.describe('combobox chip control', () => {
   })
 
   test('grips absent without draggable; cards show grips with it', async ({ page }) => {
+    await page.getByRole('button', { name: 'Optional extras' }).click()
     await expect(
       page.locator('[data-field="extras"] [data-slot="row-drag-grip"]'),
     ).toHaveCount(0)
+    await gotoRooms(page)
     await page.getByRole('button', { name: 'Add Party room', exact: true }).click()
     await expect(
       page.locator('[data-field="partyRooms"] [data-slot="row-drag-grip"]'),
@@ -213,7 +231,7 @@ test.describe('combobox chip control', () => {
   test('per-row optionsFrom keys on the sibling and surfaces orphaned values (#47)', async ({
     page,
   }) => {
-    await pickDestination(page, 'mad', 'Madrid')
+    await gotoRooms(page)
     await addRoom(page, 'dou', 'Double')
     await page.getByRole('button', { name: 'Edit Double' }).click()
     const modal = page.getByRole('dialog')
@@ -261,6 +279,7 @@ test.describe('combobox chip control', () => {
   })
 
   test('inline nested combobox stays row-scoped without any dialog', async ({ page }) => {
+    await gotoRooms(page)
     await page.getByRole('button', { name: 'Add Bunk room' }).click()
     await page.getByRole('button', { name: 'Add Bunk room' }).click()
 
@@ -283,6 +302,7 @@ test.describe('combobox chip control', () => {
   })
 
   test('an unopened incomplete row surfaces a visible error on submit', async ({ page }) => {
+    await gotoRooms(page)
     await addRoom(page, 'dou', 'Double')
     await page.getByRole('button', { name: 'Submit enquiry' }).click()
     const field = page.locator('[data-field="rooms"]')
@@ -291,6 +311,7 @@ test.describe('combobox chip control', () => {
   })
 
   test('Enter activates the chip edit button for keyboard users', async ({ page }) => {
+    await gotoRooms(page)
     await addRoom(page, 'dou', 'Double')
     const edit = page.getByRole('button', { name: 'Edit Double' })
     await edit.focus()
@@ -302,7 +323,7 @@ test.describe('combobox chip control', () => {
   test('chip modal live-edits the row; picker-seeded traveller submits its seeded values (#31)', async ({
     page,
   }) => {
-    await pickDestination(page, 'mad', 'Madrid')
+    await gotoRooms(page)
     await addRoom(page, 'dou', 'Double')
 
     await page.getByRole('button', { name: 'Edit Double' }).click()
@@ -339,7 +360,7 @@ test.describe('combobox chip control', () => {
   test('cardArray rows edit through the shared editor; nested combobox stays row-scoped (#39)', async ({
     page,
   }) => {
-    await pickDestination(page, 'mad', 'Madrid')
+    await gotoRooms(page)
     await addRoom(page, 'dou', 'Double')
 
     await page.getByRole('button', { name: 'Add Party room', exact: true }).click()
@@ -401,5 +422,99 @@ test.describe('combobox chip control', () => {
     expect(t2).toHaveLength(1)
     expect(t1[0]).toMatchObject({ value: 'adult', label: 'Adult', firstName: 'Ana', lastName: 'One' })
     expect(t2[0]).toMatchObject({ value: 'child', label: 'Child', firstName: 'Kit', lastName: 'Two' })
+  })
+})
+
+test.describe('accordion container', () => {
+  test('values added inside survive collapsing the section', async ({ page }) => {
+    await page.goto('/demo/form')
+    await page.getByRole('button', { name: 'Optional extras' }).click()
+    const field = page.locator('[data-field="extras"]')
+    const input = field.getByPlaceholder('Type to add extras')
+    await input.click()
+    await input.pressSequentially('cot', { delay: 40 })
+    await expect(page.getByRole('option', { name: 'Cot' })).toBeVisible()
+    await input.press('ArrowDown')
+    await input.press('Enter')
+    await expect(field.locator('[data-slot="combobox-chip"]')).toHaveCount(1)
+
+    await page.getByRole('button', { name: 'Optional extras' }).click()
+    await expect(field).toBeHidden()
+    await page.getByRole('button', { name: 'Optional extras' }).click()
+    await expect(field.locator('[data-slot="combobox-chip"]')).toHaveCount(1)
+
+    await pickDestination(page, 'mad', 'Madrid')
+    await nextStep(page)
+    await addRoom(page, 'dou', 'Double')
+    await page.getByRole('button', { name: 'Edit Double' }).click()
+    const modal = page.getByRole('dialog')
+    await modal.locator('[data-field^="rooms.0.board"] [data-slot="select-trigger"]').click()
+    await page.getByRole('option', { name: 'Room only' }).click()
+    await modal.getByRole('button', { name: 'Add Traveller' }).click()
+    await modal.locator('[data-field="rooms.0.travellers.0.name"] input').fill('Solo')
+    await modal
+      .locator('[data-field^="rooms.0.travellers.0.ageBand"] [data-slot="select-trigger"]')
+      .click()
+    await page.getByRole('option', { name: 'Adult', exact: true }).click()
+    await modal.getByRole('button', { name: 'Done' }).click()
+    await page.getByRole('button', { name: 'Submit enquiry' }).click()
+    const values = await submittedJson(page)
+    expect(values.extras).toEqual([{ value: 'cot', label: 'Cot' }])
+  })
+})
+
+test.describe('wizard', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/demo/form')
+    await expect(page.getByRole('heading', { name: 'Every form field' })).toBeVisible()
+  })
+
+  test('Next validates only the current step, in words', async ({ page }) => {
+    await nextStep(page)
+    const summary = page.locator('[data-slot="step-error-summary"]')
+    await expect(summary).toContainText('Destination is required')
+    await expect(summary).not.toContainText('room')
+    await expect(page.getByRole('tab', { name: /Trip/ })).toHaveAttribute('data-error', 'true')
+  })
+
+  test('completing a step marks the tab, fires confetti, and back-navigation keeps values', async ({
+    page,
+  }) => {
+    await pickDestination(page, 'mad', 'Madrid')
+    await nextStep(page)
+    await expect(roomsInput(page)).toBeVisible()
+    await expect(page.locator('canvas')).toHaveCount(1)
+    await expect(page.getByRole('tab', { name: /Trip/ })).toHaveAttribute('data-completed', 'true')
+    await page.getByRole('tab', { name: /Trip/ }).click()
+    await expect(
+      page.locator('[data-field="destination"]').getByPlaceholder('Search destinations…'),
+    ).toHaveValue('Madrid')
+  })
+
+  test('reduced motion means no confetti', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.goto('/demo/form')
+    await pickDestination(page, 'mad', 'Madrid')
+    await nextStep(page)
+    await expect(roomsInput(page)).toBeVisible()
+    await expect(page.locator('canvas')).toHaveCount(0)
+  })
+
+  test('submit failure sweeps to the first invalid step', async ({ page }) => {
+    await gotoRooms(page)
+    await page.getByRole('button', { name: 'Submit enquiry' }).click()
+    await expect(page.locator('[data-slot="step-error-summary"]')).toContainText(
+      'Add at least one room',
+    )
+    await expect(page.getByRole('tab', { name: /Rooms & party/ })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
+  })
+
+  test('resumption opens at the requested step with earlier steps completed', async ({ page }) => {
+    await page.goto('/demo/form?step=1')
+    await expect(roomsInput(page)).toBeVisible()
+    await expect(page.getByRole('tab', { name: /Trip/ })).toHaveAttribute('data-completed', 'true')
   })
 })

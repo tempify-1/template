@@ -7,13 +7,15 @@ import type { FormValues } from '@/lib/forms/types'
 
 import { allFieldsForm } from './fields'
 
-export function AllFieldsDemo() {
+export function AllFieldsDemo({ initialStep }: { initialStep?: number }) {
   const [submitted, setSubmitted] = useState<FormValues | null>(null)
 
   return (
     <div className="grid gap-10 lg:grid-cols-2 lg:items-start">
       <ConfigForm
         fields={allFieldsForm}
+        initialStep={initialStep}
+        initialCompletedSteps={initialStep ? [...Array(initialStep).keys()] : undefined}
         submitLabel="Submit"
         onSubmit={(values) => {
           console.log('Form submitted with values:', values)

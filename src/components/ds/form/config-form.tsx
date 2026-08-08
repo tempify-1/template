@@ -12,6 +12,12 @@ import {
   type UseFormReturn,
 } from 'react-hook-form'
 
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -65,6 +71,7 @@ import {
 import { fieldRegistry } from './field-registry'
 import { FieldControlBoundary } from './fields'
 import { RowEditorDialog } from './row-editor-dialog'
+import { Wizard } from './wizard'
 import { useOptionSource } from './use-option-source'
 
 export interface ConfigFormProps {
@@ -72,6 +79,10 @@ export interface ConfigFormProps {
   defaultValues?: FormValues
   onSubmit: (values: FormValues) => void | Promise<void>
   submitLabel?: string
+  onBeforeNext?: (stepIndex: number, values: FormValues) => Promise<boolean>
+  initialStep?: number
+  initialCompletedSteps?: number[]
+  stepSubmitMode?: boolean
 }
 
 type ConfigFormApi = UseFormReturn<FormValues, unknown, FormValues>
@@ -1037,6 +1048,66 @@ function CardArrayControl({
   )
 }
 
+function AccordionSection({
+  config,
+  form,
+  seeded,
+  values,
+  basePath,
+  uid,
+}: {
+  config: FieldConfig
+  form: ConfigFormApi
+  seeded: FormValues
+  values: FormValues
+  basePath: string
+  uid: string
+}) {
+  const [open, setOpen] = useState(false)
+  const [sawError, setSawError] = useState(false)
+  const childNames = inputFields(config.fields ?? []).map((child) =>
+    joinPath(basePath, child.name),
+  )
+  const hasChildError = childNames.some(
+    (name) => getAtPath(form.formState.errors, name) !== undefined,
+  )
+
+  if (hasChildError !== sawError) {
+    setSawError(hasChildError)
+    if (hasChildError) setOpen(true)
+  }
+
+  return (
+    <Accordion
+      value={open ? [config.name] : []}
+      onValueChange={(next: unknown[]) => setOpen(next.length > 0)}
+      data-field={config.name}
+    >
+      <AccordionItem value={config.name}>
+        <AccordionTrigger
+          className={hasChildError ? 'text-destructive' : undefined}
+          data-error={hasChildError || undefined}
+        >
+          {config.label ?? config.name}
+        </AccordionTrigger>
+        <AccordionContent className="flex flex-col gap-5">
+          {config.description ? (
+            <FieldDescription>{config.description}</FieldDescription>
+          ) : null}
+          <FieldList
+            fields={config.fields ?? []}
+            form={form}
+            seeded={seeded}
+            values={values}
+            basePath={basePath}
+            uid={uid}
+          />
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
+  )
+}
+
 function FieldList({
   fields,
   form,
@@ -1056,6 +1127,20 @@ function FieldList({
     <>
       {renderFields(fields).map((config) => {
         if (!isVisible(config, values)) return null
+
+        if (config.type === 'accordion') {
+          return (
+            <AccordionSection
+              key={config.name}
+              config={config}
+              form={form}
+              seeded={seeded}
+              values={values}
+              basePath={basePath}
+              uid={uid}
+            />
+          )
+        }
 
         if (config.type === 'fieldset') {
           return (
@@ -1184,7 +1269,16 @@ function FieldList({
   )
 }
 
-export function ConfigForm({ fields, defaultValues, onSubmit, submitLabel }: ConfigFormProps) {
+export function ConfigForm({
+  fields,
+  defaultValues,
+  onSubmit,
+  submitLabel,
+  onBeforeNext,
+  initialStep,
+  initialCompletedSteps,
+  stepSubmitMode,
+}: ConfigFormProps) {
   const schema = useMemo(() => buildSchema(fields), [fields])
   const seeded = useMemo(
     () => ({ ...emptyValues(fields), ...(defaultValues ?? {}) }),
@@ -1201,6 +1295,15 @@ export function ConfigForm({ fields, defaultValues, onSubmit, submitLabel }: Con
   const uid = useId()
   const values = form.watch() as Record<string, unknown>
   const submit = fields.find((field) => field.type === 'submit')
+  const steps = fields.filter((field) => field.type === 'step')
+  if (steps.length > 0) {
+    const stray = fields.filter((field) => field.type !== 'step' && field.type !== 'submit')
+    if (stray.length > 0) {
+      throw new Error(
+        `A stepped form must keep every field inside a step; stray: ${stray.map((f) => f.name).join(', ')}`,
+      )
+    }
+  }
 
   useEffect(() => {
     for (const { path, empty } of hiddenValues(fields, values as FormValues)) {
@@ -1214,20 +1317,44 @@ export function ConfigForm({ fields, defaultValues, onSubmit, submitLabel }: Con
 
   return (
     <form onSubmit={form.handleSubmit(handle)} noValidate>
-      <FieldGroup>
-        <FieldList
-          fields={fields}
+      {steps.length > 0 ? (
+        <Wizard
+          steps={steps}
           form={form}
-          seeded={seeded}
-          values={values as FormValues}
-          basePath=""
-          uid={uid}
+          submitLabel={submit?.label ?? submitLabel ?? 'Submit'}
+          onBeforeNext={onBeforeNext}
+          initialStep={initialStep}
+          initialCompletedSteps={initialCompletedSteps}
+          stepSubmitMode={stepSubmitMode}
+          renderStep={(step) => (
+            <FieldGroup>
+              <FieldList
+                fields={step.fields ?? []}
+                form={form}
+                seeded={seeded}
+                values={values as FormValues}
+                basePath=""
+                uid={uid}
+              />
+            </FieldGroup>
+          )}
         />
+      ) : (
+        <FieldGroup>
+          <FieldList
+            fields={fields}
+            form={form}
+            seeded={seeded}
+            values={values as FormValues}
+            basePath=""
+            uid={uid}
+          />
 
-        <Button type="submit" disabled={form.formState.isSubmitting}>
-          {submit?.label ?? submitLabel ?? 'Submit'}
-        </Button>
-      </FieldGroup>
+          <Button type="submit" disabled={form.formState.isSubmitting}>
+            {submit?.label ?? submitLabel ?? 'Submit'}
+          </Button>
+        </FieldGroup>
+      )}
     </form>
   )
 }

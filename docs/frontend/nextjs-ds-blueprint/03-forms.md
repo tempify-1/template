@@ -397,7 +397,7 @@ last step's nav. Proven semantics to keep:
 - `onBeforeNext(stepIndex, values) => Promise<boolean>` async gate for save-per-step flows;
   "Saving…" state while pending; returning false blocks navigation.
 - Whole-form submit failure sweeps all steps, marks invalid ones, jumps to the first.
-- Optional per-step confetti (`canvas-confetti`, reduced-motion bail).
+- Optional per-step confetti (`canvas-confetti`, reduced-motion bail) via `wizard: { confetti: true }` — the chrome key is `wizard`, since `step` already means numeric granularity.
 - Completed steps in save-per-step mode re-render readonly.
 
 ## Autosave (`onPatch`)

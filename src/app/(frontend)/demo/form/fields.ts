@@ -94,6 +94,12 @@ const extrasSource = async (query: string, signal: AbortSignal) => {
 
 export const allFieldsForm: FieldConfig[] = [
   {
+    name: 'tripStep',
+    type: 'step',
+    label: 'Trip',
+    wizard: { confetti: true },
+    fields: [
+  {
     name: 'tripBasics',
     type: 'fieldset',
     label: 'Trip basics',
@@ -118,14 +124,28 @@ export const allFieldsForm: FieldConfig[] = [
     ],
   },
   {
-    name: 'extras',
-    type: 'combobox',
-    label: 'Extras',
-    singularLabel: 'extra',
-    editableOptions: false,
-    optionSource: extrasSource,
-    placeholder: 'Type to add extras',
+    name: 'optionalExtras',
+    type: 'accordion',
+    label: 'Optional extras',
+    fields: [
+      {
+        name: 'extras',
+        type: 'combobox',
+        label: 'Extras',
+        singularLabel: 'extra',
+        editableOptions: false,
+        optionSource: extrasSource,
+        placeholder: 'Type to add extras',
+      },
+    ],
   },
+    ],
+  },
+  {
+    name: 'partyStep',
+    type: 'step',
+    label: 'Rooms & party',
+    fields: [
   {
     name: 'rooms',
     type: 'combobox',
@@ -279,6 +299,8 @@ export const allFieldsForm: FieldConfig[] = [
           { label: 'Child', value: 'child' },
         ],
       },
+    ],
+  },
     ],
   },
   { name: 'submit', type: 'submit', label: 'Submit enquiry' },
