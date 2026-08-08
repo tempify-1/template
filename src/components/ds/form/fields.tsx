@@ -271,29 +271,40 @@ export function ColorControl({ config, field, controlId, invalid, describedBy, d
 }
 
 export function SlugControl({ config, field, controlId, invalid, describedBy, disabled, fieldPath }: FieldControlProps) {
-  const { value, onChange, ...control } = field
-  const [locked, setLocked] = React.useState(false)
+  const { value, onChange, onBlur } = field
+  const [editing, setEditing] = React.useState(false)
+  const [text, setText] = React.useState('')
   const sourcePath = config.slugFrom
     ? fieldPath.split('.').slice(0, -1).concat(config.slugFrom).join('.')
     : undefined
   const source = useWatch({ name: sourcePath ?? fieldPath })
   const derived = slugify(String(source ?? ''))
+  const stored = String(value ?? '')
+  const locked = stored !== '' && stored !== derived
 
   React.useEffect(() => {
-    if (!locked && sourcePath && String(value ?? '') !== derived) {
+    if (sourcePath && stored === '' && derived !== '' && !editing) {
       onChange(derived)
     }
-  }, [derived, locked, sourcePath, value, onChange])
+  }, [derived, editing, onChange, sourcePath, stored])
 
   return (
     <InputGroup>
       <InputGroupInput
-        {...control}
         id={controlId}
-        value={String(value ?? '')}
+        value={editing ? text : stored}
+        onFocus={() => {
+          setEditing(true)
+          setText(stored)
+        }}
         onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-          setLocked(true)
-          onChange(slugify(event.target.value) || event.target.value.toLowerCase())
+          const raw = event.target.value
+          setText(raw)
+          onChange(slugify(raw))
+        }}
+        onBlur={() => {
+          setEditing(false)
+          onBlur()
         }}
         disabled={disabled}
         aria-invalid={invalid || undefined}
@@ -307,7 +318,7 @@ export function SlugControl({ config, field, controlId, invalid, describedBy, di
             variant="ghost"
             aria-label="Regenerate from source"
             onClick={() => {
-              setLocked(false)
+              setEditing(false)
               onChange(derived)
             }}
           >
@@ -324,6 +335,8 @@ export function PriceControl({ config, field, controlId, invalid, describedBy, d
   const [text, setText] = React.useState(() =>
     typeof value === 'number' ? formatMinorUnits(value) : '',
   )
+  const textDiverges =
+    text.trim() !== '' && parseToMinorUnits(text) === undefined
   return (
     <InputGroup>
       <InputGroupAddon>
@@ -335,15 +348,20 @@ export function PriceControl({ config, field, controlId, invalid, describedBy, d
         inputMode="decimal"
         placeholder={config.placeholder ?? '0.00'}
         disabled={disabled}
-        aria-invalid={invalid || undefined}
+        aria-invalid={invalid || textDiverges || undefined}
         aria-describedby={describedBy || undefined}
         onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
           const next = event.target.value
           setText(next)
-          onChange(next.trim() === '' ? undefined : parseToMinorUnits(next))
+          if (next.trim() === '') {
+            onChange(undefined)
+            return
+          }
+          const parsed = parseToMinorUnits(next)
+          if (parsed !== undefined) onChange(parsed)
         }}
         onBlur={() => {
-          if (typeof value === 'number') setText(formatMinorUnits(value))
+          setText(typeof value === 'number' ? formatMinorUnits(value) : '')
           onBlur()
         }}
       />
@@ -358,7 +376,7 @@ export function RangeControl({ config, field, controlId, invalid, describedBy, d
     <div className="flex items-center gap-3">
       <Slider
         id={controlId}
-        value={current}
+        value={[current]}
         min={config.min}
         max={config.max}
         step={config.step}

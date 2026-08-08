@@ -502,6 +502,7 @@ test.describe('trivial nine (#56-#64)', () => {
     const slugInput = page.locator('[data-field="tripSlug"] input')
     await expect(slugInput).toHaveValue('summer-escape-2026')
     await slugInput.fill('my custom trip')
+    await slugInput.blur()
     await expect(slugInput).toHaveValue('my-custom-trip')
     await page.locator('[data-field="tripName"] input').fill('Changed Again')
     await expect(slugInput).toHaveValue('my-custom-trip')

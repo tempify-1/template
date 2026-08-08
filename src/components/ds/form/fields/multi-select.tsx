@@ -44,13 +44,7 @@ export function MultiSelectControl({
 
   const handleChange = (next: Option[]) => {
     setInputValue('')
-    const nextValues = new Set(next.map((option) => option.value))
-    const offered = new Set(options.map((option) => option.value))
-    const kept = stored.filter((value) => !offered.has(value) || nextValues.has(value))
-    const added = next
-      .map((option) => option.value)
-      .filter((value) => !stored.includes(value))
-    field.onChange([...kept, ...added])
+    field.onChange(next.map((option) => option.value))
   }
 
   return (

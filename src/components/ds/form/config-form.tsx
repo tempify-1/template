@@ -58,7 +58,7 @@ import { conditionHolds, isVisible, isEnabled, isRequired } from '@/lib/forms/co
 import { getAtPath } from '@/lib/forms/paths'
 import { resolveRowOptions } from '@/lib/forms/options-from'
 import { emptyValues } from '@/lib/forms/resolvers'
-import { buildSchema } from '@/lib/forms/schema-builder'
+import { buildSchema, isBlank } from '@/lib/forms/schema-builder'
 import { hiddenValues, submittedValues } from '@/lib/forms/submitted-values'
 import {
   inputFields,
@@ -480,9 +480,8 @@ function avatarInitials(config: FieldConfig, row: FormValues): string {
 }
 
 function isBlankRowValue(field: FieldConfig, value: unknown): boolean {
-  if (field.type === 'checkbox') return value !== true
   if (field.type === 'number') return value === undefined || value === null
-  return String(value ?? '').trim() === ''
+  return isBlank(field, value)
 }
 
 function incompleteRowFields(fields: FieldConfig[], row: FormValues): string[] {
@@ -1143,7 +1142,7 @@ function FieldList({
           )
         }
 
-        if (config.type === 'fieldset') {
+        if (config.type === 'fieldset' || config.type === 'step') {
           return (
             <FieldSet key={config.name} data-field={config.name}>
               <FieldLegend>{config.label ?? config.name}</FieldLegend>

@@ -59,7 +59,12 @@ export function DateControl({
             field.onChange('')
             return
           }
-          if (parseIsoDate(next)) field.onChange(next)
+          field.onChange(parseIsoDate(next) ? next : '')
+        }}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' && text !== '' && !parseIsoDate(text)) {
+            event.preventDefault()
+          }
         }}
         onBlur={() => {
           setText(stored)

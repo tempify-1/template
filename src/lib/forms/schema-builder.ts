@@ -23,9 +23,9 @@ function assertOptionSourceExclusivity(field: FieldConfig): void {
   }
 }
 
-function numberLeaf(field: FieldConfig): z.ZodType {
+function numberLeaf(field: FieldConfig, integer = false): z.ZodType {
   const numSchema = z.number()
-  let schema: z.ZodNumber = numSchema
+  let schema: z.ZodNumber = integer ? numSchema.int() : numSchema
   if (field.min !== undefined) {
     const msg = field.minMessage ?? `Must be at least ${field.min}`
     schema = schema.min(field.min, { message: msg })
@@ -55,7 +55,7 @@ function leafFor(field: FieldConfig): z.ZodType {
       return z.boolean().optional()
 
     case 'price':
-      return z.number().int().optional()
+      return numberLeaf(field, true)
 
     case 'dateRange': {
       const iso = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
@@ -189,7 +189,7 @@ function requiredMessageFor(field: FieldConfig): string {
   return field.requiredMessage ?? `${field.label ?? field.name} is required`
 }
 
-function isBlank(field: FieldConfig, value: unknown): boolean {
+export function isBlank(field: FieldConfig, value: unknown): boolean {
   if (field.type === 'checkbox' || field.type === 'switch') return value !== true
   if (field.type === 'multiSelect' || field.type === 'checkboxCards')
     return !Array.isArray(value) || value.length === 0
@@ -263,6 +263,17 @@ function refineFields(
       }
       if (field.max !== undefined && total > field.max) {
         ctx.addIssue({ code: 'custom', path, message: maxMessageFor(field) })
+        continue
+      }
+    }
+
+    if (
+      (field.type === 'multiSelect' || field.type === 'checkboxCards') &&
+      field.min !== undefined
+    ) {
+      const length = Array.isArray(value) ? value.length : 0
+      if (length < field.min) {
+        ctx.addIssue({ code: 'custom', path, message: minMessageFor(field) })
         continue
       }
     }
