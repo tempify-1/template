@@ -7,13 +7,30 @@ import type { FormValues } from '@/lib/forms/types'
 
 import { allFieldsForm } from './fields'
 
-export function AllFieldsDemo() {
+function passwordNames(fields: typeof allFieldsForm): Set<string> {
+  const names = new Set<string>()
+  const walk = (list: typeof allFieldsForm) => {
+    for (const field of list) {
+      if (field.type === 'password') names.add(field.name)
+      if (field.fields) walk(field.fields)
+    }
+  }
+  walk(fields)
+  return names
+}
+
+const MASKED = passwordNames(allFieldsForm)
+
+export function AllFieldsDemo({ initialStep }: { initialStep?: number }) {
   const [submitted, setSubmitted] = useState<FormValues | null>(null)
 
   return (
     <div className="grid gap-10 lg:grid-cols-2 lg:items-start">
       <ConfigForm
         fields={allFieldsForm}
+        defaultValues={{ campaign: 'summer-24' }}
+        initialStep={initialStep}
+        initialCompletedSteps={initialStep ? [...Array(initialStep).keys()] : undefined}
         submitLabel="Submit"
         onSubmit={(values) => {
           console.log('Form submitted with values:', values)
@@ -27,8 +44,14 @@ export function AllFieldsDemo() {
           What the action would receive. Bare strings, numbers and booleans — except combobox
           rows, which are objects carrying <code>{'{value,label}'}</code> plus their row fields.
         </p>
-        <pre className="mt-4 max-h-[60vh] overflow-auto rounded-md border border-border bg-muted p-4 text-xs text-foreground">
-          {submitted ? JSON.stringify(submitted, null, 2) : 'Nothing submitted yet.'}
+        <pre data-slot="submitted-values" className="mt-4 max-h-[60vh] overflow-auto rounded-md border border-border bg-muted p-4 text-xs text-foreground">
+          {submitted
+            ? JSON.stringify(
+                submitted,
+                (key, value) => (MASKED.has(key) && value ? '•••' : value),
+                2,
+              )
+            : 'Nothing submitted yet.'}
         </pre>
       </div>
     </div>

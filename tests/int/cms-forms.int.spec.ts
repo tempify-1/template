@@ -74,7 +74,15 @@ describe('CMS field allowlist', () => {
       'textarea',
       'select',
       'checkbox',
+      'switch',
       'number',
+      'date',
+      'color',
+      'range',
+      'multiSelect',
+      'radioCards',
+      'radioTabs',
+      'checkboxCards',
     ])
     expect(CMS_FIELD_TYPES).not.toContain('fieldArray')
   })
@@ -151,5 +159,76 @@ describe('the client boundary', () => {
       source,
       'importing resolve-form pulls the whole Payload server graph into the client bundle and 500s the page',
     ).not.toContain('resolve-form')
+  })
+})
+
+describe('the flat newcomers are CMS-authorable (#73)', () => {
+  const rows = [
+    { name: 'optIn', type: 'switch', label: 'Opt in' },
+    { name: 'when', type: 'date', label: 'When' },
+    { name: 'shade', type: 'color', label: 'Shade' },
+    { name: 'level', type: 'range', label: 'Level', min: 0, max: 5 },
+    {
+      name: 'tags',
+      type: 'multiSelect',
+      label: 'Tags',
+      options: [{ label: 'A', value: 'a' }],
+    },
+    {
+      name: 'plan',
+      type: 'radioCards',
+      label: 'Plan',
+      options: [{ label: 'Basic', value: 'basic' }],
+    },
+    {
+      name: 'view',
+      type: 'radioTabs',
+      label: 'View',
+      options: [{ label: 'List', value: 'list' }],
+    },
+    {
+      name: 'meals',
+      type: 'checkboxCards',
+      label: 'Meals',
+      options: [{ label: 'BB', value: 'bb' }],
+    },
+  ]
+
+  it('maps every admitted type with its options intact', () => {
+    const definition = mapCmsForm({
+      name: 'Newcomers',
+      slug: 'newcomers',
+      submitLabel: 'Go',
+      successMessage: 'ok',
+      summaryField: 'optIn',
+      fields: rows,
+    })
+    if (!definition) throw new Error('expected a definition')
+    expect(definition.fields.map((f) => f.type)).toEqual([
+      'switch',
+      'date',
+      'color',
+      'range',
+      'multiSelect',
+      'radioCards',
+      'radioTabs',
+      'checkboxCards',
+    ])
+    expect(definition.fields.find((f) => f.name === 'plan')?.options).toEqual([
+      { label: 'Basic', value: 'basic' },
+    ])
+    expect(definition.fields.find((f) => f.name === 'level')?.min).toBe(0)
+  })
+
+  it('rejects a document carrying an inadmissible type outright', () => {
+    const definition = mapCmsForm({
+      name: 'X',
+      slug: 'x',
+      submitLabel: 'Go',
+      successMessage: 'ok',
+      summaryField: 'ok',
+      fields: [{ name: 'p', type: 'password' }, { name: 'ok', type: 'text' }],
+    })
+    expect(definition).toBeNull()
   })
 })

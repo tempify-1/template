@@ -9,9 +9,29 @@ export const FIELD_TYPES = [
   'searchableSelect',
   'combobox',
   'checkbox',
+  'switch',
   'number',
+  'password',
+  'hidden',
+  'color',
+  'slug',
+  'price',
+  'multiSelect',
+  'radioCards',
+  'radioTabs',
+  'checkboxCards',
+  'date',
+  'dateRange',
+  'range',
+  'numberPickerCards',
+  'numberPickerTable',
+  'paragraph',
+  'alert',
   'fieldArray',
   'cardArray',
+  'fieldset',
+  'accordion',
+  'step',
   'submit',
 ] as const
 
@@ -20,6 +40,8 @@ export type FieldType = (typeof FIELD_TYPES)[number]
 export interface Option {
   label: string
   value: string
+  description?: string
+  icon?: string
   disabled?: boolean
 }
 
@@ -72,11 +94,17 @@ export interface FieldConfig {
   ariaDescription?: string
   tabIndex?: number
   fields?: FieldConfig[]
+  slugFrom?: string
+  minDate?: Date | 'today'
+  maxDate?: Date | 'today'
+  currency?: string
+  severity?: 'neutral' | 'error' | 'ok' | 'warning'
   singularLabel?: string
   reselectOptions?: boolean
   editableOptions?: boolean
   draggable?: boolean
   cardDisplay?: CardDisplayConfig
+  wizard?: { confetti?: boolean }
   showWhen?: Condition
   enableWhen?: Condition
   requiredWhen?: Condition
@@ -100,12 +128,35 @@ export type ValueResolver = (current: FormValues) => FormValues | Promise<FormVa
 
 export type FormSchema = z.ZodType<FormValues, FormValues>
 
+export const CONTAINER_TYPES = ['fieldset', 'accordion', 'step'] as const
+
+export function isContainer(field: FieldConfig): boolean {
+  return (CONTAINER_TYPES as readonly string[]).includes(field.type)
+}
+
+export const STATIC_TYPES = ['paragraph', 'alert'] as const
+
 export function isInputField(field: FieldConfig): boolean {
-  return field.type !== 'submit'
+  return (
+    field.type !== 'submit' && !(STATIC_TYPES as readonly string[]).includes(field.type)
+  )
 }
 
 export function inputFields(fields: FieldConfig[]): FieldConfig[] {
-  return fields.filter(isInputField)
+  const flat: FieldConfig[] = []
+  for (const field of fields) {
+    if (!isInputField(field)) continue
+    if (isContainer(field)) {
+      flat.push(...inputFields(field.fields ?? []))
+      continue
+    }
+    flat.push(field)
+  }
+  return flat
+}
+
+export function renderFields(fields: FieldConfig[]): FieldConfig[] {
+  return fields.filter((field) => field.type !== 'submit')
 }
 
 export function defaultValueFor(field: FieldConfig): FormValue {
@@ -115,5 +166,11 @@ export function defaultValueFor(field: FieldConfig): FormValue {
   if (field.type === 'cardArray') return []
   if (field.type === 'number') return undefined
   if (field.type === 'searchableSelect' && field.optionSource) return undefined
+  if (field.type === 'multiSelect' || field.type === 'checkboxCards') return []
+  if (field.type === 'numberPickerCards' || field.type === 'numberPickerTable') return {}
+  if (field.type === 'dateRange') return undefined
+  if (field.type === 'range') return undefined
+  if (field.type === 'switch') return false
+  if (field.type === 'price') return undefined
   return ''
 }

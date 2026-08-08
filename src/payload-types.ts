@@ -504,7 +504,22 @@ export interface Form {
   summaryField: string;
   fields: {
     name: string;
-    type: 'text' | 'email' | 'tel' | 'textarea' | 'select' | 'checkbox' | 'number';
+    type:
+      | 'text'
+      | 'email'
+      | 'tel'
+      | 'textarea'
+      | 'select'
+      | 'checkbox'
+      | 'switch'
+      | 'number'
+      | 'date'
+      | 'color'
+      | 'range'
+      | 'multiSelect'
+      | 'radioCards'
+      | 'radioTabs'
+      | 'checkboxCards';
     label?: string | null;
     placeholder?: string | null;
     description?: string | null;

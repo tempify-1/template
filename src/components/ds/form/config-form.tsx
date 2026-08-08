@@ -5,6 +5,7 @@ import { ArrowDownIcon, ArrowUpIcon, GripVerticalIcon, XIcon } from 'lucide-reac
 import { useEffect, useId, useMemo, useState } from 'react'
 import {
   Controller,
+  FormProvider,
   useFieldArray,
   useForm,
   useWatch,
@@ -12,6 +13,12 @@ import {
   type UseFormReturn,
 } from 'react-hook-form'
 
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -51,10 +58,11 @@ import { conditionHolds, isVisible, isEnabled, isRequired } from '@/lib/forms/co
 import { getAtPath } from '@/lib/forms/paths'
 import { resolveRowOptions } from '@/lib/forms/options-from'
 import { emptyValues } from '@/lib/forms/resolvers'
-import { buildSchema } from '@/lib/forms/schema-builder'
+import { buildSchema, isBlank } from '@/lib/forms/schema-builder'
 import { hiddenValues, submittedValues } from '@/lib/forms/submitted-values'
 import {
   inputFields,
+  renderFields,
   type FieldConfig,
   type FormValues,
   type Option,
@@ -64,6 +72,7 @@ import {
 import { fieldRegistry } from './field-registry'
 import { FieldControlBoundary } from './fields'
 import { RowEditorDialog } from './row-editor-dialog'
+import { Wizard } from './wizard'
 import { useOptionSource } from './use-option-source'
 
 export interface ConfigFormProps {
@@ -71,6 +80,10 @@ export interface ConfigFormProps {
   defaultValues?: FormValues
   onSubmit: (values: FormValues) => void | Promise<void>
   submitLabel?: string
+  onBeforeNext?: (stepIndex: number, values: FormValues) => Promise<boolean>
+  initialStep?: number
+  initialCompletedSteps?: number[]
+  stepSubmitMode?: boolean
 }
 
 type ConfigFormApi = UseFormReturn<FormValues, unknown, FormValues>
@@ -467,9 +480,8 @@ function avatarInitials(config: FieldConfig, row: FormValues): string {
 }
 
 function isBlankRowValue(field: FieldConfig, value: unknown): boolean {
-  if (field.type === 'checkbox') return value !== true
   if (field.type === 'number') return value === undefined || value === null
-  return String(value ?? '').trim() === ''
+  return isBlank(field, value)
 }
 
 function incompleteRowFields(fields: FieldConfig[], row: FormValues): string[] {
@@ -1036,6 +1048,66 @@ function CardArrayControl({
   )
 }
 
+function AccordionSection({
+  config,
+  form,
+  seeded,
+  values,
+  basePath,
+  uid,
+}: {
+  config: FieldConfig
+  form: ConfigFormApi
+  seeded: FormValues
+  values: FormValues
+  basePath: string
+  uid: string
+}) {
+  const [open, setOpen] = useState(false)
+  const [sawError, setSawError] = useState(false)
+  const childNames = inputFields(config.fields ?? []).map((child) =>
+    joinPath(basePath, child.name),
+  )
+  const hasChildError = childNames.some(
+    (name) => getAtPath(form.formState.errors, name) !== undefined,
+  )
+
+  if (hasChildError !== sawError) {
+    setSawError(hasChildError)
+    if (hasChildError) setOpen(true)
+  }
+
+  return (
+    <Accordion
+      value={open ? [config.name] : []}
+      onValueChange={(next: unknown[]) => setOpen(next.length > 0)}
+      data-field={config.name}
+    >
+      <AccordionItem value={config.name}>
+        <AccordionTrigger
+          className={hasChildError ? 'text-destructive' : undefined}
+          data-error={hasChildError || undefined}
+        >
+          {config.label ?? config.name}
+        </AccordionTrigger>
+        <AccordionContent className="flex flex-col gap-5">
+          {config.description ? (
+            <FieldDescription>{config.description}</FieldDescription>
+          ) : null}
+          <FieldList
+            fields={config.fields ?? []}
+            form={form}
+            seeded={seeded}
+            values={values}
+            basePath={basePath}
+            uid={uid}
+          />
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
+  )
+}
+
 function FieldList({
   fields,
   form,
@@ -1053,8 +1125,41 @@ function FieldList({
 }) {
   return (
     <>
-      {inputFields(fields).map((config) => {
+      {renderFields(fields).map((config) => {
         if (!isVisible(config, values)) return null
+
+        if (config.type === 'accordion') {
+          return (
+            <AccordionSection
+              key={config.name}
+              config={config}
+              form={form}
+              seeded={seeded}
+              values={values}
+              basePath={basePath}
+              uid={uid}
+            />
+          )
+        }
+
+        if (config.type === 'fieldset' || config.type === 'step') {
+          return (
+            <FieldSet key={config.name} data-field={config.name}>
+              <FieldLegend>{config.label ?? config.name}</FieldLegend>
+              {config.description ? (
+                <FieldDescription>{config.description}</FieldDescription>
+              ) : null}
+              <FieldList
+                fields={config.fields ?? []}
+                form={form}
+                seeded={seeded}
+                values={values}
+                basePath={basePath}
+                uid={uid}
+              />
+            </FieldSet>
+          )
+        }
 
         if (config.type === 'fieldArray') {
           return (
@@ -1097,6 +1202,33 @@ function FieldList({
           )
         }
 
+        if (config.type === 'hidden') return null
+
+        if (config.type === 'paragraph') {
+          return (
+            <p key={config.name} data-field={config.name} className="text-sm text-muted-foreground">
+              {config.description ?? config.label}
+            </p>
+          )
+        }
+
+        if (config.type === 'alert') {
+          return (
+            <div
+              key={config.name}
+              role="status"
+              data-field={config.name}
+              data-severity={config.severity ?? 'neutral'}
+              className={`rounded-md border border-border p-3 text-sm ${
+                config.severity === 'error' ? 'text-destructive' : 'text-foreground'
+              } bg-muted`}
+            >
+              {config.label ? <strong className="mr-1">{config.label}</strong> : null}
+              {config.description}
+            </div>
+          )
+        }
+
         const Control = fieldRegistry[config.type as keyof typeof fieldRegistry]
         if (!Control) return null
 
@@ -1132,13 +1264,14 @@ function FieldList({
                   invalid={Boolean(message)}
                   describedBy={describedBy}
                   disabled={disabled || undefined}
+                  fieldPath={fullName}
                 />
               </FieldControlBoundary>
             )}
           />
         )
 
-        if (config.type === 'checkbox') {
+        if (config.type === 'checkbox' || config.type === 'switch') {
           return (
             <Field key={fullName} orientation="horizontal" data-field={fullName}>
               {control}
@@ -1164,7 +1297,16 @@ function FieldList({
   )
 }
 
-export function ConfigForm({ fields, defaultValues, onSubmit, submitLabel }: ConfigFormProps) {
+export function ConfigForm({
+  fields,
+  defaultValues,
+  onSubmit,
+  submitLabel,
+  onBeforeNext,
+  initialStep,
+  initialCompletedSteps,
+  stepSubmitMode,
+}: ConfigFormProps) {
   const schema = useMemo(() => buildSchema(fields), [fields])
   const seeded = useMemo(
     () => ({ ...emptyValues(fields), ...(defaultValues ?? {}) }),
@@ -1181,6 +1323,15 @@ export function ConfigForm({ fields, defaultValues, onSubmit, submitLabel }: Con
   const uid = useId()
   const values = form.watch() as Record<string, unknown>
   const submit = fields.find((field) => field.type === 'submit')
+  const steps = fields.filter((field) => field.type === 'step')
+  if (steps.length > 0) {
+    const stray = fields.filter((field) => field.type !== 'step' && field.type !== 'submit')
+    if (stray.length > 0) {
+      throw new Error(
+        `A stepped form must keep every field inside a step; stray: ${stray.map((f) => f.name).join(', ')}`,
+      )
+    }
+  }
 
   useEffect(() => {
     for (const { path, empty } of hiddenValues(fields, values as FormValues)) {
@@ -1193,21 +1344,47 @@ export function ConfigForm({ fields, defaultValues, onSubmit, submitLabel }: Con
   }
 
   return (
+    <FormProvider {...form}>
     <form onSubmit={form.handleSubmit(handle)} noValidate>
-      <FieldGroup>
-        <FieldList
-          fields={fields}
+      {steps.length > 0 ? (
+        <Wizard
+          steps={steps}
           form={form}
-          seeded={seeded}
-          values={values as FormValues}
-          basePath=""
-          uid={uid}
+          submitLabel={submit?.label ?? submitLabel ?? 'Submit'}
+          onBeforeNext={onBeforeNext}
+          initialStep={initialStep}
+          initialCompletedSteps={initialCompletedSteps}
+          stepSubmitMode={stepSubmitMode}
+          renderStep={(step) => (
+            <FieldGroup>
+              <FieldList
+                fields={step.fields ?? []}
+                form={form}
+                seeded={seeded}
+                values={values as FormValues}
+                basePath=""
+                uid={uid}
+              />
+            </FieldGroup>
+          )}
         />
+      ) : (
+        <FieldGroup>
+          <FieldList
+            fields={fields}
+            form={form}
+            seeded={seeded}
+            values={values as FormValues}
+            basePath=""
+            uid={uid}
+          />
 
-        <Button type="submit" disabled={form.formState.isSubmitting}>
-          {submit?.label ?? submitLabel ?? 'Submit'}
-        </Button>
-      </FieldGroup>
+          <Button type="submit" disabled={form.formState.isSubmitting}>
+            {submit?.label ?? submitLabel ?? 'Submit'}
+          </Button>
+        </FieldGroup>
+      )}
     </form>
+    </FormProvider>
   )
 }

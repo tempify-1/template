@@ -43,8 +43,9 @@ type FieldType =
 //   address — geocode search plus subfields. A composite over an async combobox, so it is blocked
 //     on that, not on itself.
 //   file — blocked on the storage adapter decision (#20), not on the form engine.
-//   range, color, definitionList, aside, actionButton — no form in the backlog needs them. Add on
-//     demand, with a contract row, never speculatively.
+//   definitionList, aside, actionButton — no form in the backlog needs them. Add on demand, with
+//     a contract row, never speculatively. (range and color were in this list and were swept into
+//     phase 3 instead.)
 // Not a field type but a real gap: ADR-0005 records that behaviour in config is a named action,
 //   and the engine has no binding for one (the old system's `action` / `append` / `onFieldAction`).
 //   Not in the parity spec; needs its own ticket.
@@ -216,6 +217,15 @@ warranted when there is no options array to resolve a display label against. Rul
 - select / radioCards / radioTabs → `string` (the option value)
 - multiSelect / checkboxCards → `string[]`
 - checkbox / switch → `boolean`
+- password / hidden / slug / color → `string`; `password` is never echoed by any summary, card,
+  chip or debug surface — masked wherever a value would render
+- price → **integer minor units** (`4999`), currency display-only from config. Decided at the
+  phase 3 trivial foundations (#52): no floats near money — the step-modulo float bug was the
+  warning shot. The control owns display↔minor-units conversion at the field boundary
+- range → `number`, through the same min/max/step pipes as `number`
+- numberPickerCards / numberPickerTable → `Record<optionValue, number>`
+  (`{ standard: 2, deluxe: 1 }`). Decided at the phase 3 numeric foundations (#55); cards and
+  table are two presentations of the same record
 - number → `number` (not string — the control coerces at the field boundary and the schema
   validates the result)
 - date → `"yyyy-MM-dd"` string; dateRange → `{ start, end }` of the same (no fake-Z timestamps)
@@ -226,7 +236,11 @@ warranted when there is no options array to resolve a display label against. Rul
   `useFieldArray`, so values stay bare and there are no identity records. The render-side row key
   is separate from the submitted value. Nested arrays are configured as recursive `fields[]` rather
   than dot-path templates with a `#` segment.
-- fieldset / accordion / step → no value (containers)
+- fieldset / accordion / step → no value (containers), and **containers carry no conditions** —
+  a container `showWhen` cannot compose with a child's under single-condition semantics, so the
+  engine rejects it at config time; put the condition on the fields inside
+- paragraph / alert → no value (static content; excluded from schema, payload and condition
+  targets exactly as `submit` is)
 - combobox → **`object[]`, always** — the combobox is an array chip control (spec 1.5), and
   every row is an object regardless of config: `{ value, label }` from the picked option, merged
   over the row template, plus whatever nested fields the row's `fields` define. One shape, no
@@ -383,7 +397,7 @@ last step's nav. Proven semantics to keep:
 - `onBeforeNext(stepIndex, values) => Promise<boolean>` async gate for save-per-step flows;
   "Saving…" state while pending; returning false blocks navigation.
 - Whole-form submit failure sweeps all steps, marks invalid ones, jumps to the first.
-- Optional per-step confetti (`canvas-confetti`, reduced-motion bail).
+- Optional per-step confetti (`canvas-confetti`, reduced-motion bail) via `wizard: { confetti: true }` — the chrome key is `wizard`, since `step` already means numeric granularity.
 - Completed steps in save-per-step mode re-render readonly.
 
 ## Autosave (`onPatch`)

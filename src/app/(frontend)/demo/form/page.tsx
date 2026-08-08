@@ -8,7 +8,13 @@ export const metadata = {
   robots: { index: false, follow: false },
 }
 
-export default async function AllFieldsFormPage() {
+export default async function AllFieldsFormPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ step?: string }>
+}) {
+  const params = await searchParams
+  const initialStep = params.step ? Number(params.step) : undefined
   return (
     <SiteShell config={await loadNavigation()}>
       <div className="mx-auto w-full max-w-6xl px-6 py-12">
@@ -19,7 +25,7 @@ export default async function AllFieldsFormPage() {
           picker, and a rooms array carrying one travellers combobox per row.
         </p>
         <div className="mt-10">
-          <AllFieldsDemo />
+          <AllFieldsDemo initialStep={initialStep} />
         </div>
       </div>
     </SiteShell>

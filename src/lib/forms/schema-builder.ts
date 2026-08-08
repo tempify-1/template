@@ -23,35 +23,71 @@ function assertOptionSourceExclusivity(field: FieldConfig): void {
   }
 }
 
+function numberLeaf(field: FieldConfig, integer = false): z.ZodType {
+  const numSchema = z.number()
+  let schema: z.ZodNumber = integer ? numSchema.int() : numSchema
+  if (field.min !== undefined) {
+    const msg = field.minMessage ?? `Must be at least ${field.min}`
+    schema = schema.min(field.min, { message: msg })
+  }
+  if (field.max !== undefined) {
+    const msg = field.maxMessage ?? `Must be at most ${field.max}`
+    schema = schema.max(field.max, { message: msg })
+  }
+  if (field.step !== undefined) {
+    const minVal = field.min ?? 0
+    const stepVal = field.step
+    schema = schema.refine((val) => {
+      if (val === undefined) return true
+      if (typeof val !== 'number') return true
+      const steps = (val - minVal) / stepVal
+      return Math.abs(steps - Math.round(steps)) < 1e-8
+    }, { message: `Must be a multiple of ${stepVal}` })
+  }
+  return schema.optional()
+}
+
 function leafFor(field: FieldConfig): z.ZodType {
   assertOptionSourceExclusivity(field)
   switch (field.type) {
     case 'checkbox':
+    case 'switch':
       return z.boolean().optional()
 
-    case 'number': {
-      const numSchema = z.number()
-      let schema: z.ZodNumber = numSchema
-      if (field.min !== undefined) {
-        const msg = field.minMessage ?? `Must be at least ${field.min}`
-        schema = schema.min(field.min, { message: msg })
+    case 'price':
+      return numberLeaf(field, true)
+
+    case 'dateRange': {
+      const iso = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+      return z
+        .object({ start: iso, end: iso })
+        .refine((range) => range.start <= range.end, {
+          message: field.minMessage ?? 'The end date must not precede the start',
+        })
+        .optional()
+    }
+
+    case 'range':
+    case 'numberPickerCards':
+    case 'numberPickerTable': {
+      if (field.type !== 'range') {
+        return z.record(z.string(), z.number().int().min(0)).optional()
       }
+      return numberLeaf(field)
+    }
+
+    case 'checkboxCards':
+    case 'multiSelect': {
+      let schema = z.array(z.string())
       if (field.max !== undefined) {
-        const msg = field.maxMessage ?? `Must be at most ${field.max}`
-        schema = schema.max(field.max, { message: msg })
-      }
-      if (field.step !== undefined) {
-        const minVal = field.min ?? 0
-        const stepVal = field.step
-        schema = schema.refine((val) => {
-          if (val === undefined) return true
-          if (typeof val !== 'number') return true
-          const steps = (val - minVal) / stepVal
-          return Math.abs(steps - Math.round(steps)) < 1e-8
-        }, { message: `Must be a multiple of ${stepVal}` })
+        schema = schema.max(field.max, { message: maxMessageFor(field) })
       }
       return schema.optional()
     }
+
+    case 'number':
+      return numberLeaf(field)
+
 
     case 'searchableSelect': {
       if (field.optionSource) {
@@ -153,8 +189,15 @@ function requiredMessageFor(field: FieldConfig): string {
   return field.requiredMessage ?? `${field.label ?? field.name} is required`
 }
 
-function isBlank(field: FieldConfig, value: unknown): boolean {
-  if (field.type === 'checkbox') return value !== true
+export function isBlank(field: FieldConfig, value: unknown): boolean {
+  if (field.type === 'checkbox' || field.type === 'switch') return value !== true
+  if (field.type === 'multiSelect' || field.type === 'checkboxCards')
+    return !Array.isArray(value) || value.length === 0
+  if (field.type === 'numberPickerCards' || field.type === 'numberPickerTable') {
+    if (value === null || typeof value !== 'object') return true
+    return Object.values(value as Record<string, number>).reduce((a, b) => a + b, 0) === 0
+  }
+  if (field.type === 'dateRange') return value === undefined || value === null
   if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
     return String((value as { value?: unknown }).value ?? '').trim() === ''
   }
@@ -209,6 +252,32 @@ function refineFields(
       continue
     }
 
+    if (
+      (field.type === 'numberPickerCards' || field.type === 'numberPickerTable') &&
+      (value === undefined || (value !== null && typeof value === 'object'))
+    ) {
+      const total = Object.values((value ?? {}) as Record<string, number>).reduce((a, b) => a + b, 0)
+      if (field.min !== undefined && total < field.min) {
+        ctx.addIssue({ code: 'custom', path, message: minMessageFor(field) })
+        continue
+      }
+      if (field.max !== undefined && total > field.max) {
+        ctx.addIssue({ code: 'custom', path, message: maxMessageFor(field) })
+        continue
+      }
+    }
+
+    if (
+      (field.type === 'multiSelect' || field.type === 'checkboxCards') &&
+      field.min !== undefined
+    ) {
+      const length = Array.isArray(value) ? value.length : 0
+      if (length < field.min) {
+        ctx.addIssue({ code: 'custom', path, message: minMessageFor(field) })
+        continue
+      }
+    }
+
     const blank = isBlank(field, value)
 
     if (isRequired(field, values) && blank) {
@@ -217,6 +286,39 @@ function refineFields(
     }
 
     if (blank) continue
+
+    if (field.optionsFrom && Array.isArray(value)) {
+      const offered = new Set(resolveRowOptions(field, values).map((option) => option.value))
+      const orphans = (value as string[]).filter((entry) => !offered.has(entry))
+      if (orphans.length > 0) {
+        ctx.addIssue({
+          code: 'custom',
+          path,
+          message: `${field.label ?? field.name} has choices that are no longer available — choose again`,
+        })
+        continue
+      }
+    }
+
+    if (field.type === 'date' && typeof value === 'string' && value !== '') {
+      const bound = (limit: Date | 'today' | undefined): string | undefined => {
+        if (limit === undefined) return undefined
+        const date = limit === 'today' ? new Date() : limit
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const day = String(date.getDate()).padStart(2, '0')
+        return `${date.getFullYear()}-${month}-${day}`
+      }
+      const minIso = bound(field.minDate)
+      const maxIso = bound(field.maxDate)
+      if (minIso && value < minIso) {
+        ctx.addIssue({ code: 'custom', path, message: `Must be on or after ${minIso}` })
+        continue
+      }
+      if (maxIso && value > maxIso) {
+        ctx.addIssue({ code: 'custom', path, message: `Must be on or before ${maxIso}` })
+        continue
+      }
+    }
 
     if (field.optionsFrom && typeof value === 'string') {
       const offered = resolveRowOptions(field, values)

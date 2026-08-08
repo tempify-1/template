@@ -7,7 +7,15 @@ export const CMS_FIELD_TYPES = [
   'textarea',
   'select',
   'checkbox',
+  'switch',
   'number',
+  'date',
+  'color',
+  'range',
+  'multiSelect',
+  'radioCards',
+  'radioTabs',
+  'checkboxCards',
 ] as const
 
 export type CmsFieldType = (typeof CMS_FIELD_TYPES)[number]
