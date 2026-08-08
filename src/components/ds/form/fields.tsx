@@ -98,7 +98,13 @@ export function SelectControl({
   const ariaDescribedBy = [describedBy, config.ariaDescribedby].filter(Boolean).join(' ')
 
   return (
-    <Select items={options} value={chosen} onValueChange={onChange}>
+    <Select
+      items={options}
+      value={chosen}
+      onValueChange={(next: string | null) => {
+        if (next !== null) onChange(next)
+      }}
+    >
       <SelectTrigger
         id={controlId}
         aria-invalid={invalid || undefined}

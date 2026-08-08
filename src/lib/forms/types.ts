@@ -56,6 +56,7 @@ export interface FieldConfig {
   requiredMessage?: string
   options?: Option[]
   optionSource?: (query: string, signal: AbortSignal) => Promise<Option[]>
+  optionsFrom?: { field: string; map: Record<string, Option[]> }
   min?: number
   max?: number
   minMessage?: string

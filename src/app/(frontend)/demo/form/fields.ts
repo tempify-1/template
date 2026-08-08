@@ -14,6 +14,29 @@ const traveller: FieldConfig[] = [
     ],
   },
   {
+    name: 'title',
+    type: 'select',
+    label: 'Title',
+    optionsFrom: {
+      field: 'ageBand',
+      map: {
+        adult: [
+          { label: 'Mr', value: 'mr' },
+          { label: 'Ms', value: 'ms' },
+          { label: 'Dr', value: 'dr' },
+        ],
+        child: [
+          { label: 'Master', value: 'master' },
+          { label: 'Miss', value: 'miss' },
+        ],
+        infant: [
+          { label: 'Master', value: 'master' },
+          { label: 'Miss', value: 'miss' },
+        ],
+      },
+    },
+  },
+  {
     name: 'age',
     type: 'number',
     label: 'Age',

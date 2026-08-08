@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { assertConditionTargetsExist, isEnabled, isRequired, isVisible } from './conditions'
+import { resolveRowOptions } from './options-from'
 import { getAtPath, pathSegments } from './paths'
 import { inputFields, type FieldConfig, type FormSchema, type FormValues } from './types'
 
@@ -202,6 +203,18 @@ function refineFields(
     }
 
     if (blank) continue
+
+    if (field.optionsFrom && typeof value === 'string') {
+      const offered = resolveRowOptions(field, values)
+      if (!offered.some((option) => option.value === value)) {
+        ctx.addIssue({
+          code: 'custom',
+          path,
+          message: `${field.label ?? field.name} is no longer available — choose again`,
+        })
+        continue
+      }
+    }
 
     if (field.type === 'number') {
       if (typeof value !== 'number') continue

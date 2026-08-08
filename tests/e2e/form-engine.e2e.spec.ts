@@ -210,6 +210,52 @@ test.describe('combobox chip control', () => {
     ).toHaveCount(1)
   })
 
+  test('per-row optionsFrom keys on the sibling and surfaces orphaned values (#47)', async ({
+    page,
+  }) => {
+    await pickDestination(page, 'mad', 'Madrid')
+    await addRoom(page, 'dou', 'Double')
+    await page.getByRole('button', { name: 'Edit Double' }).click()
+    const modal = page.getByRole('dialog')
+    await modal.locator('[data-field^="rooms.0.board"] [data-slot="select-trigger"]').click()
+    await page.getByRole('option', { name: 'Room only' }).click()
+    await modal.getByRole('button', { name: 'Add Traveller' }).click()
+    await modal.locator('[data-field="rooms.0.travellers.0.name"] input').fill('Kit')
+
+    const ageBand = modal.locator(
+      '[data-field^="rooms.0.travellers.0.ageBand"] [data-slot="select-trigger"]',
+    )
+    const title = modal.locator(
+      '[data-field^="rooms.0.travellers.0.title"] [data-slot="select-trigger"]',
+    )
+
+    await ageBand.click()
+    await page.getByRole('option', { name: 'Child', exact: true }).click()
+    await title.click()
+    await expect(page.getByRole('option', { name: 'Master' })).toBeVisible()
+    await expect(page.getByRole('option', { name: 'Mr', exact: true })).toHaveCount(0)
+    await page.getByRole('option', { name: 'Miss' }).click()
+    await modal.locator('[data-field="rooms.0.travellers.0.age"] input').fill('8')
+
+    await ageBand.click()
+    await page.getByRole('option', { name: 'Adult', exact: true }).click()
+    await modal.getByRole('button', { name: 'Done' }).click()
+    await page.getByRole('button', { name: 'Submit enquiry' }).click()
+    await expect(page.locator('pre')).toContainText('Nothing submitted yet')
+
+    await page.getByRole('button', { name: 'Edit Double' }).click()
+    await expect(page.getByRole('dialog')).toContainText('no longer available')
+    await title.click()
+    await page.getByRole('option', { name: 'Dr' }).click()
+    await page.getByRole('dialog').getByRole('button', { name: 'Done' }).click()
+    await page.getByRole('button', { name: 'Submit enquiry' }).click()
+
+    const values = await submittedJson(page)
+    const rooms = values.rooms as Record<string, unknown>[]
+    const travellers = rooms[0]?.travellers as Record<string, unknown>[]
+    expect(travellers[0]).toMatchObject({ title: 'dr', ageBand: 'adult' })
+  })
+
   test('an unopened incomplete row surfaces a visible error on submit', async ({ page }) => {
     await addRoom(page, 'dou', 'Double')
     await page.getByRole('button', { name: 'Submit enquiry' }).click()

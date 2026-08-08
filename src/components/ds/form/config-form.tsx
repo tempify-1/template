@@ -49,6 +49,7 @@ import {
 import { useSectionTheme } from '@/components/ds/section/section-theme-context'
 import { conditionHolds, isVisible, isEnabled, isRequired } from '@/lib/forms/conditions'
 import { getAtPath } from '@/lib/forms/paths'
+import { resolveRowOptions } from '@/lib/forms/options-from'
 import { emptyValues } from '@/lib/forms/resolvers'
 import { buildSchema } from '@/lib/forms/schema-builder'
 import { hiddenValues, submittedValues } from '@/lib/forms/submitted-values'
@@ -1073,6 +1074,10 @@ function FieldList({
         const Control = fieldRegistry[config.type as keyof typeof fieldRegistry]
         if (!Control) return null
 
+        const resolvedConfig = config.optionsFrom
+          ? { ...config, options: resolveRowOptions(config, values) }
+          : config
+
         const fullName = joinPath(basePath, config.name)
         const message = errorMessageAt(form.formState.errors, fullName)
         const id = `${uid}${fullName}`
@@ -1095,7 +1100,7 @@ function FieldList({
             render={({ field }) => (
               <FieldControlBoundary>
                 <Control
-                  config={config}
+                  config={resolvedConfig}
                   field={{ ...field, disabled }}
                   controlId={id}
                   invalid={Boolean(message)}

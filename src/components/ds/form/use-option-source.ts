@@ -8,29 +8,35 @@ import {
 } from '@/lib/forms/option-source'
 import type { FieldConfig, Option } from '@/lib/forms/types'
 
+interface SourceState {
+  query: string | null
+  results: Option[]
+  failed: boolean
+}
+
 export function useOptionSource(
   config: FieldConfig,
   query: string,
   selected: Option[],
 ): { items: Option[]; status: OptionSourceStatus; isAsync: boolean } {
   const source = config.optionSource
-  const [results, setResults] = React.useState<Option[]>([])
-  const [status, setStatus] = React.useState<OptionSourceStatus>('idle')
+  const [state, setState] = React.useState<SourceState>({
+    query: null,
+    results: [],
+    failed: false,
+  })
 
   React.useEffect(() => {
     if (!source) return
     const controller = new AbortController()
-    setStatus('loading')
     source(query, controller.signal)
-      .then((next) => {
+      .then((results) => {
         if (controller.signal.aborted) return
-        setResults(next)
-        setStatus('idle')
+        setState({ query, results, failed: false })
       })
       .catch(() => {
         if (controller.signal.aborted) return
-        setResults([])
-        setStatus('error')
+        setState({ query, results: [], failed: true })
       })
     return () => controller.abort()
   }, [source, query])
@@ -38,5 +44,8 @@ export function useOptionSource(
   if (!source) {
     return { items: config.options ?? [], status: 'idle', isAsync: false }
   }
-  return { items: mergeSelectedOptions(results, selected), status, isAsync: true }
+
+  const status: OptionSourceStatus =
+    state.query !== query ? 'loading' : state.failed ? 'error' : 'idle'
+  return { items: mergeSelectedOptions(state.results, selected), status, isAsync: true }
 }
