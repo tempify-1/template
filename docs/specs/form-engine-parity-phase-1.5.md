@@ -217,7 +217,9 @@ for `object[]` rows.
 - **Pointer drag reorder** — phase 2, with `cardArray`. `draggable: true` renders the grip only
   when drag lands; until then the flag is documented as inert.
 - **`cardArray`, form-level chrome, wizard resumption** — phase 2, unchanged except that
-  `cardDisplay` config and the shared row editor now precede it.
+  `cardDisplay` config and the shared row editor now precede it. **Superseded by the phase 2
+  spec**: chrome and wizard resumption moved on — chrome to phase 4 (the `FormProps` surface),
+  resumption to phase 3 (with the wizard). Phase 2 is the array family only.
 
 ---
 
