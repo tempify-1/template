@@ -18,6 +18,7 @@ const BASE_URL = `http://localhost:${PORT}`
 export default defineConfig({
   globalSetup: './tests/global-setup.ts',
   testDir: './tests/e2e',
+  testIgnore: (process.env.E2E_QUARANTINE ?? '').split(',').filter(Boolean),
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */

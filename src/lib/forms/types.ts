@@ -31,6 +31,15 @@ export interface PickerOption extends Option {
   data?: FormValues
 }
 
+export interface CardDisplayConfig {
+  title?: string | string[]
+  description?: (string | { field?: string; text?: string })[]
+  chips?: { field: string; label?: string }[]
+  addable?: boolean
+  removable?: boolean
+  showCompletionStatus?: boolean
+}
+
 export interface FieldConfig {
   name: string
   type: FieldType
@@ -55,6 +64,11 @@ export interface FieldConfig {
   ariaDescription?: string
   tabIndex?: number
   fields?: FieldConfig[]
+  singularLabel?: string
+  reselectOptions?: boolean
+  editableOptions?: boolean
+  draggable?: boolean
+  cardDisplay?: CardDisplayConfig
   showWhen?: Condition
   enableWhen?: Condition
   requiredWhen?: Condition
@@ -89,6 +103,7 @@ export function inputFields(fields: FieldConfig[]): FieldConfig[] {
 export function defaultValueFor(field: FieldConfig): FormValue {
   if (field.type === 'checkbox') return false
   if (field.type === 'fieldArray') return []
+  if (field.type === 'combobox') return []
   if (field.type === 'number') return undefined
   return ''
 }

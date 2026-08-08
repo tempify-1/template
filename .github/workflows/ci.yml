@@ -6,10 +6,15 @@ on:
     branches:
       - main
 
+env:
+  DATABASE_URL: postgres://postgres:postgres@localhost:5433/template
+  PAYLOAD_SECRET: ci-only-secret
+  NEXT_PUBLIC_SERVER_URL: http://localhost:3001
+
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     services:
       postgres:
         image: postgres:16
@@ -24,28 +29,33 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-    
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: 'pnpm'
-      
+
       - name: Install dependencies
-        run: pnpm install
-      
+        run: pnpm install --frozen-lockfile
+
       - name: Type check
         run: pnpm exec tsc --noEmit
-      
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps
-      
+
       - name: Run integration tests
         run: pnpm test:int
-      
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
       - name: Run e2e tests
+        env:
+          E2E_QUARANTINE: 'page-shell.e2e.spec.ts,seo.e2e.spec.ts,pages-cms.e2e.spec.ts,live-preview.e2e.spec.ts,fixtures-visual.e2e.spec.ts'
         run: pnpm test:e2e

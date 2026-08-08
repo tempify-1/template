@@ -1,7 +1,7 @@
 import type { FieldConfig } from '@/lib/forms/types'
 
 const traveller: FieldConfig[] = [
-  { name: 'name', type: 'text', label: 'Full name', required: true },
+  { name: 'name', type: 'text', label: 'Full name', required: true, autocomplete: 'name' },
   {
     name: 'ageBand',
     type: 'select',
@@ -31,53 +31,111 @@ const traveller: FieldConfig[] = [
   },
 ]
 
-const room: FieldConfig[] = [
+export const allFieldsForm: FieldConfig[] = [
   {
-    name: 'type',
+    name: 'rooms',
     type: 'combobox',
-    label: 'Room type',
+    label: 'Rooms',
+    singularLabel: 'room',
     required: true,
+    requiredMessage: 'Add at least one room',
+    max: 4,
+    reselectOptions: true,
     options: [
       { label: 'Double', value: 'double' },
       { label: 'Twin', value: 'twin' },
       { label: 'Single', value: 'single' },
       { label: 'Suite', value: 'suite' },
     ],
+    cardDisplay: {
+      title: 'label',
+      chips: [{ field: 'board' }],
+      showCompletionStatus: true,
+    },
+    fields: [
+      {
+        name: 'board',
+        type: 'select',
+        label: 'Board basis',
+        required: true,
+        options: [
+          { label: 'Bed and breakfast', value: 'bb' },
+          { label: 'Half board', value: 'hb' },
+          { label: 'Room only', value: 'ro' },
+        ],
+      },
+      {
+        name: 'travellers',
+        type: 'fieldArray',
+        label: 'Traveller',
+        min: 1,
+        max: 6,
+        fields: traveller,
+        picker: {
+          label: 'party template',
+          options: [
+            { label: 'Two adults', value: 'two-adults', data: { ageBand: 'adult' } },
+            { label: 'One adult', value: 'one-adult', data: { ageBand: 'adult' } },
+            { label: 'One child (age 8)', value: 'child-8', data: { ageBand: 'child', age: 8 } },
+            { label: 'One infant', value: 'infant', data: { ageBand: 'infant' } },
+          ],
+        },
+      },
+    ],
   },
   {
-    name: 'travellers',
-    type: 'fieldArray',
-    label: 'Traveller',
-    min: 1,
-    max: 6,
-    fields: traveller,
-    picker: {
-      label: 'party template',
-      options: [
-        { label: 'Two adults', value: 'two-adults', data: { ageBand: 'adult' } },
-        { label: 'One adult', value: 'one-adult', data: { ageBand: 'adult' } },
-        { label: 'One child (age 8)', value: 'child-8', data: { ageBand: 'child', age: 8 } },
-        { label: 'One infant', value: 'infant', data: { ageBand: 'infant' } },
-      ],
-    },
+    name: 'phone',
+    type: 'tel',
+    label: 'Contact phone',
+    autocomplete: 'tel',
+    inputmode: 'tel',
+    enableWhen: { field: 'rooms', exists: true },
+    description: 'Enabled once a room is added; disabled it never reaches the payload.',
   },
-]
-
-export const allFieldsForm: FieldConfig[] = [
   {
-    name: 'rooms',
+    name: 'partyRooms',
     type: 'fieldArray',
-    label: 'Room',
-    min: 1,
-    max: 4,
-    fields: room,
-    picker: {
-      label: 'room type',
-      options: [
-        { label: 'Double, bed and breakfast', value: 'double-bb', data: { type: 'double' } },
-        { label: 'Twin, half board', value: 'twin-half', data: { type: 'twin' } },
-        { label: 'Single, room only', value: 'single-ro', data: { type: 'single' } },
-      ],
-    },
+    label: 'Party room',
+    max: 3,
+    fields: [
+      {
+        name: 'travellers',
+        type: 'combobox',
+        label: 'Travellers',
+        singularLabel: 'traveller',
+        required: true,
+        reselectOptions: true,
+        draggable: true,
+        options: [
+          { label: 'Adult', value: 'adult' },
+          { label: 'Child', value: 'child' },
+          { label: 'Infant', value: 'infant' },
+        ],
+        cardDisplay: { showCompletionStatus: true },
+        fields: [
+          {
+            name: 'firstName',
+            type: 'text',
+            label: 'First name',
+            required: true,
+            autocomplete: 'given-name',
+          },
+          {
+            name: 'middleName',
+            type: 'text',
+            label: 'Middle name',
+            autocomplete: 'additional-name',
+          },
+          {
+            name: 'lastName',
+            type: 'text',
+            label: 'Last name',
+            required: true,
+            autocomplete: 'family-name',
+          },
+        ],
+      },
+    ],
   },
+  { name: 'submit', type: 'submit', label: 'Submit enquiry' },
 ]

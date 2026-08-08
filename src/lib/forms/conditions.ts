@@ -1,8 +1,8 @@
 import { getAtPath } from './paths'
 import { inputFields, type Condition, type FieldConfig, type FormValues } from './types'
 
-export function assertConditionTargetsExist(fields: FieldConfig[]): void {
-  const known = new Set(inputFields(fields).map((field) => field.name))
+export function assertConditionTargetsExist(fields: FieldConfig[], extraKnown: string[] = []): void {
+  const known = new Set([...inputFields(fields).map((field) => field.name), ...extraKnown])
 
   for (const field of fields) {
     for (const [kind, condition] of [
@@ -19,6 +19,10 @@ export function assertConditionTargetsExist(fields: FieldConfig[]): void {
 
     if (field.type === 'fieldArray' && field.fields) {
       assertConditionTargetsExist(field.fields)
+    }
+
+    if (field.type === 'combobox' && field.fields) {
+      assertConditionTargetsExist(field.fields, ['value', 'label'])
     }
   }
 }
@@ -37,10 +41,14 @@ export function conditionHolds(condition: Condition | undefined, values: FormVal
   }
 
   if ('exists' in condition) {
-    if (Array.isArray(value)) return value.length > 0
-    if (typeof value === 'boolean') return value
-    if (typeof value === 'string') return value.trim().length > 0
-    return value !== undefined && value !== null
+    const present = Array.isArray(value)
+      ? value.length > 0
+      : typeof value === 'boolean'
+        ? value
+        : typeof value === 'string'
+          ? value.trim().length > 0
+          : value !== undefined && value !== null
+    return condition.exists ? present : !present
   }
 
   if ('count_equals' in condition) {
