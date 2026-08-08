@@ -336,8 +336,9 @@ per-form CSS — keep it.
 
 - **fieldArray**: stacked rows, add/remove, keyboard up/down reorder with an `aria-live` position
   announcement, min/max counts with friendly messages (`At least 1 traveller required`). Built.
-  Pointer drag-reorder is additive on top of the keyboard controls, not a replacement for them,
-  and lands with `cardArray`.
+  On `combobox` and `cardArray`, `draggable: true` additionally renders a pointer-drag grip on
+  each chip or card — sugar over the same `move`, announced through the same `aria-live` path,
+  never a replacement for the keyboard controls.
 - **cardArray** — rows render as summary Cards; the whole card is a button
   (`aria-haspopup="dialog"`) opening the same shared row-editor Dialog the combobox uses, with
   prev/next, footer reorder and the incomplete alert. `cardDisplay` is shared by both array

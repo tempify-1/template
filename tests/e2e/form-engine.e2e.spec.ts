@@ -155,6 +155,61 @@ test.describe('combobox chip control', () => {
     await expect(field.locator('[data-slot="combobox-chip"]')).toContainText('Cot')
   })
 
+  test('pointer drag reorders chips and the payload proves it (#46)', async ({ page }) => {
+    await pickDestination(page, 'mad', 'Madrid')
+    await addRoom(page, 'dou', 'Double')
+    await addRoom(page, 'twi', 'Twin')
+
+    const chips = page.locator('[data-field="rooms"] [data-slot="combobox-chip"]')
+    await expect(chips.nth(0)).toContainText('Double')
+    const grips = page.locator('[data-field="rooms"] [data-slot="row-drag-grip"]')
+    await expect(grips).toHaveCount(2)
+
+    const from = await grips.nth(1).boundingBox()
+    const to = await chips.nth(0).boundingBox()
+    if (!from || !to) throw new Error('missing bounding boxes')
+    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(to.x + 4, to.y + to.height / 2, { steps: 8 })
+    await page.mouse.up()
+
+    await expect(chips.nth(0)).toContainText('Twin')
+    await expect(
+      page.locator('[data-field="rooms"] [data-slot="reorder-announcement"]'),
+    ).toContainText('moved to position 1')
+
+    for (const index of [0, 1]) {
+      await page.getByRole('button', { name: index === 0 ? 'Edit Twin' : 'Edit Double' }).click()
+      const modal = page.getByRole('dialog')
+      await modal
+        .locator(`[data-field^="rooms.${index}.board"] [data-slot="select-trigger"]`)
+        .click()
+      await page.getByRole('option', { name: 'Room only' }).click()
+      await modal.getByRole('button', { name: 'Add Traveller' }).click()
+      await modal.locator(`[data-field="rooms.${index}.travellers.0.name"] input`).fill('T')
+      await modal
+        .locator(`[data-field^="rooms.${index}.travellers.0.ageBand"] [data-slot="select-trigger"]`)
+        .click()
+      await page.getByRole('option', { name: 'Adult', exact: true }).click()
+      await modal.getByRole('button', { name: 'Done' }).click()
+    }
+
+    await page.getByRole('button', { name: 'Submit enquiry' }).click()
+    const values = await submittedJson(page)
+    const rooms = values.rooms as Record<string, unknown>[]
+    expect(rooms.map((r) => r.value)).toEqual(['twin', 'double'])
+  })
+
+  test('grips absent without draggable; cards show grips with it', async ({ page }) => {
+    await expect(
+      page.locator('[data-field="extras"] [data-slot="row-drag-grip"]'),
+    ).toHaveCount(0)
+    await page.getByRole('button', { name: 'Add Party room', exact: true }).click()
+    await expect(
+      page.locator('[data-field="partyRooms"] [data-slot="row-drag-grip"]'),
+    ).toHaveCount(1)
+  })
+
   test('an unopened incomplete row surfaces a visible error on submit', async ({ page }) => {
     await addRoom(page, 'dou', 'Double')
     await page.getByRole('button', { name: 'Submit enquiry' }).click()

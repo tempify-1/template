@@ -1,7 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowDownIcon, ArrowUpIcon, XIcon } from 'lucide-react'
+import { ArrowDownIcon, ArrowUpIcon, GripVerticalIcon, XIcon } from 'lucide-react'
 import { useEffect, useId, useMemo, useState } from 'react'
 import {
   Controller,
@@ -105,6 +105,51 @@ function mergeDeep(target: FormValues, source: FormValues): FormValues {
     }
   }
   return result
+}
+
+function rowIndexUnderPointer(fullName: string, x: number, y: number): number | null {
+  const el = document.elementFromPoint(x, y)
+  const row = el?.closest('[data-row-index]')
+  if (!row) return null
+  const owner = row.closest('[data-field]')
+  if (!owner || owner.getAttribute('data-field') !== fullName) return null
+  const parsed = Number(row.getAttribute('data-row-index'))
+  return Number.isNaN(parsed) ? null : parsed
+}
+
+function DragGrip({
+  fullName,
+  index,
+  onDrop,
+}: {
+  fullName: string
+  index: number
+  onDrop: (from: number, to: number) => void
+}) {
+  return (
+    <span
+      data-slot="row-drag-grip"
+      className="flex cursor-grab touch-none items-center text-muted-foreground"
+      onPointerDown={(down) => {
+        down.preventDefault()
+        const grip = down.currentTarget
+        grip.setPointerCapture(down.pointerId)
+        let target: number | null = null
+        const handleMove = (ev: PointerEvent) => {
+          target = rowIndexUnderPointer(fullName, ev.clientX, ev.clientY)
+        }
+        const handleUp = () => {
+          grip.removeEventListener('pointermove', handleMove)
+          grip.removeEventListener('pointerup', handleUp)
+          if (target !== null && target !== index) onDrop(index, target)
+        }
+        grip.addEventListener('pointermove', handleMove)
+        grip.addEventListener('pointerup', handleUp)
+      }}
+    >
+      <GripVerticalIcon aria-hidden className="size-3.5" />
+    </span>
+  )
 }
 
 function PickerDialog({
@@ -446,6 +491,7 @@ function ComboboxArrayControl({
   const anchorRef = useComboboxAnchor()
   const [inputValue, setInputValue] = useState('')
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
+  const [announcement, setAnnouncement] = useState('')
   const {
     fields: rows,
     append,
@@ -585,6 +631,16 @@ function ComboboxArrayControl({
                 data-row-index={index}
                 className="flex h-[calc(--spacing(5.25))] w-fit items-center justify-center gap-1 rounded-sm bg-muted px-1.5 text-xs font-medium whitespace-nowrap text-foreground has-data-[slot=combobox-chip-remove]:pr-0"
               >
+                {reorderable ? (
+                  <DragGrip
+                    fullName={fullName}
+                    index={index}
+                    onDrop={(from, to) => {
+                      move(from, to)
+                      setAnnouncement(`${chipLabel} moved to position ${to + 1}`)
+                    }}
+                  />
+                ) : null}
                 {editable ? (
                   <button
                     type="button"
@@ -672,6 +728,10 @@ function ComboboxArrayControl({
         <FieldError id={errorId}>{message ?? rowErrorMessage}</FieldError>
       ) : null}
 
+      <span aria-live="polite" className="sr-only" data-slot="reorder-announcement">
+        {announcement}
+      </span>
+
       {activeIndex !== null && rows[activeIndex] ? (
         <RowEditorDialog
           open
@@ -733,6 +793,7 @@ function CardArrayControl({
 }) {
   const fullName = joinPath(basePath, config.name)
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
+  const [announcement, setAnnouncement] = useState('')
   const {
     fields: rows,
     append,
@@ -849,6 +910,20 @@ function CardArrayControl({
                   <XIcon />
                 </Button>
               ) : null}
+              {reorderable ? (
+                <span className="absolute bottom-2 right-2">
+                  <DragGrip
+                    fullName={fullName}
+                    index={index}
+                    onDrop={(from, to) => {
+                      move(from, to)
+                      setAnnouncement(
+                        `${rowSummaryTitle(config, values, index)} moved to position ${to + 1}`,
+                      )
+                    }}
+                  />
+                </span>
+              ) : null}
             </div>
           )
         })}
@@ -857,6 +932,10 @@ function CardArrayControl({
       {message || rowErrorMessage ? (
         <FieldError id={errorId}>{message ?? rowErrorMessage}</FieldError>
       ) : null}
+
+      <span aria-live="polite" className="sr-only" data-slot="reorder-announcement">
+        {announcement}
+      </span>
 
       {addable ? (
         <div className="flex flex-wrap gap-2">

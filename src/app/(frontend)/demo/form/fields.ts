@@ -100,6 +100,7 @@ export const allFieldsForm: FieldConfig[] = [
     type: 'combobox',
     label: 'Rooms',
     singularLabel: 'room',
+    draggable: true,
     required: true,
     requiredMessage: 'Add at least one room',
     max: 4,
@@ -160,6 +161,7 @@ export const allFieldsForm: FieldConfig[] = [
     type: 'cardArray',
     label: 'Party room',
     singularLabel: 'Party room',
+    draggable: true,
     max: 3,
     cardDisplay: {
       showCompletionStatus: true,
