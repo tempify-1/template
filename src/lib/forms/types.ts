@@ -12,6 +12,7 @@ export const FIELD_TYPES = [
   'number',
   'fieldArray',
   'cardArray',
+  'fieldset',
   'submit',
 ] as const
 
@@ -100,11 +101,30 @@ export type ValueResolver = (current: FormValues) => FormValues | Promise<FormVa
 
 export type FormSchema = z.ZodType<FormValues, FormValues>
 
+export const CONTAINER_TYPES = ['fieldset'] as const
+
+export function isContainer(field: FieldConfig): boolean {
+  return (CONTAINER_TYPES as readonly string[]).includes(field.type)
+}
+
 export function isInputField(field: FieldConfig): boolean {
   return field.type !== 'submit'
 }
 
 export function inputFields(fields: FieldConfig[]): FieldConfig[] {
+  const flat: FieldConfig[] = []
+  for (const field of fields) {
+    if (!isInputField(field)) continue
+    if (isContainer(field)) {
+      flat.push(...inputFields(field.fields ?? []))
+      continue
+    }
+    flat.push(field)
+  }
+  return flat
+}
+
+export function renderFields(fields: FieldConfig[]): FieldConfig[] {
   return fields.filter(isInputField)
 }
 

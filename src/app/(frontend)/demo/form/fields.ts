@@ -94,20 +94,28 @@ const extrasSource = async (query: string, signal: AbortSignal) => {
 
 export const allFieldsForm: FieldConfig[] = [
   {
-    name: 'destination',
-    type: 'searchableSelect',
-    label: 'Destination',
-    placeholder: 'Search destinations…',
-    required: true,
-    options: DESTINATIONS,
-  },
-  {
-    name: 'destinationAsync',
-    type: 'searchableSelect',
-    label: 'Destination (live search)',
-    placeholder: 'Type to search…',
-    optionSource: destinationSource,
-    description: 'Options load from a stub source with an artificial delay.',
+    name: 'tripBasics',
+    type: 'fieldset',
+    label: 'Trip basics',
+    description: 'Grouping changes presentation, never paths or payloads.',
+    fields: [
+      {
+        name: 'destination',
+        type: 'searchableSelect',
+        label: 'Destination',
+        placeholder: 'Search destinations…',
+        required: true,
+        options: DESTINATIONS,
+      },
+      {
+        name: 'destinationAsync',
+        type: 'searchableSelect',
+        label: 'Destination (live search)',
+        placeholder: 'Type to search…',
+        optionSource: destinationSource,
+        description: 'Options load from a stub source with an artificial delay.',
+      },
+    ],
   },
   {
     name: 'extras',

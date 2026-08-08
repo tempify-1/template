@@ -55,6 +55,7 @@ import { buildSchema } from '@/lib/forms/schema-builder'
 import { hiddenValues, submittedValues } from '@/lib/forms/submitted-values'
 import {
   inputFields,
+  renderFields,
   type FieldConfig,
   type FormValues,
   type Option,
@@ -1053,8 +1054,27 @@ function FieldList({
 }) {
   return (
     <>
-      {inputFields(fields).map((config) => {
+      {renderFields(fields).map((config) => {
         if (!isVisible(config, values)) return null
+
+        if (config.type === 'fieldset') {
+          return (
+            <FieldSet key={config.name} data-field={config.name}>
+              <FieldLegend>{config.label ?? config.name}</FieldLegend>
+              {config.description ? (
+                <FieldDescription>{config.description}</FieldDescription>
+              ) : null}
+              <FieldList
+                fields={config.fields ?? []}
+                form={form}
+                seeded={seeded}
+                values={values}
+                basePath={basePath}
+                uid={uid}
+              />
+            </FieldSet>
+          )
+        }
 
         if (config.type === 'fieldArray') {
           return (

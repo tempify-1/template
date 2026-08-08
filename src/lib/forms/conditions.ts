@@ -1,10 +1,19 @@
 import { getAtPath } from './paths'
-import { inputFields, type Condition, type FieldConfig, type FormValues } from './types'
+import { inputFields, isContainer, type Condition, type FieldConfig, type FormValues } from './types'
 
 export function assertConditionTargetsExist(fields: FieldConfig[], extraKnown: string[] = []): void {
   const known = new Set([...inputFields(fields).map((field) => field.name), ...extraKnown])
 
   for (const field of fields) {
+    if (isContainer(field)) {
+      if (field.showWhen || field.enableWhen || field.requiredWhen) {
+        throw new Error(
+          `Container "${field.name}" carries a condition — containers group presentation only; put the condition on the fields inside`,
+        )
+      }
+      assertConditionTargetsExist(field.fields ?? [], [...known])
+      continue
+    }
     for (const [kind, condition] of [
       ['showWhen', field.showWhen],
       ['enableWhen', field.enableWhen],
