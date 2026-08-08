@@ -57,6 +57,23 @@ test.describe('combobox chip control', () => {
     await expect(phone).toBeEnabled()
   })
 
+  test('an unopened incomplete row surfaces a visible error on submit', async ({ page }) => {
+    await addRoom(page, 'dou', 'Double')
+    await page.getByRole('button', { name: 'Submit enquiry' }).click()
+    const field = page.locator('[data-field="rooms"]')
+    await expect(field).toContainText('Complete room 1')
+    await expect(page.locator('pre')).toContainText('Nothing submitted yet')
+  })
+
+  test('Enter activates the chip edit button for keyboard users', async ({ page }) => {
+    await addRoom(page, 'dou', 'Double')
+    const edit = page.getByRole('button', { name: 'Edit Double' })
+    await edit.focus()
+    await page.keyboard.press('Enter')
+    await expect(page.getByRole('dialog')).toBeVisible()
+    await expect(page.getByRole('dialog').getByRole('status')).toContainText('Traveller')
+  })
+
   test('chip modal live-edits the row; picker-seeded traveller submits its seeded values (#31)', async ({
     page,
   }) => {

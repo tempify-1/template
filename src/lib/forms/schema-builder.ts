@@ -40,10 +40,15 @@ function leafFor(field: FieldConfig): z.ZodType {
     case 'combobox': {
       const tree: ShapeTree = {}
       for (const rowField of inputFields(field.fields ?? [])) {
+        if (rowField.name === 'value' || rowField.name === 'label') {
+          throw new Error(
+            `Combobox "${field.name}" declares a row field named "${rowField.name}", which is reserved for the row's option identity`,
+          )
+        }
         insert(tree, pathSegments(rowField.name), leafFor(rowField))
       }
-      insert(tree, ['value'], z.string())
-      insert(tree, ['label'], z.string())
+      insert(tree, ['value'], z.string().optional())
+      insert(tree, ['label'], z.string().optional())
       return z.array(toZod(tree)).optional()
     }
 

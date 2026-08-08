@@ -321,15 +321,21 @@ function isBlankRowValue(field: FieldConfig, value: unknown): boolean {
 }
 
 function incompleteRowFields(fields: FieldConfig[], row: FormValues): string[] {
-  return inputFields(fields)
-    .filter(
-      (field) =>
-        isVisible(field, row) &&
-        isEnabled(field, row) &&
-        isRequired(field, row) &&
-        isBlankRowValue(field, getAtPath(row, field.name)),
-    )
-    .map((field) => field.label ?? field.name)
+  const names: string[] = []
+  for (const field of inputFields(fields)) {
+    if (!isVisible(field, row) || !isEnabled(field, row)) continue
+    const value = getAtPath(row, field.name)
+    if (field.type === 'fieldArray' || field.type === 'combobox') {
+      const count = Array.isArray(value) ? value.length : 0
+      const minCount = field.min ?? (field.required ? 1 : 0)
+      if (count < minCount) names.push(field.label ?? field.name)
+      continue
+    }
+    if (isRequired(field, row) && isBlankRowValue(field, value)) {
+      names.push(field.label ?? field.name)
+    }
+  }
+  return names
 }
 
 function rowDisplayValue(row: FormValues, key: string): string {
@@ -344,12 +350,14 @@ function ComboboxArrayControl({
   seeded,
   basePath,
   uid,
+  disabled = false,
 }: {
   config: FieldConfig
   form: ConfigFormApi
   seeded: FormValues
   basePath: string
   uid: string
+  disabled?: boolean
 }) {
   const fullName = joinPath(basePath, config.name)
   const theme = useSectionTheme()
@@ -373,17 +381,30 @@ function ComboboxArrayControl({
   const currentRows = (useWatch({ control: form.control, name: fullName }) ?? []) as FormValues[]
 
   const label = config.label ?? config.name
-  const singular = config.singularLabel ?? label.toLowerCase()
+  const singular = config.singularLabel
+  const addPlaceholder =
+    config.placeholder ?? `Type to add ${singular ? `${singular}s` : label.toLowerCase()}`
   const options = config.options ?? []
   const reselect = config.reselectOptions === true
-  const addable = config.cardDisplay?.addable !== false
-  const removable = config.cardDisplay?.removable !== false
-  const editable = config.editableOptions !== false
+  const addable = config.cardDisplay?.addable !== false && !disabled
+  const removable = config.cardDisplay?.removable !== false && !disabled
+  const editable = config.editableOptions !== false && !disabled
+  const reorderable = config.draggable === true && !disabled
   const showCompletion = config.cardDisplay?.showCompletionStatus === true
   const atMax = config.max !== undefined && rows.length >= config.max
   const message = errorMessageAt(form.formState.errors, fullName)
+  const rowErrorIndexes = rows
+    .map((_, index) => index)
+    .filter((index) => getAtPath(form.formState.errors, `${fullName}.${index}`) !== undefined)
+  const rowErrorMessage =
+    activeIndex === null && rowErrorIndexes.length > 0
+      ? `Complete ${singular ?? label.toLowerCase()} ${rowErrorIndexes.map((i) => i + 1).join(', ')}`
+      : undefined
   const id = `${uid}${fullName}`
-  const errorId = message ? `${id}-error` : undefined
+  const descriptionId = config.description ? `${id}-description` : undefined
+  const errorId = message || rowErrorMessage ? `${id}-error` : undefined
+  const describedBy =
+    [descriptionId, errorId, config.ariaDescribedby].filter(Boolean).join(' ') || undefined
 
   const rowValues = (index: number): FormValues => currentRows[index] ?? {}
   const selectedValues = new Set(currentRows.map((row) => rowDisplayValue(row, 'value')))
@@ -410,9 +431,11 @@ function ComboboxArrayControl({
       if (!selectedValues.has(option.value)) addRow(option)
     }
     if (removable) {
-      const goneIndex = currentRows.findIndex(
-        (row) => !nextValues.has(rowDisplayValue(row, 'value')),
-      )
+      const offered = new Set(options.map((option) => option.value))
+      const goneIndex = currentRows.findIndex((row) => {
+        const rowValue = rowDisplayValue(row, 'value')
+        return offered.has(rowValue) && !nextValues.has(rowValue)
+      })
       if (goneIndex >= 0) {
         remove(goneIndex)
         if (activeIndex === goneIndex) setActiveIndex(null)
@@ -460,11 +483,19 @@ function ComboboxArrayControl({
       .filter(Boolean)
 
   return (
-    <Field data-field={fullName} onKeyDown={(event) => {
-      if (event.key === 'Enter') event.preventDefault()
-    }}>
+    <Field
+      data-field={fullName}
+      onKeyDown={(event) => {
+        const target = event.target as HTMLElement
+        if (event.key === 'Enter' && target.dataset.slot === 'combobox-chip-input') {
+          event.preventDefault()
+        }
+      }}
+    >
       <FieldLabel htmlFor={id}>{label}</FieldLabel>
-      {config.description ? <FieldDescription>{config.description}</FieldDescription> : null}
+      {config.description ? (
+        <FieldDescription id={descriptionId}>{config.description}</FieldDescription>
+      ) : null}
 
       <Combobox
         multiple
@@ -479,7 +510,7 @@ function ComboboxArrayControl({
         <ComboboxChips ref={anchorRef} aria-label={config.ariaLabel ?? `${label} items`}>
           {rows.map((row, index) => {
             const values = rowValues(index)
-            const chipLabel = rowDisplayValue(values, 'label') || `${singular} ${index + 1}`
+            const chipLabel = rowDisplayValue(values, 'label') || `${singular ?? label} ${index + 1}`
             const incomplete = showCompletion
               ? incompleteRowFields(config.fields ?? [], values)
               : []
@@ -532,9 +563,13 @@ function ComboboxArrayControl({
           {addable ? (
             <ComboboxChipsInput
               id={id}
-              placeholder={config.placeholder ?? `Type to add ${singular}s`}
-              aria-describedby={errorId}
-              aria-invalid={message ? true : undefined}
+              placeholder={addPlaceholder}
+              disabled={disabled}
+              aria-describedby={describedBy}
+              aria-description={config.ariaDescription}
+              aria-label={config.ariaLabel}
+              tabIndex={config.tabIndex}
+              aria-invalid={message || rowErrorMessage ? true : undefined}
               onKeyDown={(event) => {
                 if (
                   event.key === 'Backspace' &&
@@ -565,7 +600,9 @@ function ComboboxArrayControl({
         ) : null}
       </Combobox>
 
-      {message ? <FieldError id={errorId}>{message}</FieldError> : null}
+      {message || rowErrorMessage ? (
+        <FieldError id={errorId}>{message ?? rowErrorMessage}</FieldError>
+      ) : null}
 
       {activeIndex !== null && rows[activeIndex] ? (
         <RowEditorDialog
@@ -581,7 +618,7 @@ function ComboboxArrayControl({
           onPrev={activeIndex > 0 ? () => setActiveIndex(activeIndex - 1) : undefined}
           onNext={activeIndex < rows.length - 1 ? () => setActiveIndex(activeIndex + 1) : undefined}
           onMoveUp={
-            activeIndex > 0
+            reorderable && activeIndex > 0
               ? () => {
                   move(activeIndex, activeIndex - 1)
                   setActiveIndex(activeIndex - 1)
@@ -589,7 +626,7 @@ function ComboboxArrayControl({
               : undefined
           }
           onMoveDown={
-            activeIndex < rows.length - 1
+            reorderable && activeIndex < rows.length - 1
               ? () => {
                   move(activeIndex, activeIndex + 1)
                   setActiveIndex(activeIndex + 1)
@@ -653,6 +690,7 @@ function FieldList({
               seeded={seeded}
               basePath={basePath}
               uid={uid}
+              disabled={!isEnabled(config, values)}
             />
           )
         }

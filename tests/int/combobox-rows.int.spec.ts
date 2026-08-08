@@ -87,6 +87,28 @@ describe('combobox rows through the schema', () => {
   })
 })
 
+describe('combobox row shape rules', () => {
+  it('accepts a seeded row that carries no label', () => {
+    const schema = buildSchema(form)
+    const parsed = schema.safeParse({
+      travellers: [{ value: 'adult', firstName: 'Ana', middleName: '', lastName: 'One' }],
+    })
+    expect(parsed.success).toBe(true)
+  })
+
+  it('rejects a config whose row field is named value or label', () => {
+    const colliding: FieldConfig[] = [
+      {
+        name: 'rooms',
+        type: 'combobox',
+        options: [{ label: 'A', value: 'a' }],
+        fields: [{ name: 'label', type: 'text' }],
+      },
+    ]
+    expect(() => buildSchema(colliding)).toThrow(/reserved/)
+  })
+})
+
 describe('combobox rows through submittedValues', () => {
   it('keeps value and label plus declared row fields, drops smuggled keys', () => {
     const out = submittedValues(form, {
