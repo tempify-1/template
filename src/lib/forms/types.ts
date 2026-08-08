@@ -6,6 +6,7 @@ export const FIELD_TYPES = [
   'tel',
   'textarea',
   'select',
+  'searchableSelect',
   'combobox',
   'checkbox',
   'number',

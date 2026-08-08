@@ -8,6 +8,7 @@ import {
   TextareaControl,
   type FieldControlProps,
 } from './fields'
+import { SearchableSelectControl } from './fields/searchable-select'
 
 export type FieldControl = (props: FieldControlProps) => React.ReactNode
 
@@ -19,6 +20,7 @@ export const fieldRegistry: ControlRegistry = {
   tel: TextControl,
   textarea: TextareaControl,
   select: SelectControl,
+  searchableSelect: SearchableSelectControl,
   checkbox: CheckboxControl,
   number: NumberControl,
 }

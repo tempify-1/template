@@ -31,7 +31,24 @@ const traveller: FieldConfig[] = [
   },
 ]
 
+const DESTINATIONS = [
+  { label: 'Lisbon', value: 'lis' },
+  { label: 'Ljubljana', value: 'lju' },
+  { label: 'London', value: 'lon' },
+  { label: 'Lyon', value: 'lyo' },
+  { label: 'Madrid', value: 'mad' },
+  { label: 'Marrakesh', value: 'rak' },
+]
+
 export const allFieldsForm: FieldConfig[] = [
+  {
+    name: 'destination',
+    type: 'searchableSelect',
+    label: 'Destination',
+    placeholder: 'Search destinations…',
+    required: true,
+    options: DESTINATIONS,
+  },
   {
     name: 'rooms',
     type: 'combobox',

@@ -22,6 +22,15 @@ async function addRoom(page: Page, query: string, optionName: string) {
   await addViaKeyboard(page, roomsInput(page), query, optionName)
 }
 
+async function pickDestination(page: Page, query: string, optionName: string) {
+  const input = page.locator('[data-field="destination"]').getByPlaceholder('Search destinations…')
+  await input.click()
+  await input.pressSequentially(query, { delay: 40 })
+  await expect(page.getByRole('option', { name: optionName })).toBeVisible()
+  await input.press('Enter')
+  await expect(input).toHaveValue(optionName)
+}
+
 test.describe('combobox chip control', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/demo/form')
@@ -57,6 +66,38 @@ test.describe('combobox chip control', () => {
     await expect(phone).toBeEnabled()
   })
 
+  test('searchableSelect filters, selects, clears, and submits a bare string', async ({ page }) => {
+    const field = page.locator('[data-field="destination"]')
+    const input = field.getByPlaceholder('Search destinations…')
+    await input.click()
+    await input.pressSequentially('lj', { delay: 40 })
+    await expect(page.getByRole('option', { name: 'Ljubljana' })).toBeVisible()
+    await input.press('Enter')
+    await expect(input).toHaveValue('Ljubljana')
+    await expect(page.locator('pre')).toContainText('Nothing submitted yet')
+
+    await field.locator('[data-slot="combobox-clear"]').click()
+    await expect(input).toHaveValue('')
+
+    await pickDestination(page, 'lis', 'Lisbon')
+    await addRoom(page, 'dou', 'Double')
+    await page.getByRole('button', { name: 'Edit Double' }).click()
+    const modal = page.getByRole('dialog')
+    await modal.locator('[data-field^="rooms.0.board"] [data-slot="select-trigger"]').click()
+    await page.getByRole('option', { name: 'Room only' }).click()
+    await modal.getByRole('button', { name: 'Add Traveller' }).click()
+    await modal.locator('[data-field="rooms.0.travellers.0.name"] input').fill('Solo')
+    await modal
+      .locator('[data-field^="rooms.0.travellers.0.ageBand"] [data-slot="select-trigger"]')
+      .click()
+    await page.getByRole('option', { name: 'Adult', exact: true }).click()
+    await modal.getByRole('button', { name: 'Done' }).click()
+
+    await page.getByRole('button', { name: 'Submit enquiry' }).click()
+    const values = await submittedJson(page)
+    expect(values.destination).toBe('lis')
+  })
+
   test('an unopened incomplete row surfaces a visible error on submit', async ({ page }) => {
     await addRoom(page, 'dou', 'Double')
     await page.getByRole('button', { name: 'Submit enquiry' }).click()
@@ -77,6 +118,7 @@ test.describe('combobox chip control', () => {
   test('chip modal live-edits the row; picker-seeded traveller submits its seeded values (#31)', async ({
     page,
   }) => {
+    await pickDestination(page, 'mad', 'Madrid')
     await addRoom(page, 'dou', 'Double')
 
     await page.getByRole('button', { name: 'Edit Double' }).click()
@@ -111,6 +153,7 @@ test.describe('combobox chip control', () => {
   })
 
   test('nested combobox per array row stays row-scoped (#39)', async ({ page }) => {
+    await pickDestination(page, 'mad', 'Madrid')
     await addRoom(page, 'dou', 'Double')
 
     await page.getByRole('button', { name: 'Add Party room' }).click()
